@@ -15,8 +15,7 @@
                                                         color/size of plots using
                                                         graphics.conf settings
         03/24/2008      W. Krenn        3               metric adaptations
-        07/10/2008      T. Lum          4               Null properties for optional values
-        12/01/2009      M. Hornsby      5               Add Moon Rise and Set
+        12/01/2009      M. Hornsby      4               Add Moon Rise and Set
  
   NOTES:
         This is by far the ugliest code in the wview source. Shortcuts are taken
@@ -642,7 +641,7 @@ static char                 tendency[5][14] =
         "Unknown"
 };
 
-static char *buildTimeTag (short timeval)
+static char *buildTimeTag (int16_t timeval)
 {
     static char     ret[16];
 
@@ -711,7 +710,7 @@ static char *makeduration (float x)
 
 }
 
-static char* getBattStatus(UCHAR status)
+static char* getBattStatus(uint8_t status)
 {
     static char batteryStatus[16];
 
@@ -756,10 +755,7 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         strcpy (store, " %");
         break;
     case 2:
-        if (id->isMetricUnits)
-            strcpy (store, " km/h");
-        else
-            strcpy (store, " mph");
+        sprintf (store, " %s", wvutilsGetWindUnitLabel());
         break;
     case 3:
         if (id->isMetricUnits)
@@ -851,34 +847,16 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         break;
     case 16:
-    	  if( !id->loopStore.windDir.isNull)
-    	  {	
-            tempfloat = (float)id->loopStore.windDir.value + 11.24;
-            tempfloat /= 22.5;
-            tempInt = (int)tempfloat;
-            tempInt %= 16;
-            sprintf (store, "%s", buildWindDirString(tempInt));
-        }
-        else
-        	  sprintf (store, "n/a");
-
+        tempfloat = (float)id->loopStore.windDir + 11.24;
+        tempfloat /= 22.5;
+        tempInt = (int)tempfloat;
+        tempInt %= 16;
+        sprintf (store, "%s", buildWindDirString(tempInt));
         break;
     case 17:
-    	  if(!id->loopStore.windSpeed.isNull)
-    	  {
-            if (id->isMetricUnits)
-            {
-                sprintf (store, "%.1f",
-                         wvutilsConvertMPHToKPH((float)id->loopStore.windSpeed.value));
-            }
-            else
-            {
-                sprintf (store, "%d", id->loopStore.windSpeed.value);
-            }
-        }
-        else
-            sprintf (store, "n/a");
-
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed((float)id->loopStore.windSpeed));
         break;
     case 18:
         if (id->isMetricUnits)
@@ -1027,15 +1005,10 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         strcpy (store, sensorGetDailyLowTime(sensors->sensor, SENSOR_DEWPOINT, temp));
         break;
     case 37:
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.0f",
-                     wvutilsConvertMPHToKPH(sensorGetDailyHigh(sensors->sensor, SENSOR_WGUST)));
-        }
-        else
-        {
-            sprintf (store, "%.0f", sensorGetDailyHigh(sensors->sensor, SENSOR_WGUST));
-        }
+        sprintf (store, 
+                 "%.1f", 
+                 wvutilsGetWindSpeed(sensorGetDailyHigh(sensors->sensor, SENSOR_WGUST))
+                 );
         break;
     case 38:
         strcpy (store, sensorGetDailyHighTime(sensors->sensor, SENSOR_WGUST, temp));
@@ -1166,15 +1139,10 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         break;
     case 55:
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.0f",
-                     wvutilsConvertMPHToKPH(sensorGetHigh(&sensors->sensor[STF_MONTH][SENSOR_WGUST])));
-        }
-        else
-        {
-            sprintf (store, "%.0f", sensorGetHigh(&sensors->sensor[STF_MONTH][SENSOR_WGUST]));
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed(sensorGetHigh(&sensors->sensor[STF_MONTH][SENSOR_WGUST]))
+                 );
         break;
     case 56:
         if (id->isMetricUnits)
@@ -1284,15 +1252,10 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         break;
     case 67:
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.0f",
-                     wvutilsConvertMPHToKPH(sensorGetHigh(&sensors->sensor[STF_YEAR][SENSOR_WGUST])));
-        }
-        else
-        {
-            sprintf (store, "%.0f", sensorGetHigh(&sensors->sensor[STF_YEAR][SENSOR_WGUST]));
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed(sensorGetHigh(&sensors->sensor[STF_YEAR][SENSOR_WGUST]))
+                 );
         break;
     case 68:
         if (id->isMetricUnits)
@@ -1358,10 +1321,7 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         sprintf (store, "%s", radSystemGetUpTimeSTR (WVIEW_SYSTEM_ID));
         break;
     case 75:
-     	  if(!id->loopStore.UV.isNull)
-           sprintf (store, "%.1f", (float)id->loopStore.UV.value);
-        else
-            sprintf (store, "n/a");
+        sprintf (store, "%.1f", (float)id->loopStore.UV);
         break;
     case 76:
         if (id->isMetricUnits)
@@ -1375,10 +1335,7 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         break;
     case 77:
-    	  if(!id->loopStore.radiation.isNull)
-            sprintf (store, "%.0f", (float)id->loopStore.radiation.value);
-        else
-            sprintf (store, "n/a");
+        sprintf (store, "%.0f", (float)id->loopStore.radiation);
         break;
     case 78:
         if (id->isMetricUnits)
@@ -1570,15 +1527,10 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         break;
     case 99:
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.1f",
-                     wvutilsConvertMPHToKPH(sensorGetAvg(&sensors->sensor[STF_HOUR][SENSOR_WSPEED])));
-        }
-        else
-        {
-            sprintf (store, "%.1f", sensorGetAvg(&sensors->sensor[STF_HOUR][SENSOR_WSPEED]));
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed(sensorGetAvg(&sensors->sensor[STF_HOUR][SENSOR_WSPEED]))
+                 );
         break;
     case 100:
         sprintf (store, "%d", windAverageCompute(&sensors->wind[STF_HOUR]));
@@ -1621,15 +1573,9 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         break;
     case 105:
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.0f",
-                     wvutilsConvertMPHToKPH(id->hilowStore.hourchangewind));
-        }
-        else
-        {
-            sprintf (store, "%d", id->hilowStore.hourchangewind);
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed(id->hilowStore.hourchangewind));
         break;
     case 106:
         sprintf (store, "%d", id->hilowStore.hourchangewinddir);
@@ -1683,15 +1629,9 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         break;
     case 112:
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.1f",
-                     wvutilsConvertMPHToKPH(sensorGetAvg(&sensors->sensor[STF_DAY][SENSOR_WSPEED])));
-        }
-        else
-        {
-            sprintf (store, "%.1f", sensorGetAvg(&sensors->sensor[STF_DAY][SENSOR_WSPEED]));
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed(sensorGetAvg(&sensors->sensor[STF_DAY][SENSOR_WSPEED])));
         break;
     case 113:
         sprintf (store, "%d", windAverageCompute(&sensors->wind[STF_DAY]));
@@ -1734,15 +1674,9 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         break;
     case 118:
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.0f",
-                     wvutilsConvertMPHToKPH(id->hilowStore.daychangewind));
-        }
-        else
-        {
-            sprintf (store, "%d", id->hilowStore.daychangewind);
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed(id->hilowStore.daychangewind));
         break;
     case 119:
         sprintf (store, "%d", id->hilowStore.daychangewinddir);
@@ -1796,15 +1730,9 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         break;
     case 125:
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.1f",
-                     wvutilsConvertMPHToKPH(sensorGetAvg(&sensors->sensor[STF_WEEK][SENSOR_WSPEED])));
-        }
-        else
-        {
-            sprintf (store, "%.1f", sensorGetAvg(&sensors->sensor[STF_WEEK][SENSOR_WSPEED]));
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed(sensorGetAvg(&sensors->sensor[STF_WEEK][SENSOR_WSPEED])));
         break;
     case 126:
         sprintf (store, "%d", windAverageCompute(&sensors->wind[STF_WEEK]));
@@ -1847,15 +1775,9 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         break;
     case 131:
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.0f",
-                     wvutilsConvertMPHToKPH(id->hilowStore.weekchangewind));
-        }
-        else
-        {
-            sprintf (store, "%d", id->hilowStore.weekchangewind);
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed(id->hilowStore.weekchangewind));
         break;
     case 132:
         sprintf (store, "%d", id->hilowStore.weekchangewinddir);
@@ -1909,15 +1831,9 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         break;
     case 138:
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.1f",
-                     wvutilsConvertMPHToKPH(sensorGetAvg(&sensors->sensor[STF_MONTH][SENSOR_WSPEED])));
-        }
-        else
-        {
-            sprintf (store, "%.1f", sensorGetAvg(&sensors->sensor[STF_MONTH][SENSOR_WSPEED]));
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed(sensorGetAvg(&sensors->sensor[STF_MONTH][SENSOR_WSPEED])));
         break;
     case 139:
         sprintf (store, "%d", windAverageCompute(&sensors->wind[STF_MONTH]));
@@ -2023,15 +1939,9 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         break;
     case 158:
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.1f",
-                     wvutilsConvertMPHToKPH(sensorGetAvg(&sensors->sensor[STF_YEAR][SENSOR_WSPEED])));
-        }
-        else
-        {
-            sprintf (store, "%.1f", sensorGetAvg(&sensors->sensor[STF_YEAR][SENSOR_WSPEED]));
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed(sensorGetAvg(&sensors->sensor[STF_YEAR][SENSOR_WSPEED])));
         break;
     case 159:
         sprintf (store, "%d", windAverageCompute(&sensors->wind[STF_YEAR]));
@@ -2242,7 +2152,8 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         else
         {
-            localtime_r (&id->loopStore.stormStart, &loctime);
+            time_t Time = (time_t)id->loopStore.stormStart;
+            localtime_r (&Time, &loctime);
             strftime(store, 64, id->dateFormat, &loctime);
             tempInt = strlen(store);
             snprintf(&store[tempInt], 64, " %2.2d:%2.2d",
@@ -2279,15 +2190,9 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         break;
     case 212:
         // intervalAvgWindSpeed
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.0f",
-                     wvutilsConvertMPHToKPH((float)id->loopStore.intervalAvgWSPEED));
-        }
-        else
-        {
-            sprintf (store, "%d", id->loopStore.intervalAvgWSPEED);
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed((float)id->loopStore.intervalAvgWSPEED));
         break;
     case 213:
         // stationPressure
@@ -2333,14 +2238,9 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         {
             tempfloat = 0;
         }
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.0f", wvutilsConvertMPHToKPH(tempfloat));
-        }
-        else
-        {
-            sprintf (store, "%.0f", tempfloat);
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed(tempfloat));
         break;
 
     case 218:
@@ -2350,8 +2250,7 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
 
     case 219:
         // windBeaufortScale
-        if(!id->loopStore.windSpeed.isNull)
-            sprintf (store, "%s", wvutilsConvertToBeaufortScale(id->loopStore.windSpeed.value));
+        sprintf (store, "%s", wvutilsConvertToBeaufortScale(id->loopStore.windSpeed));
         break;
 
     case 220:
@@ -2376,17 +2275,6 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
             sprintf (store, "%.2f",id->loopStore.wxt510Hail);
         }
         break;
-
-        // $WIXDR,C,38.6,F,2,U,12.2,N,0,U,12.5,V,1,U,3.540,V,2*77 Supervisor
-        // $WIXDR,A,014,D,1,A,021,D,2,S,9.0,S,1,S,11.0,S,2*6F Wind
-        // $WIXDR,C,36.1,F,0,H,94.3,P,0,P,27.04,I,0*41  Temp.,Hum,Baro
-        // $WIXDR,V,0.298,I,0,R,0.00,I,0,V,0,I,1,R,0,I,1*63 Rain, Hail
-
-        // $WIXDR,A,038,D,1,A,126,D,2,S,4.9,S,1,S,9.1,S,2*5B Wind
-        // $WIXDR,C,28.1,F,0,H,87.6,P,0,P,26.95,I,0*40  Temp.,Hum,Baro
-        // $WIXDR,V,0.000,I,0,Z,40,s,0,R,0.00,I,0,V,0,I,1,Z,0,s,1,R,0,I,1*55 Rain, Hail
-        // $WIXDR,C,38.6,F,2,U,12.1,V,0,U,12.3,V,1,U,3.540,V,2*6A Supervisor
-
 
     case 223:
         //    "<!--wxt510Hailrate-->"
@@ -2491,12 +2379,12 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         break;
 
     case 233:
-        // "<!--rxCheckPercent-->", USHORT              rxCheckPercent;          0 - 100
+        // "<!--rxCheckPercent-->", uint16_t              rxCheckPercent;          0 - 100
         sprintf (store, "%.1f", (float)id->loopStore.rxCheckPercent);
         break;
 
     case 234:
-        // "<!--tenMinuteAvgWindSpeed-->", USHORT              tenMinuteAvgWindSpeed;  mph
+        // "<!--tenMinuteAvgWindSpeed-->", uint16_t              tenMinuteAvgWindSpeed;  mph
         if (id->isMetricUnits)
         {
             sprintf (store, "%.1f",
@@ -2509,12 +2397,12 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         break;
 
     case 237:
-        // "<!--txBatteryStatus-->",  USHORT              txBatteryStatus;         VP only
+        // "<!--txBatteryStatus-->",  uint16_t              txBatteryStatus;         VP only
         sprintf (store, "%2.2x", id->loopStore.txBatteryStatus);
         break;
 
     case 238:
-        // "<!--consBatteryVoltage-->",   USHORT              consBatteryVoltage;   VP only
+        // "<!--consBatteryVoltage-->",   uint16_t              consBatteryVoltage;   VP only
         tempfloat = (((float)id->loopStore.consBatteryVoltage * 300)/512)/100;
         sprintf (store, "%.2f", tempfloat);
         break;
@@ -2564,18 +2452,16 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         // ###### Begin EXTRA Wind #######################
     case 246:
         // "<!--windSpeed_ms-->"
-        if(!id->loopStore.windSpeed.isNull){
-            tempfloat = wvutilsConvertMPHToMPS ((float)id->loopStore.windSpeed.value);
-            sprintf (store, "%.1f", tempfloat);
-        }
+        tempfloat = wvutilsConvertMPHToMPS ((float)id->loopStore.windSpeed);
+        sprintf (store, "%.1f", tempfloat);
         break;
 
     case 247:
         //  "<!--windGustSpeed_ms-->"
         tempfloat = (float)sensorGetHigh(&sensors->sensor[STF_INTERVAL][SENSOR_WGUST]);
-        if (tempfloat < 0 && id->loopStore.windSpeed.isNull)
+        if (tempfloat < 0)
         {
-            tempfloat = (float)id->loopStore.windSpeed.value;
+            tempfloat = (float)id->loopStore.windSpeed;
         }
         tempfloat = wvutilsConvertMPHToMPS (tempfloat);
         sprintf (store, "%.1f", tempfloat);
@@ -2661,18 +2547,16 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
 
     case 261:
         // "<!--windSpeed_kts-->",
-        if(!id->loopStore.windSpeed.isNull){
-            tempfloat = wvutilsConvertMPHToKnots ((float)id->loopStore.windSpeed.value);
-            sprintf (store, "%.1f", tempfloat);
-        }
+        tempfloat = wvutilsConvertMPHToKnots ((float)id->loopStore.windSpeed);
+        sprintf (store, "%.1f", tempfloat);
         break;
 
     case 262:
         //  "<!--windGustSpeed_kts-->",
         tempfloat = (float)sensorGetHigh(&sensors->sensor[STF_INTERVAL][SENSOR_WGUST]);
-        if (tempfloat < 0 && id->loopStore.windSpeed.isNull)
+        if (tempfloat < 0)
         {
-            tempfloat = ((float)id->loopStore.windSpeed.value);
+            tempfloat = ((float)id->loopStore.windSpeed);
         }
         tempfloat = wvutilsConvertMPHToKnots (tempfloat);
         sprintf (store, "%.1f", tempfloat);
@@ -2845,15 +2729,9 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         break;
     case 288:
         // "<!--hiAllTimeWindSpeed-->",
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.0f",
-                     wvutilsConvertMPHToKPH(sensorGetHigh(&sensors->sensor[STF_ALL][SENSOR_WGUST])));
-        }
-        else
-        {
-            sprintf (store, "%.0f", sensorGetHigh(&sensors->sensor[STF_ALL][SENSOR_WGUST]));
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed(sensorGetHigh(&sensors->sensor[STF_ALL][SENSOR_WGUST])));
         break;
     case 289:
         // "<!--hiAllTimeBarometer-->",
@@ -2939,15 +2817,9 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         break;
     case 297:
         // "<!--alltimeavgwind-->",
-        if (id->isMetricUnits)
-        {
-            sprintf (store, "%.1f",
-                     wvutilsConvertMPHToKPH(sensorGetAvg(&sensors->sensor[STF_ALL][SENSOR_WSPEED])));
-        }
-        else
-        {
-            sprintf (store, "%.1f", sensorGetAvg(&sensors->sensor[STF_ALL][SENSOR_WSPEED]));
-        }
+        sprintf (store, 
+                 "%.1f",
+                 wvutilsGetWindSpeed(sensorGetAvg(&sensors->sensor[STF_ALL][SENSOR_WSPEED])));
         break;
     case 298:
         // "<!--alltimedomwinddir-->",
@@ -3079,19 +2951,17 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         break;
     case 319:
        // "<!--apparentTemp-->",
-       if(!id->loopStore.windSpeed.isNull){
-            if (id->isMetricUnits)
-            {
-                sprintf (store, "%.1f",
-                         wvutilsConvertFToC(wvutilsCalculateApparentTemp(id->loopStore.outTemp, (float)id->loopStore.windSpeed.value, id->loopStore.outHumidity)));
+        if (id->isMetricUnits)
+        {
+            sprintf (store, "%.1f",
+                     wvutilsConvertFToC(wvutilsCalculateApparentTemp(id->loopStore.outTemp, (float)id->loopStore.windSpeed, id->loopStore.outHumidity)));
 
-            }
-            else
-            {
-                sprintf (store, "%.1f",
-                         wvutilsCalculateApparentTemp(id->loopStore.outTemp, (float)id->loopStore.windSpeed.value, id->loopStore.outHumidity));
-            }
-       }
+        }
+        else
+        {
+            sprintf (store, "%.1f",
+                     wvutilsCalculateApparentTemp(id->loopStore.outTemp, (float)id->loopStore.windSpeed, id->loopStore.outHumidity));
+        }
         break;
     case 320:
        // "<!--genExtraTemp1-->",
@@ -3524,7 +3394,7 @@ static int replaceDataTags (HTML_MGR_ID id, char *oldline, char *newline)
     return FALSE;
 }
 
-static int createOutFile (HTML_MGR_ID id, char *templatefile, ULONGLONG startTime)
+static int createOutFile (HTML_MGR_ID id, char *templatefile, uint64_t startTime)
 {
     FILE        *infile, *outfile, *incfile;
     char        *ptr;
@@ -3589,7 +3459,7 @@ static int createOutFile (HTML_MGR_ID id, char *templatefile, ULONGLONG startTim
 
 #if _DEBUG_GENERATION
     wvutilsLogEvent(PRI_HIGH, "GENERATION: TEMPLATE: %s OPEN INFILE: %u", 
-                    oldfname, (ULONG)(radTimeGetMSSinceEpoch() - startTime));
+                    oldfname, (uint32_t)(radTimeGetMSSinceEpoch() - startTime));
 #endif
 
     //  ... now open the files up
@@ -3603,7 +3473,7 @@ static int createOutFile (HTML_MGR_ID id, char *templatefile, ULONGLONG startTim
 
 #if _DEBUG_GENERATION
     wvutilsLogEvent(PRI_HIGH, "GENERATION: TEMPLATE: %s OPEN OUTFILE: %u", 
-                    oldfname, (ULONG)(radTimeGetMSSinceEpoch() - startTime));
+                    oldfname, (uint32_t)(radTimeGetMSSinceEpoch() - startTime));
 #endif
 
     outfile = fopen (newfname, "w");
@@ -3617,7 +3487,7 @@ static int createOutFile (HTML_MGR_ID id, char *templatefile, ULONGLONG startTim
 
 #if _DEBUG_GENERATION
     wvutilsLogEvent(PRI_HIGH, "GENERATION: TEMPLATE: %s START: %u", 
-                    oldfname, (ULONG)(radTimeGetMSSinceEpoch() - startTime));
+                    oldfname, (uint32_t)(radTimeGetMSSinceEpoch() - startTime));
 #endif
 
     //  ... now read each line of the template -
@@ -3666,7 +3536,7 @@ static int createOutFile (HTML_MGR_ID id, char *templatefile, ULONGLONG startTim
 
 #if _DEBUG_GENERATION
 wvutilsLogEvent(PRI_HIGH, "GENERATION: TEMPLATE: %s FINISH: %u", 
-                oldfname, (ULONG)(radTimeGetMSSinceEpoch() - startTime));
+                oldfname, (uint32_t)(radTimeGetMSSinceEpoch() - startTime));
 #endif
 
     fclose (infile);
@@ -4178,7 +4048,7 @@ int htmlgenGetMultiChartDefaultFourthLine (void)
     return plotPrefs.multichartFourthLineColor;
 }
 
-int htmlgenOutputFiles (HTML_MGR_ID id, ULONGLONG startTime)
+int htmlgenOutputFiles (HTML_MGR_ID id, uint64_t startTime)
 {
     register HTML_TMPL  *tmpl;
     int                 count = 0;
@@ -4189,7 +4059,7 @@ int htmlgenOutputFiles (HTML_MGR_ID id, ULONGLONG startTime)
     {
 #if _DEBUG_GENERATION
         wvutilsLogEvent(PRI_HIGH, "GENERATION: TEMPLATE: %s: %u ms",
-                        tmpl->fname, (ULONG)(radTimeGetMSSinceEpoch() - startTime));
+                        tmpl->fname, (uint32_t)(radTimeGetMSSinceEpoch() - startTime));
 #endif
 
         if (createOutFile (id, tmpl->fname, startTime) == ERROR)
@@ -4247,8 +4117,8 @@ int htmlgenMesonetFile (HTML_MGR_ID id, WVIEW_MSG_ARCHIVE_NOTIFY *armsg)
     fprintf (outfile, "HumdIn %d\n", armsg->inhumidity);
     fprintf (outfile, "HumdEx %d\n", armsg->humidity);
 
-    fprintf (outfile, "RnFall %.2f\n", (float)armsg->rainHour/100);
-    fprintf (outfile, "DailyRnFall %.2f\n", (float)armsg->rainDay/100);
+    fprintf (outfile, "RnFall %.2f\n", armsg->rainHour);
+    fprintf (outfile, "DailyRnFall %.2f\n", armsg->rainDay);
 
     fclose (outfile);
     return OK;
@@ -4863,15 +4733,12 @@ int htmlGenPngMultiChart
     if (numDataSets > MC_MAX_DATA_SETS)
         numDataSets = MC_MAX_DATA_SETS;
 
-    sprintf (timestr, "%s", units);
-
     for (i = 0; i < numDataSets; i ++)
     {
         legends[i] = datasets[i].legend;
     }
 
-
-    id = multiChartCreate (plotPrefs.chartWidth, plotPrefs.chartHeight, timestr, numDataSets, legends);
+    id = multiChartCreate (plotPrefs.chartWidth, plotPrefs.chartHeight, units, numDataSets, legends);
     if (id == NULL)
     {
         return ERROR;
@@ -5096,7 +4963,6 @@ static struct xyCoords windLabelLocations[8] =
 int htmlGenPngDialWind
 (
     char                *fname,
-    int                 isMetricUnits,
     int                 direction,              // 0-359 degrees
     int                 highDirection,          // 0-359 degrees
     int                 speed,
@@ -5159,28 +5025,24 @@ int htmlGenPngDialWind
     gdImageFilledEllipse (im, (plotPrefs.dialImageWidth/2), (plotPrefs.dialImageWidth/2),
                           plotPrefs.dialCtrDiameter, plotPrefs.dialCtrDiameter, centercolor);
 
-    if (isMetricUnits)
-        sprintf (text, "%02d", (int) wvutilsConvertMPHToKPH ((float)speed));
-    else
-        sprintf (text, "%02d", speed);
+    sprintf (text, "%02d", (int)wvutilsGetWindSpeed((float)speed));
+
     // center it
     angle = plotPrefs.dialDiameter - (gdFontGiant->w * strlen (text));
     angle /= 2;
     angle += gdFontGiant->w/2;
     if (angle < 0)
         angle = 0;
-    gdImageString (im, gdFontGiant, (int)angle, (plotPrefs.dialImageWidth/2)+32, (UCHAR *)text, centertext);
-    if (isMetricUnits)
-        sprintf (text, "%02d", (int) wvutilsConvertMPHToKPH ((float)highSpeed));
-    else
-        sprintf (text, "%02d", highSpeed);
+    gdImageString (im, gdFontGiant, (int)angle, (plotPrefs.dialImageWidth/2)+32, (uint8_t *)text, centertext);
+    sprintf (text, "%02d", (int)wvutilsGetWindSpeed((float)highSpeed));
+
     // center it
     angle = plotPrefs.dialDiameter - (gdFontSmall->w * strlen (text));
     angle /= 2;
     angle += gdFontSmall->w/2;
     if (angle < 0)
         angle = 0;
-    gdImageString (im, gdFontSmall, (int)angle, (plotPrefs.dialImageWidth/2)+46, (UCHAR *)text, centerhigh);
+    gdImageString (im, gdFontSmall, (int)angle, (plotPrefs.dialImageWidth/2)+46, (uint8_t *)text, centerhigh);
 
 
     //  ... create the dial ticks and labels
@@ -5195,7 +5057,7 @@ int htmlGenPngDialWind
 
         gdImageSetThickness (im, 2);
         gdImageLine (im, sticx, sticy, eticx, eticy, tickcolor);
-        gdImageString (im, gdFontSmall, xpix, ypix, (UCHAR *)windLabels[i], tickcolor);
+        gdImageString (im, gdFontSmall, xpix, ypix, (uint8_t *)windLabels[i], tickcolor);
     }
 
 
@@ -5226,7 +5088,7 @@ int htmlGenPngDialWind
                    gdFontGiant,
                    (int)angle,
                    (plotPrefs.dialImageWidth/2)-52,
-                   (UCHAR *)text,
+                   (uint8_t *)text,
                    tickcolor);
 
     gdImagePng (im, pngFile);
@@ -5424,7 +5286,7 @@ int htmlGenPngDialTemperature
                    gdFontGiant,
                    (int)degAngle,
                    (plotPrefs.dialImageWidth/2)+32,
-                   (UCHAR *)text,
+                   (uint8_t *)text,
                    centertext);
 
     if (feelsLike != DIAL_TEMP_FEELSLIKE_DISABLE)
@@ -5440,7 +5302,7 @@ int htmlGenPngDialTemperature
                        gdFontSmall,
                        (int)degAngle,
                        (plotPrefs.dialImageWidth/2)+46,
-                       (UCHAR *)text,
+                       (uint8_t *)text,
                        appcolor);
     }
 
@@ -5467,11 +5329,11 @@ int htmlGenPngDialTemperature
         gdImageLine (im, sticx, sticy, eticx, eticy, tickcolor);
         if (isMetricUnits)
         {
-            gdImageString (im, gdFontSmall, xpix, ypix, (UCHAR *)tempLabelsC[i], tickcolor);
+            gdImageString (im, gdFontSmall, xpix, ypix, (uint8_t *)tempLabelsC[i], tickcolor);
         }
         else
         {
-            gdImageString (im, gdFontSmall, xpix, ypix, (UCHAR *)tempLabelsF[i], tickcolor);
+            gdImageString (im, gdFontSmall, xpix, ypix, (uint8_t *)tempLabelsF[i], tickcolor);
         }
     }
 
@@ -5518,7 +5380,7 @@ int htmlGenPngDialTemperature
                    gdFontGiant,
                    (int)degAngle,
                    (plotPrefs.dialImageWidth/2)-52,
-                   (UCHAR *)text,
+                   (uint8_t *)text,
                    tickcolor);
 
     gdImagePng (im, pngFile);
@@ -5652,7 +5514,7 @@ int htmlGenPngDialHumidity
                    gdFontGiant,
                    (int)degAngle,
                    (plotPrefs.dialImageWidth/2)+32,
-                   (UCHAR *)text,
+                   (uint8_t *)text,
                    centertext);
 
 
@@ -5668,7 +5530,7 @@ int htmlGenPngDialHumidity
 
         gdImageSetThickness (im, 2);
         gdImageLine (im, sticx, sticy, eticx, eticy, tickcolor);
-        gdImageString (im, gdFontSmall, xpix, ypix, (UCHAR *)humidLabels[i], tickcolor);
+        gdImageString (im, gdFontSmall, xpix, ypix, (uint8_t *)humidLabels[i], tickcolor);
     }
 
 
@@ -5715,7 +5577,7 @@ int htmlGenPngDialHumidity
                    gdFontGiant,
                    (int)degAngle,
                    (plotPrefs.dialImageWidth/2)-52,
-                   (UCHAR *)text,
+                   (uint8_t *)text,
                    tickcolor);
 
     gdImagePng (im, pngFile);
@@ -6116,7 +5978,7 @@ int htmlGenPngDialNetRain
                    gdFontGiant,
                    (int)degAngle,
                    (plotPrefs.dialImageWidth/2)+28,
-                   (UCHAR *)text,
+                   (uint8_t *)text,
                    centertext);
 
     if (IsET)
@@ -6136,7 +5998,7 @@ int htmlGenPngDialNetRain
                        gdFontSmall,
                        (int)degAngle,
                        (plotPrefs.dialImageWidth/2)+42,
-                       (UCHAR *)text,
+                       (uint8_t *)text,
                        appcolor);
     }
 
@@ -6154,7 +6016,7 @@ int htmlGenPngDialNetRain
 
         gdImageSetThickness (im, 2);
         gdImageLine (im, sticx, sticy, eticx, eticy, tickcolor);
-        gdImageString (im, gdFontSmall, xpix, ypix, (UCHAR *)labels[i], tickcolor);
+        gdImageString (im, gdFontSmall, xpix, ypix, (uint8_t *)labels[i], tickcolor);
     }
 
     //  ... title
@@ -6171,7 +6033,7 @@ int htmlGenPngDialNetRain
                    gdFontGiant,
                    (int)degAngle,
                    (plotPrefs.dialImageWidth/2)-52,
-                   (UCHAR *)text,
+                   (uint8_t *)text,
                    tickcolor);
 
     gdImagePng (im, pngFile);
@@ -6288,7 +6150,7 @@ int htmlGenPngDialWindRose
         eticy = (plotPrefs.dialImageWidth/2) - (int)(DIAL_TICK_OUTER * windTicks[i].y);
         gdImageSetThickness (im, 2);
         gdImageLine (im, sticx, sticy, eticx, eticy, tickcolor);
-        gdImageString (im, gdFontSmall, xpix, ypix, (UCHAR *)windLabels[i], tickcolor);
+        gdImageString (im, gdFontSmall, xpix, ypix, (uint8_t *)windLabels[i], tickcolor);
     }
 
     // number of samples
@@ -6302,7 +6164,7 @@ int htmlGenPngDialWindRose
         i = 0;
 
     // draw it
-    gdImageString (im, gdFontGiant, i, (plotPrefs.dialImageWidth/2)+26, (UCHAR *)text, centertext);
+    gdImageString (im, gdFontGiant, i, (plotPrefs.dialImageWidth/2)+26, (uint8_t *)text, centertext);
 
     // maximum count (i.e. scale)
     sprintf(text, "%d", maxCount);
@@ -6315,7 +6177,7 @@ int htmlGenPngDialWindRose
         i = 0;
 
     // draw it
-    gdImageString (im, gdFontSmall, i, (plotPrefs.dialImageWidth/2)+40, (UCHAR *)text, centerhigh);
+    gdImageString (im, gdFontSmall, i, (plotPrefs.dialImageWidth/2)+40, (uint8_t *)text, centerhigh);
 
     // title
     sprintf (text, "%s", title);
@@ -6328,7 +6190,7 @@ int htmlGenPngDialWindRose
         i = 0;
 
     // draw it
-    gdImageString (im, gdFontGiant, i, (plotPrefs.dialImageWidth/2)-52, (UCHAR *)text, tickcolor);
+    gdImageString (im, gdFontGiant, i, (plotPrefs.dialImageWidth/2)-52, (uint8_t *)text, tickcolor);
 
     gdImagePng (im, pngFile);
     fclose (pngFile);

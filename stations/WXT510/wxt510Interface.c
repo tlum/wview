@@ -10,7 +10,6 @@
         Date            Engineer        Revision        Remarks
         01/14/2006      M.S. Teel       0               Original
         03/23/2008      W. Krenn        1               modified rain/hail/heating
-        10/02/2011      T. Lum          2               Null properties for optional values
  
   NOTES:
  
@@ -237,7 +236,7 @@ int stationInit
 
     // start the rain accumulator reset timer -
     // we use the provided interface timer (ifTimer) for this
-    radProcessTimerStart (work->ifTimer, (ULONG)WXT_RAIN_RESET_INTERVAL);
+    radProcessTimerStart (work->ifTimer, (uint32_t)WXT_RAIN_RESET_INTERVAL);
 
     // we must indicate successful completion here -
     // even though we are synchronous, the daemon wants to see this event
@@ -276,15 +275,15 @@ int stationGetPosition (WVIEWD_WORK *work)
 {
     // just set the values from our internal store - we retrieved them in
     // stationInit
-    work->elevation     = (short)wxt510WorkData.elevation;
+    work->elevation     = (int16_t)wxt510WorkData.elevation;
     if (wxt510WorkData.latitude >= 0)
-        work->latitude      = (short)((wxt510WorkData.latitude*10)+0.5);
+        work->latitude      = (int16_t)((wxt510WorkData.latitude*10)+0.5);
     else
-        work->latitude      = (short)((wxt510WorkData.latitude*10)-0.5);
+        work->latitude      = (int16_t)((wxt510WorkData.latitude*10)-0.5);
     if (wxt510WorkData.longitude >= 0)
-        work->longitude     = (short)((wxt510WorkData.longitude*10)+0.5);
+        work->longitude     = (int16_t)((wxt510WorkData.longitude*10)+0.5);
     else
-        work->longitude     = (short)((wxt510WorkData.longitude*10)-0.5);
+        work->longitude     = (int16_t)((wxt510WorkData.longitude*10)-0.5);
 
     radMsgLog (PRI_STATUS, "station location: elevation: %d feet",
                work->elevation);
@@ -405,7 +404,7 @@ void stationIFTimerExpiry (WVIEWD_WORK *work)
     wxt510WorkData.totalRain = 0;
 
     // restart the timer
-    radProcessTimerStart (work->ifTimer, (ULONG)WXT_RAIN_RESET_INTERVAL);
+    radProcessTimerStart (work->ifTimer, (uint32_t)WXT_RAIN_RESET_INTERVAL);
 
     return;
 }
@@ -497,40 +496,35 @@ static void storeLoopPkt (WVIEWD_WORK* work, LOOP_PKT *dest, NMEA0183_DATA *src)
     {
         tempfloat = src->humidity;
         tempfloat += 0.5;
-        dest->outHumidity                   = (USHORT)tempfloat;
+        dest->outHumidity                   = (uint16_t)tempfloat;
     }
 
     if (0 <= src->windSpeed && src->windSpeed <= 250)
     {
         tempfloat = src->windSpeed;
         tempfloat += 0.5;
-        dest->windSpeed.value               = (USHORT)tempfloat;
-        dest->windSpeed.isNull = FALSE;
+        dest->windSpeed                     = (uint16_t)tempfloat;
     }
-    else
-        dest->windSpeed.isNull = TRUE;
-    	
 
     if (0 <= src->windDir && src->windDir <= 360)
     {
         tempfloat = src->windDir;
         tempfloat += 0.5;
-        dest->windDir.value                 = (USHORT)tempfloat;
-        dest->windDir.isNull = FALSE;
+        dest->windDir                       = (uint16_t)tempfloat;
     }
 
     if (0 <= src->maxWindSpeed && src->maxWindSpeed <= 250)
     {
         tempfloat = src->maxWindSpeed;
         tempfloat += 0.5;
-        dest->windGust                      = (USHORT)tempfloat;
+        dest->windGust                      = (uint16_t)tempfloat;
     }
 
     if (0 <= src->maxWindDir && src->maxWindDir <= 360)
     {
         tempfloat = src->maxWindDir;
         tempfloat += 0.5;
-        dest->windGustDir                   = (USHORT)tempfloat;
+        dest->windGustDir                   = (uint16_t)tempfloat;
     }
 
     dest->rainRate                          = src->rainrate;

@@ -11,7 +11,6 @@
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         08/24/03        M.S. Teel       0               Original
-        10/03/2011      T. Lum          1               Add radiation and uv to notify packet
  
   NOTES:
  
@@ -99,10 +98,10 @@ __attribute__ ((packed)) WVIEW_MSG_REQUEST;
 typedef struct
 {
     time_t          lastArcTime;
-    short           archiveInterval;
-    short           latitude;
-    short           longitude;
-    short           elevation;
+    int16_t         archiveInterval;
+    int16_t         latitude;
+    int16_t         longitude;
+    int16_t         elevation;
     char            stationType[_MAX_PATH];
 
 }
@@ -156,13 +155,13 @@ typedef struct
     int             wspeed;
     int             hiwspeed;
     float           sampleRain;
-    int             rainHour;
-    int             rainDay;
+    float           rainHour;
+    float           rainDay;
+    float           rainToday;
     int             dewpoint;
+    float           UV;
+    float           radiation;
     int             rxPercent;
-    int             uv;
-    int             radiation;
-
 
 }
 __attribute__ ((packed)) WVIEW_MSG_ARCHIVE_NOTIFY;

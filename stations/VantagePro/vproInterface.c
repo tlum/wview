@@ -10,7 +10,6 @@
         Date            Engineer        Revision        Remarks
         06/06/2005      M.S. Teel       0               Original
         04/12/2008      W. Krenn        1               vpifGetRainCollectorSize
-        07/10/2008      T. Lum          2               Null properties for optional values
 
   NOTES:
 
@@ -104,8 +103,8 @@ int stationInit
     // set our work data pointer
     work->stationData = &vpWorkData;
 
-    // set the Archive Generation flag to indicate the VP generates them
-    work->stationGeneratesArchives = TRUE;
+    // This is now read from configuration...
+    // work->stationGeneratesArchives = TRUE;
 
 
     // initialize the medium abstraction based on user configuration
@@ -589,7 +588,7 @@ static void convertToArchivePkt(WVIEWD_WORK *work, ARCHIVE_RECORD* newRecord, AR
     bknTime.tm_sec   = 0;
     bknTime.tm_isdst = -1;
 
-    archivePkt->dateTime = mktime(&bknTime);
+    archivePkt->dateTime = (int32_t)mktime(&bknTime);
     archivePkt->usUnits  = 1;
     archivePkt->interval = work->archiveInterval;
 
@@ -650,8 +649,8 @@ static void convertToArchivePkt(WVIEWD_WORK *work, ARCHIVE_RECORD* newRecord, AR
     }
     if (newRecord->ET != 0xFF)
         archivePkt->value[DATA_INDEX_ET]            = (float)newRecord->ET/1000.0;
-    if ((USHORT)newRecord->radiation != 0x7FFF && 
-        (USHORT)newRecord->radiation != 0xFFFF && 
+    if ((uint16_t)newRecord->radiation != 0x7FFF && 
+        (uint16_t)newRecord->radiation != 0xFFFF && 
         (float)newRecord->radiation >= 0 && 
         (float)newRecord->radiation <= 1800)
     {
@@ -742,7 +741,7 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_DATA *src)
 {
     LOOP_PKT*   dest = &(work->loopPkt);
     float       tempfloat;
-    USHORT      tempshort;
+    uint16_t    tempshort;
     int         intTemp;
     float       scaledRain;
 
@@ -839,17 +838,15 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_DATA *src)
         dest->inHumidity = src->inHumidity;
     if (src->outHumidity != 0xFF)
         dest->outHumidity = src->outHumidity;
-    dest->windSpeed.isNull = src->windSpeed == 0xFF ? TRUE : FALSE;
-    if (!dest->windSpeed.isNull)
+    if (src->windSpeed != 0xFF)
     {
-        dest->windSpeed.value = src->windSpeed;
+        dest->windSpeed = src->windSpeed;
         dest->windGust = src->windSpeed;
     }
     tempshort = SHORT_SWAP(src->windDir);
-    dest->windDir.isNull = (tempshort == 0xFFFF || tempshort == 0x7FFF) ? TRUE : FALSE;
-    if (!dest->windDir.isNull)
+    if (tempshort != 0xFFFF && tempshort != 0x7FFF)
     {
-        dest->windDir.value = tempshort;
+        dest->windDir = tempshort;
         dest->windGustDir = tempshort;
     }
     tempshort = SHORT_SWAP(src->rainRate);
@@ -857,12 +854,16 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_DATA *src)
     {
 	    dest->rainRate = (float)tempshort/vpWorkData.rainTicksPerInch;
     }
-    dest->UV.isNull = src->UV == 0xFF ? TRUE : FALSE;
-    if (!dest->UV.isNull)
-    	  dest->UV.value = (float)src->UV/10;
-    dest->radiation.isNull = src->radiation == 0xFFFF ? TRUE : FALSE;    
-    if (!dest->radiation.isNull)
-        dest->radiation.value = SHORT_SWAP(src->radiation);
+    if (src->UV != 0xFF)
+        dest->UV = (float)src->UV/10;
+    else
+        dest->UV = -1;
+
+    tempshort = SHORT_SWAP(src->radiation);
+    if (tempshort != 0x7FFF && tempshort != 0xFFFF && tempshort <= 1800)
+        dest->radiation = tempshort;
+    else
+        dest->radiation = 0xFFFF;
 
     if (src->tenMinuteAvgWindSpeed != 0xFF)
         dest->tenMinuteAvgWindSpeed = src->tenMinuteAvgWindSpeed;
@@ -898,7 +899,7 @@ static int processArchivePage (WVIEWD_WORK *work, ARCHIVE_PAGE *page)
     ARCHIVE_RECORD*     newRecord;
     ARCHIVE_PKT         archivePkt;
     float               tempf;
-    USHORT              date, ntime, tempRainBits;
+    uint16_t            date, ntime, tempRainBits;
 
     start = vpWorkData.archiveRecOffset;
     vpWorkData.archiveRecOffset = 0;
@@ -926,7 +927,7 @@ static int processArchivePage (WVIEWD_WORK *work, ARCHIVE_PAGE *page)
         numNewRecords ++;
 
         // save the high wind speed
-        work->loopPkt.windGust = (USHORT)page->record[i].highWindSpeed;
+        work->loopPkt.windGust = (uint16_t)page->record[i].highWindSpeed;
 
         // clear the retry flag here
         vpWorkData.archiveRetryFlag = FALSE;
@@ -939,38 +940,46 @@ static int processArchivePage (WVIEWD_WORK *work, ARCHIVE_PAGE *page)
         tempf                   *= work->calMBarometer;
         tempf                   += work->calCBarometer;
         tempf                   *= 1000;
-        newRecord->barometer    = (USHORT)floorf (tempf);
+        newRecord->barometer    = (uint16_t)floorf (tempf);
     
         tempf                   = newRecord->inTemp;
         tempf                   /= 10;
         tempf                   *= work->calMInTemp;
         tempf                   += work->calCInTemp;
         tempf                   *= 10;
-        newRecord->inTemp       = (short)floorf (tempf);
+        newRecord->inTemp       = (int16_t)floorf (tempf);
     
         tempf                   = newRecord->outTemp;
         tempf                   /= 10;
         tempf                   *= work->calMOutTemp;
         tempf                   += work->calCOutTemp;
         tempf                   *= 10;
-        newRecord->outTemp      = (short)floorf (tempf);
+        newRecord->outTemp      = (int16_t)floorf (tempf);
     
         tempf                   = newRecord->inHumidity;
         tempf                   *= work->calMInHumidity;
         tempf                   += work->calCInHumidity;
-        newRecord->inHumidity   = (UCHAR)floorf (tempf);
+        newRecord->inHumidity   = (uint8_t)floorf (tempf);
+        if (newRecord->inHumidity > 100)
+        {
+            newRecord->inHumidity = 100;
+        }
     
         tempf                   = newRecord->outHumidity;
         tempf                   *= work->calMOutHumidity;
         tempf                   += work->calCOutHumidity;
-        newRecord->outHumidity   = (UCHAR)floorf (tempf);
+        newRecord->outHumidity   = (uint8_t)floorf (tempf);
+        if (newRecord->outHumidity > 100)
+        {
+            newRecord->outHumidity = 100;
+        }
     
         if (newRecord->avgWindSpeed != 255)
         {
             tempf                   = newRecord->avgWindSpeed;
             tempf                   *= work->calMWindSpeed;
             tempf                   += work->calCWindSpeed;
-            newRecord->avgWindSpeed = (UCHAR)floorf (tempf);
+            newRecord->avgWindSpeed = (uint8_t)floorf (tempf);
         }
     
         if (newRecord->prevWindDir != 255)
@@ -982,7 +991,7 @@ static int processArchivePage (WVIEWD_WORK *work, ARCHIVE_PAGE *page)
             tempf                   /= 22.5;
             tempInt                 = (int)floorf (tempf);
             tempInt                 %= 16;
-            newRecord->prevWindDir  = (UCHAR)tempInt;
+            newRecord->prevWindDir  = (uint8_t)tempInt;
         }
     
         tempf                   = newRecord->rain & 0xFFF;
@@ -992,7 +1001,7 @@ static int processArchivePage (WVIEWD_WORK *work, ARCHIVE_PAGE *page)
         tempf                   += work->calCRain;
         tempf                   *= 100;
         tempf                   += 0.5;
-        newRecord->rain         = (USHORT)floorf (tempf);
+        newRecord->rain         = (uint16_t)floorf (tempf);
         newRecord->rain         |= tempRainBits;
     
         tempf                   = newRecord->highRainRate;
@@ -1001,7 +1010,7 @@ static int processArchivePage (WVIEWD_WORK *work, ARCHIVE_PAGE *page)
         tempf                   += work->calCRainRate;
         tempf                   *= 100;
         tempf                   += 0.5;
-        newRecord->highRainRate = (USHORT)floorf (tempf);
+        newRecord->highRainRate = (uint16_t)floorf (tempf);
 
         // Convert to the wview internal archive format:
         convertToArchivePkt(work, newRecord, &archivePkt);
@@ -1030,10 +1039,10 @@ static int processArchivePage (WVIEWD_WORK *work, ARCHIVE_PAGE *page)
 #endif
 
 
-static USHORT genCRC (void *data, int length)
+static uint16_t genCRC (void *data, int length)
 {
-    UCHAR           *ptr = (UCHAR *)data;
-    USHORT          crc = 0;
+    uint8_t         *ptr = (uint8_t *)data;
+    uint16_t        crc = 0;
     register int    i;
 
     for (i = 0; i < length; i ++)
@@ -1047,9 +1056,9 @@ static USHORT genCRC (void *data, int length)
 
 static int readWithCRC (WVIEWD_WORK *work, void *bfr, int len, int msTimeout)
 {
-    int     retVal, index = 0;
-    UCHAR   *ptr = (UCHAR *)bfr;
-    USHORT  crc = 0;
+    int         retVal, index = 0;
+    uint8_t     *ptr = (uint8_t *)bfr;
+    uint16_t    crc = 0;
 
     retVal = (*work->medium.read) (&work->medium, bfr, len, msTimeout);
     if (retVal != len)
@@ -1067,9 +1076,9 @@ static int readWithCRC (WVIEWD_WORK *work, void *bfr, int len, int msTimeout)
 
 static int writeWithCRC (WVIEWD_WORK *work, void *buffer, int length)
 {
-    int     retVal;
-    int     wrerrno = 0;
-    USHORT  crc;
+    int         retVal;
+    int         wrerrno = 0;
+    uint16_t    crc;
 
     crc = SHORT_SWAP(genCRC (buffer, length));
 
@@ -1104,8 +1113,8 @@ static int writeWithCRC (WVIEWD_WORK *work, void *buffer, int length)
 static int wakeupConsole (WVIEWD_WORK *work)
 {
     int         retVal;
-    UCHAR       bfr[32];
-    int         retries = 3;
+    uint8_t     bfr[32];
+    int         retries = 4;
  
     while (retries > 0)
     {
@@ -1123,9 +1132,9 @@ static int wakeupConsole (WVIEWD_WORK *work)
         // If this is a Weatherlink IP interface, allow more time for the wakeup:
         if (work->stationIsWLIP)
         {
-            retVal = (*work->medium.read) (&work->medium, bfr, 2, 1500);
+            retVal = (*work->medium.read) (&work->medium, bfr, 2, 2000);
         }
-        else if (retries == 3)
+        else if (retries == 4)
         {
             // Don't wait long on the first try for serial interfaces;
             // This is often ignored by the console:
@@ -1142,12 +1151,17 @@ static int wakeupConsole (WVIEWD_WORK *work)
             // good stuff:
             return OK;
         }
+        else
+        {
+            // radMsgLog (PRI_MEDIUM, "wakeupConsole: bad read: retVal=%d", retVal);
+        }
 
         retries -= 1;
     }
 
-    // If here, no joy:
+    // If here, try a restart (if the medium supports it):
     radMsgLog (PRI_MEDIUM, "wakeupConsole: failed");
+    (*work->medium.restart) (&work->medium);
     return ERROR;
 }
 
@@ -1243,16 +1257,16 @@ int vpifSynchronizeConsoleClock (WVIEWD_WORK *work)
 int vpifGetTime
 (
     WVIEWD_WORK *work,
-    USHORT      *year,
-    USHORT      *month,
-    USHORT      *day,
-    USHORT      *hour,
-    USHORT      *minute,
-    USHORT      *second
+    uint16_t    *year,
+    uint16_t    *month,
+    uint16_t    *day,
+    uint16_t    *hour,
+    uint16_t    *minute,
+    uint16_t    *second
 )
 {
     int         retVal, len;
-    UCHAR       bfr[32];
+    uint8_t     bfr[32];
 
     strcpy ((char *)bfr, "GETTIME");
     len = strlen ((char *)bfr);
@@ -1297,8 +1311,8 @@ int vpifGetLatandLong
 )
 {
     int         retVal, len;
-    short       tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp;
+    int16_t     tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp;
 
     strcpy ((char *)bfr, "EEBRD 0B 2");
     len = strlen ((char *)bfr);
@@ -1377,8 +1391,8 @@ int vpifGetLatandLong
 
 int vpifGetArchiveInterval (WVIEWD_WORK *work)
 {
-    USHORT              temp[32];                       // short align
-    UCHAR               *ptr = (UCHAR *)temp;
+    uint16_t            temp[32];                       // short align
+    uint8_t             *ptr = (uint8_t *)temp;
     int                 len, retVal;
     ARCHIVE_INTERVAL    *interval = (ARCHIVE_INTERVAL *)temp;
 
@@ -1412,8 +1426,8 @@ int vpifGetArchiveInterval (WVIEWD_WORK *work)
 int vpifGetRainCollectorSize (WVIEWD_WORK *work)
 {
     int         retVal, len;
-    short       tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp;
+    int16_t     tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp;
     float       tempfloat;
 
     strcpy ((char *)bfr, "EEBRD 2B 1");
@@ -1463,18 +1477,18 @@ int vpifGetRainCollectorSize (WVIEWD_WORK *work)
 int vpifSetTime
 (
     WVIEWD_WORK *work,
-    USHORT      year,
-    USHORT      month,
-    USHORT      day,
-    USHORT      hour,
-    USHORT      minute,
-    USHORT      second
+    uint16_t      year,
+    uint16_t      month,
+    uint16_t      day,
+    uint16_t      hour,
+    uint16_t      minute,
+    uint16_t      second
 )
 {
     int         retVal, len;
-    USHORT      usbfr[16];
-    UCHAR       *bfr = (UCHAR *)usbfr;
-    USHORT      *crc;
+    uint16_t    usbfr[16];
+    uint8_t     *bfr = (uint8_t *)usbfr;
+    uint16_t    *crc;
 
     strcpy ((char *)bfr, "SETTIME");
     len = strlen ((char *)bfr);
@@ -1498,7 +1512,7 @@ int vpifSetTime
     bfr[3]  = day;
     bfr[4]  = month;
     bfr[5]  = year - 1900;
-    crc     = (USHORT *)&bfr[6];
+    crc     = (uint16_t *)&bfr[6];
     *crc    = SHORT_SWAP(genCRC (bfr, 6));
 
     retVal = (*work->medium.write) (&work->medium, bfr, 8);
@@ -1523,8 +1537,8 @@ int vpifSetGMTOffset
 )
 {
     int             retVal, len, gmtOffsetHours, gmtOffsetMinutes;
-    short           tmp[16];
-    UCHAR           *bfr = (UCHAR *)tmp;
+    int16_t         tmp[16];
+    uint8_t         *bfr = (uint8_t *)tmp;
     time_t          nowtime = time (NULL);
     struct tm       bknTime;
     long            gmtMinsEast;
@@ -1563,7 +1577,7 @@ int vpifSetGMTOffset
     bfr[1] = 0;
 
     // set the GMT offset
-    tmp[1] = SHORT_SWAP((short)((gmtOffsetHours * 100) + gmtOffsetMinutes));
+    tmp[1] = SHORT_SWAP((int16_t)((gmtOffsetHours * 100) + gmtOffsetMinutes));
 
     // make sure the VP uses the GMT offset
     bfr[4] = 1;
@@ -1583,8 +1597,8 @@ int vpifSetGMTOffset
 */
 int vpifReadMessage (WVIEWD_WORK *work, int expectACK)
 {
-    USHORT              temp[VP_BYTE_LENGTH_MAX/2];     // short align
-    UCHAR               *chPtr = (UCHAR *)temp;
+    uint16_t            temp[VP_BYTE_LENGTH_MAX/2];     // short align
+    uint8_t             *chPtr = (uint8_t *)temp;
     ARCHIVE_PAGE        *arcRec = (ARCHIVE_PAGE *)temp;
     ARCHIVE_INTERVAL    *interval = (ARCHIVE_INTERVAL *)temp;
     DMPAFT_HDR          *dmphdr = (DMPAFT_HDR *)temp;
@@ -1688,7 +1702,7 @@ int vpifReadMessage (WVIEWD_WORK *work, int expectACK)
 
 int vpifGetAck (WVIEWD_WORK *work, int msWait)
 {
-    UCHAR       temp[4];
+    uint8_t       temp[4];
 
     if ((*work->medium.read) (&work->medium, temp, 1, msWait) != 1)
     {
@@ -1725,8 +1739,8 @@ int vpifGetAck (WVIEWD_WORK *work, int msWait)
 */
 int vpifSendAck (WVIEWD_WORK *work)
 {
-    USHORT              temp[32];                       // short align
-    UCHAR               *ptr = (UCHAR *)temp;
+    uint16_t              temp[32];                       // short align
+    uint8_t               *ptr = (uint8_t *)temp;
 
     ptr[0] = VP_ACK;
 
@@ -1740,8 +1754,8 @@ int vpifSendAck (WVIEWD_WORK *work)
 
 int vpifSendNak (WVIEWD_WORK *work)
 {
-    USHORT              temp[32];                       // short align
-    UCHAR               *ptr = (UCHAR *)temp;
+    uint16_t              temp[32];                       // short align
+    uint8_t               *ptr = (uint8_t *)temp;
 
     ptr[0] = VP_NAK;
 
@@ -1755,8 +1769,8 @@ int vpifSendNak (WVIEWD_WORK *work)
 
 int vpifSendCancel (WVIEWD_WORK *work)
 {
-    USHORT              temp[32];                       // short align
-    UCHAR               *ptr = (UCHAR *)temp;
+    uint16_t              temp[32];                       // short align
+    uint8_t               *ptr = (uint8_t *)temp;
 
     ptr[0] = VP_CANCEL;
 
@@ -1770,8 +1784,8 @@ int vpifSendCancel (WVIEWD_WORK *work)
 
 int vpifSendDumpAfterRqst (WVIEWD_WORK *work)
 {
-    USHORT              temp[32];                       // short align
-    UCHAR               *ptr = (UCHAR *)temp;
+    uint16_t            temp[32];                       // short align
+    uint8_t             *ptr = (uint8_t *)temp;
     int                 len;
 
     strcpy ((char *)ptr, "DMPAFT");
@@ -1789,8 +1803,8 @@ int vpifSendDumpAfterRqst (WVIEWD_WORK *work)
 
 int vpifSendDumpDateTimeRqst (WVIEWD_WORK *work)
 {
-    USHORT              temp[32];                       // short align
-    USHORT              date, ntime;
+    uint16_t              temp[32];                       // short align
+    uint16_t              date, ntime;
 
     date = INSERT_PACKED_DATE(wvutilsGetYear(work->archiveDateTime),
                               wvutilsGetMonth(work->archiveDateTime),
@@ -1813,8 +1827,8 @@ int vpifSendDumpDateTimeRqst (WVIEWD_WORK *work)
 
 int vpifSendLoopRqst (WVIEWD_WORK *work, int number)
 {
-    USHORT              temp[32];                       // short align
-    UCHAR               *ptr = (UCHAR *)temp;
+    uint16_t            temp[32];                       // short align
+    uint8_t             *ptr = (uint8_t *)temp;
     int                 len;
 
     sprintf ((char *)ptr, "LOOP %d", number);
@@ -1833,8 +1847,8 @@ int vpifSendLoopRqst (WVIEWD_WORK *work, int number)
 int vpifGetRXCheck (WVIEWD_WORK *work)
 {
     int                 i, len, retVal, done;
-    USHORT              temp[VP_BYTE_LENGTH_MAX/2];     // short align
-    UCHAR               *ptr = (UCHAR *)temp;
+    uint16_t            temp[VP_BYTE_LENGTH_MAX/2];     // short align
+    uint8_t             *ptr = (uint8_t *)temp;
     char                *token;
     int                 rxGood, rxMiss, rxCRC, tempint;
 
@@ -1977,8 +1991,8 @@ int vpconfigGetArchiveInterval
 )
 {
     int                 retVal, len;
-    USHORT              temp[VP_BYTE_LENGTH_MAX/2];     // short align
-    UCHAR               *ptr = (UCHAR *)temp;
+    uint16_t            temp[VP_BYTE_LENGTH_MAX/2];     // short align
+    uint8_t             *ptr = (uint8_t *)temp;
     ARCHIVE_INTERVAL    *interval = (ARCHIVE_INTERVAL *)temp;
 
     strcpy ((char *)ptr, "EEBRD 2D 1");
@@ -2016,8 +2030,8 @@ int vpconfigGetFWVersion
 )
 {
     int                 i, retVal, len, done = 0;
-    USHORT              temp[VP_BYTE_LENGTH_MAX/2];     // short align
-    UCHAR               *indexPtr, *ptr = (UCHAR *)temp;
+    uint16_t            temp[VP_BYTE_LENGTH_MAX/2];     // short align
+    uint8_t             *indexPtr, *ptr = (uint8_t *)temp;
 
     strcpy ((char *)ptr, "VER");
     len = strlen ((char *)ptr);
@@ -2074,8 +2088,8 @@ int vpconfigGetRainSeasonStart
 )
 {
     int         retVal, len;
-    short       tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp;
+    int16_t     tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp;
 
     strcpy ((char *)bfr, "EEBRD 2C 1");
     len = strlen ((char *)bfr);
@@ -2110,8 +2124,8 @@ int vpconfigGetWindDirectionCal
 )
 {
     int         retVal, len;
-    short       tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp;
+    int16_t     tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp;
 
     strcpy ((char *)bfr, "EEBRD 4D 2");
     len = strlen ((char *)bfr);
@@ -2146,8 +2160,8 @@ int vpconfigGetTransmitters
 )
 {
     int         retVal, len;
-    USHORT      tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp;
+    uint16_t    tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp;
 
     strcpy ((char *)bfr, "EEBRD 17 12");
     len = strlen ((char *)bfr);
@@ -2184,8 +2198,8 @@ int vpconfigGetRainCollectorSize
 )
 {
     int         retVal, len;
-    USHORT      tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp;
+    uint16_t    tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp;
 
     strcpy ((char *)bfr, "EEBRD 2B 1");
     len = strlen ((char *)bfr);
@@ -2220,8 +2234,8 @@ int vpconfigGetWindCupSize
 )
 {
     int         retVal, len;
-    USHORT      tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp;
+    uint16_t    tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp;
 
     strcpy ((char *)bfr, "EEBRD 2B 1");
     len = strlen ((char *)bfr);
@@ -2257,8 +2271,8 @@ int vpconfigSetInterval
 )
 {
     int         i, retVal, len, done = 0;
-    USHORT      usbfr[16];
-    UCHAR       *indexPtr, *bfr = (UCHAR *)usbfr;
+    uint16_t    usbfr[16];
+    uint8_t     *indexPtr, *bfr = (uint8_t *)usbfr;
 
     sprintf ((char *)bfr, "SETPER %d", interval);
     len = strlen ((char *)bfr);
@@ -2326,8 +2340,8 @@ int vpconfigClearArchiveMemory
 )
 {
     int         retVal, len;
-    USHORT      usbfr[16];
-    UCHAR       *bfr = (UCHAR *)usbfr;
+    uint16_t    usbfr[16];
+    uint8_t     *bfr = (uint8_t *)usbfr;
 
     sprintf ((char *)bfr, "CLRLOG");
     len = strlen ((char *)bfr);
@@ -2355,8 +2369,8 @@ int vpconfigSetElevation
 )
 {
     int         retVal, len, done = 0;
-    USHORT      usbfr[16];
-    UCHAR       *indexPtr, *bfr = (UCHAR *)usbfr;
+    uint16_t    usbfr[16];
+    uint8_t     *indexPtr, *bfr = (uint8_t *)usbfr;
 
     sprintf ((char *)bfr, "BAR=0 %d", value);
     len = strlen ((char *)bfr);
@@ -2411,8 +2425,8 @@ int vpconfigSetGain
 )
 {
     int                 i, retVal, len, done = 0;
-    USHORT              temp[VP_BYTE_LENGTH_MAX/2];     // short align
-    UCHAR               *indexPtr, *ptr = (UCHAR *)temp;
+    uint16_t            temp[VP_BYTE_LENGTH_MAX/2];     // short align
+    uint8_t             *indexPtr, *ptr = (uint8_t *)temp;
 
     sprintf ((char *)ptr, "GAIN %d", on);
     len = strlen ((char *)ptr);
@@ -2466,8 +2480,8 @@ int vpconfigSetLatandLong
 )
 {
     int         retVal, len;
-    short       tmp[16], lat1, long1;
-    UCHAR       *bfr = (UCHAR *)tmp;
+    int16_t     tmp[16], lat1, long1;
+    uint8_t     *bfr = (uint8_t *)tmp;
 
     strcpy ((char *)bfr, "EEBWR 0B 4");
     len = strlen ((char *)bfr);
@@ -2484,8 +2498,8 @@ int vpconfigSetLatandLong
         return ERROR;
     }
 
-    lat1 = (short)latitude;
-    long1 = (short)longitude;
+    lat1 = (int16_t)latitude;
+    long1 = (int16_t)longitude;
     memset (bfr, 0, 4);
     tmp[0] = SHORT_SWAP(lat1);
     tmp[1] = SHORT_SWAP(long1);
@@ -2523,8 +2537,8 @@ int vpconfigSetRainSeasonStart
 )
 {
     int         retVal, len;
-    short       tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp;
+    int16_t     tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp;
 
     strcpy ((char *)bfr, "EEBWR 2C 1");
     len = strlen ((char *)bfr);
@@ -2559,8 +2573,8 @@ int vpconfigSetRainYearToDate
 )
 {
     int         retVal, len;
-    short       tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp;
+    int16_t     tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp;
 
     rainAmount *=1000;
     rainAmount = (int)rainAmount;
@@ -2593,8 +2607,8 @@ int vpconfigSetETYearToDate
 )
 {
     int         retVal, len;
-    short       tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp;
+    int16_t     tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp;
 
     etAmount *=1000;
     etAmount = (int)etAmount;
@@ -2627,8 +2641,8 @@ int vpconfigSetWindDirectionCal
 )
 {
     int         retVal, len;
-    short       tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp;
+    int16_t     tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp;
 
     strcpy ((char *)bfr, "EEBWR 4D 2");
     len = strlen ((char *)bfr);
@@ -2646,7 +2660,7 @@ int vpconfigSetWindDirectionCal
     }
 
     memset (bfr, 0, sizeof (tmp));
-    tmp[0] = SHORT_SWAP((short) offset);
+    tmp[0] = SHORT_SWAP((int16_t) offset);
     retVal = writeWithCRC (work, bfr, 2);
     if (retVal != 2)
     {
@@ -2664,8 +2678,8 @@ int vpconfigSetSensor
 )
 {
     int         retVal, len, i, temperature_id = 0, humidity_id = 1;
-    USHORT      tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp;
+    uint16_t    tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp;
 
     // Fetch existing transmitter information.
     if (vpconfigGetTransmitters(work) != OK)
@@ -2676,11 +2690,11 @@ int vpconfigSetSensor
     // Set or clear the USETX bit corresponding to the channel.
     if (type == VPRO_SENSOR_NONE)
     {
-      vpWorkData.listenChannels &= ~((UCHAR) 1 << (channel-1));
+      vpWorkData.listenChannels &= ~((uint8_t) 1 << (channel-1));
     }
     else
     {
-      vpWorkData.listenChannels |= ((UCHAR) 1 << (channel-1));
+      vpWorkData.listenChannels |= ((uint8_t) 1 << (channel-1));
     }
 
     // There can be only one ISS.
@@ -2780,8 +2794,8 @@ int vpconfigSetRetransmitChannel
 )
 {
     int         retVal, len;
-    short       tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp;
+    int16_t     tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp;
 
     strcpy ((char *)bfr, "EEBWR 18 1");
     len = strlen ((char *)bfr);
@@ -2835,8 +2849,8 @@ int vpconfigSetRainCollectorSize
 )
 {
     int         retVal, len;
-    USHORT      tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp, newval;
+    uint16_t    tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp, newval;
 
     strcpy ((char *)bfr, "EEBRD 2B 1");
     len = strlen ((char *)bfr);
@@ -2895,8 +2909,8 @@ int vpconfigSetWindCupSize
 )
 {
     int         retVal, len;
-    USHORT      tmp[16];
-    UCHAR       *bfr = (UCHAR *)tmp, newval;
+    uint16_t    tmp[16];
+    uint8_t     *bfr = (uint8_t *)tmp, newval;
 
     strcpy ((char *)bfr, "EEBRD 2B 1");
     len = strlen ((char *)bfr);

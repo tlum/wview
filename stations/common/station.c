@@ -9,7 +9,6 @@
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         12/31/2005      M.S. Teel       0               Original
-        07/10/2008      T. Lum          1               Null properties for optional values
 
   NOTES:
 
@@ -92,7 +91,8 @@ int stationSendShutdown (WVIEWD_WORK *work)
 int stationSendArchiveNotifications (WVIEWD_WORK *work, float sampleRain)
 {
     WVIEW_MSG_ARCHIVE_NOTIFY    notify;
-    float                       tempfloat;
+    int                         retVal;
+    HISTORY_DATA                store;
 
     notify.dateTime         = work->archiveDateTime;
     notify.intemp           = (int)floorf(work->loopPkt.inTemp * 10);
@@ -102,24 +102,46 @@ int stationSendArchiveNotifications (WVIEWD_WORK *work, float sampleRain)
     notify.barom            = (int)floorf(work->loopPkt.barometer * 1000);
     notify.stationPressure  = (int)floorf(work->loopPkt.stationPressure * 1000);
     notify.altimeter        = (int)floorf(work->loopPkt.altimeter * 1000);
-    notify.winddir          = !work->loopPkt.windDir.isNull ? work->loopPkt.windDir.value : -1;
-    notify.wspeed           = !work->loopPkt.windSpeed.isNull ? work->loopPkt.windSpeed.value : -1;
+    notify.winddir          = work->loopPkt.windDir;
+    notify.wspeed           = work->loopPkt.windSpeed;
     notify.dewpoint         = (int)floorf(work->loopPkt.dewpoint * 10);
     notify.hiwspeed         = work->loopPkt.windGust;
     notify.rxPercent        = work->loopPkt.rxCheckPercent;
     notify.sampleRain       = sampleRain;
-    notify.uv               = !work->loopPkt.UV.isNull ? work->loopPkt.UV.value : -1;
-    notify.radiation        = !work->loopPkt.radiation.isNull ? work->loopPkt.radiation.value : -1;
+    notify.UV               = work->loopPkt.UV;
+    notify.radiation        = work->loopPkt.radiation;
 
-    tempfloat = sensorGetCumulative (&work->sensors.sensor[STF_HOUR][SENSOR_RAIN]);
-    tempfloat *= 100;
-    tempfloat += 0.5;
-    notify.rainHour    = (int)tempfloat;
+    // Grab last 60 minutes and last 24 hours from database:
+    retVal = dbsqliteArchiveGetAverages (FALSE,
+                                         work->archiveInterval,
+                                         &store,
+                                         time(NULL) - WV_SECONDS_IN_HOUR,
+                                         WV_SECONDS_IN_HOUR/SECONDS_IN_INTERVAL(work->archiveInterval));
+    if (retVal <= 0)
+    {
+        notify.rainHour = ARCHIVE_VALUE_NULL;
+    }
+    else
+    {
+        notify.rainHour = store.values[DATA_INDEX_rain];
+    }
 
-    tempfloat = sensorGetCumulative (&work->sensors.sensor[STF_DAY][SENSOR_RAIN]);
-    tempfloat *= 100;
-    tempfloat += 0.5;
-    notify.rainDay     = (int)tempfloat;
+    retVal = dbsqliteArchiveGetAverages (FALSE,
+                                         work->archiveInterval,
+                                         &store,
+                                         time(NULL) - WV_SECONDS_IN_DAY,
+                                         WV_SECONDS_IN_DAY/SECONDS_IN_INTERVAL(work->archiveInterval));
+    if (retVal <= 0)
+    {
+        notify.rainDay = ARCHIVE_VALUE_NULL;
+    }
+    else
+    {
+        notify.rainDay = store.values[DATA_INDEX_rain];
+    }
+
+    notify.rainToday = sensorGetCumulative (&work->sensors.sensor[STF_DAY][SENSOR_RAIN]);
+
 
     if (radMsgRouterMessageSend (WVIEW_MSG_TYPE_ARCHIVE_NOTIFY, &notify, sizeof(notify))
         == ERROR)
@@ -218,14 +240,10 @@ int stationProcessIPM (WVIEWD_WORK *work, char *srcQueueName, int msgType, void 
                     loop.loopData = work->loopPkt;
                     if (loop.loopData.sampleET == ARCHIVE_VALUE_NULL)
                         loop.loopData.sampleET = 0;
-                    if (loop.loopData.radiation.value == 0xFFFF)
-                        loop.loopData.radiation.isNull = TRUE;
-                    else
-                    	  loop.loopData.radiation.isNull = FALSE;
-                    if (loop.loopData.UV.value == 0xFFFF)
-                        loop.loopData.UV.isNull = TRUE;
-                    else
-                    	  loop.loopData.UV.isNull = FALSE;
+                    if (loop.loopData.radiation == 0xFFFF)
+                        loop.loopData.radiation = 0;
+                    if (loop.loopData.UV < 0)
+                        loop.loopData.UV = 0;
                     if (loop.loopData.rxCheckPercent == 0xFFFF)
                         loop.loopData.rxCheckPercent = 0;
                     if (loop.loopData.wxt510Hail == ARCHIVE_VALUE_NULL)
@@ -510,8 +528,8 @@ int stationGetConfigValueFloat (WVIEWD_WORK *work, char *configName, float *stor
 void stationClearLoopData (WVIEWD_WORK *work)
 {
     work->loopPkt.sampleET                      = ARCHIVE_VALUE_NULL;
-    work->loopPkt.radiation.isNull              = TRUE;
-    work->loopPkt.UV.isNull                     = TRUE;
+    work->loopPkt.radiation                     = 0xFFFF;
+    work->loopPkt.UV                            = -1;
     work->loopPkt.rxCheckPercent                = 0xFFFF;
     work->loopPkt.wxt510Hail                    = ARCHIVE_VALUE_NULL;
     work->loopPkt.wxt510Hailrate                = ARCHIVE_VALUE_NULL;

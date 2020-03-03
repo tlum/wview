@@ -9,8 +9,6 @@
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         01/10/04        M.S. Teel       0               Original
-        07/10/2008      T. Lum          1               Null properties for optional values
-        
  
   NOTES:
         
@@ -667,11 +665,11 @@ static void processAlarms (LOOP_PKT *loopData)
             case WindSpeed:
                 if (alarmsWork.isMetric)
                 {
-                    tempFloat = wvutilsConvertMPHToKPH((float)!loopData->windSpeed.isNull ? loopData->windSpeed.value : 0);
+                    tempFloat = wvutilsConvertMPHToKPH((float)loopData->windSpeed);
                 }
                 else
                 {
-                    tempFloat = (float)!loopData->windSpeed.isNull ? loopData->windSpeed.value : 0;
+                    tempFloat = (float)loopData->windSpeed;
                 }
                 break;
 
@@ -687,7 +685,7 @@ static void processAlarms (LOOP_PKT *loopData)
                 break;
 
             case WindDirection:
-                tempFloat = (float)!loopData->windDir.isNull ? loopData->windDir.value : 0;
+                tempFloat = (float)loopData->windDir;
                 break;
 
             case OutsideHumidity:
@@ -791,11 +789,11 @@ static void processAlarms (LOOP_PKT *loopData)
                 break;
 
             case Radiation:
-                tempFloat = (float)!loopData->radiation.isNull ? loopData->radiation.value : 0;
+                tempFloat = (float)loopData->radiation;
                 break;
 
             case UV:
-                tempFloat = (float)!loopData->UV.isNull ? loopData->UV.value : 0;
+                tempFloat = (float)loopData->UV;
                 break;
 
             case ET:
@@ -1234,7 +1232,7 @@ static void RemoveClient(RADSOCK_ID clientSock)
     }
 }
 
-static void SendNextArchiveRecord(RADSOCK_ID client, ULONG dateTime)
+static void SendNextArchiveRecord(RADSOCK_ID client, uint32_t dateTime)
 {
     ARCHIVE_PKT         recordStore;
     ARCHIVE_PKT         networkStore;
@@ -1282,7 +1280,7 @@ static void ClientDataRX (int fd, void *userData)
 {
     RADSOCK_ID          client = (RADSOCK_ID)userData;
     int                 retVal;
-    ULONG               dateTime;
+    uint32_t            dateTime;
 
     retVal = datafeedSyncStartOfFrame(client);
     switch (retVal)
@@ -1321,6 +1319,12 @@ static void ClientDataRX (int fd, void *userData)
     
             // Now we have the date and time, get busy:
             SendNextArchiveRecord(client, dateTime);
+            break;
+
+        default:
+            statusUpdateMessage("ClientDataRX: socket error during sync - disconnecting");
+            radMsgLog (PRI_HIGH, "ClientDataRX: socket error during sync - disconnecting");
+            RemoveClient(client);
             break;
     }
 

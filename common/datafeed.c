@@ -11,7 +11,6 @@
         12/16/2009      M.S. Teel       0               Original
         01/02/2011      M.S. Teel       1               Remove fixed point translation;
                         & P. Sanchez                    add htonf and ntohf utilities.
-        10/02/2011      T. Lum          2               Null properties for optional values
  
   NOTES:
         
@@ -75,30 +74,30 @@ float ntohf(uint32_t p)
 }
 // end of slurped code
 
-static USHORT swapShortNTOH(UCHAR* item)
+static uint16_t swapShortNTOH(uint8_t* item)
 {
-    USHORT*     sh_item = (USHORT*)item;
-    USHORT      retVal;
+    uint16_t*     sh_item = (uint16_t*)item;
+    uint16_t      retVal;
 
     retVal = ntohs(*sh_item);
     return retVal;
 }
 
-static USHORT swapShortHTON(UCHAR* item)
+static uint16_t swapShortHTON(uint8_t* item)
 {
-    USHORT*     sh_item = (USHORT*)item;
-    USHORT      retVal;
+    uint16_t*     sh_item = (uint16_t*)item;
+    uint16_t      retVal;
 
     retVal = htons(*sh_item);
     return retVal;
 }
 
-static int ReadExact(RADSOCK_ID socket, void *bfr, int len, ULONG msTimeout)
+static int ReadExact(RADSOCK_ID socket, void *bfr, int len, uint32_t msTimeout)
 {
     int             rval, index = 0;
-    ULONG           cumTime = 0;
-    ULONGLONG       readTime;
-    UCHAR           *ptr = (UCHAR *)bfr;
+    uint32_t        cumTime = 0;
+    uint64_t        readTime;
+    uint8_t         *ptr = (uint8_t *)bfr;
 
     while (index < len && cumTime < msTimeout)
     {
@@ -118,13 +117,13 @@ static int ReadExact(RADSOCK_ID socket, void *bfr, int len, ULONG msTimeout)
         }
 
         readTime = radTimeGetMSSinceEpoch () - readTime;
-        cumTime += (ULONG)readTime;
+        cumTime += (uint32_t)readTime;
         if (index < len && cumTime < msTimeout)
         {
             readTime = radTimeGetMSSinceEpoch ();
             radUtilsSleep (9);
             readTime = radTimeGetMSSinceEpoch () - readTime;
-            cumTime += (ULONG)readTime;
+            cumTime += (uint32_t)readTime;
         }
     }
 
@@ -133,10 +132,10 @@ static int ReadExact(RADSOCK_ID socket, void *bfr, int len, ULONG msTimeout)
 
 int datafeedSyncStartOfFrame(RADSOCK_ID socket)
 {
-    USHORT          start;
+    uint16_t        start;
     int             retVal;
 
-    retVal = ReadExact(socket, (void *)&start, sizeof (USHORT), DF_WAIT_FIRST);
+    retVal = ReadExact(socket, (void *)&start, sizeof (uint16_t), DF_WAIT_FIRST);
     if (retVal == ERROR)
     {
         radMsgLog (PRI_HIGH, "datafeed: socket read 1 error - abort!");
@@ -146,7 +145,7 @@ int datafeedSyncStartOfFrame(RADSOCK_ID socket)
     {
         return ERROR_ABORT;
     }
-    else if (retVal != sizeof(USHORT))
+    else if (retVal != sizeof(uint16_t))
     {
         return FALSE;
     }
@@ -155,8 +154,8 @@ int datafeedSyncStartOfFrame(RADSOCK_ID socket)
         return FALSE;
     }
 
-    if (ReadExact(socket, (void *)&start, sizeof (USHORT), DF_WAIT_MORE)
-            != sizeof (USHORT))
+    if (ReadExact(socket, (void *)&start, sizeof (uint16_t), DF_WAIT_MORE)
+            != sizeof (uint16_t))
     {
         radMsgLog (PRI_HIGH, "datafeed: socket read 2 error - abort!");
         return ERROR;
@@ -166,8 +165,8 @@ int datafeedSyncStartOfFrame(RADSOCK_ID socket)
         return FALSE;
     }
 
-    if (ReadExact(socket, (void *)&start, sizeof (USHORT), DF_WAIT_MORE)
-            != sizeof (USHORT))
+    if (ReadExact(socket, (void *)&start, sizeof (uint16_t), DF_WAIT_MORE)
+            != sizeof (uint16_t))
     {
         radMsgLog (PRI_HIGH, "datafeed: socket read 3 error - abort!");
         return ERROR;
@@ -177,8 +176,8 @@ int datafeedSyncStartOfFrame(RADSOCK_ID socket)
         return FALSE;
     }
 
-    if (ReadExact(socket, (void *)&start, sizeof (USHORT), DF_WAIT_MORE)
-            != sizeof (USHORT))
+    if (ReadExact(socket, (void *)&start, sizeof (uint16_t), DF_WAIT_MORE)
+            != sizeof (uint16_t))
     {
         radMsgLog (PRI_HIGH, "datafeed: socket read 4 error - abort!");
         return ERROR;
@@ -202,7 +201,7 @@ int datafeedSyncStartOfFrame(RADSOCK_ID socket)
 
 int datafeedConvertLOOP_HTON(LOOP_PKT* dest, LOOP_PKT* src)
 {
-    USHORT*         tempshort;
+    uint16_t*         tempshort;
 
     dest->barometer                     = htonf(src->barometer);
     dest->stationPressure               = htonf(src->stationPressure);
@@ -212,10 +211,8 @@ int datafeedConvertLOOP_HTON(LOOP_PKT* dest, LOOP_PKT* src)
 
     dest->inHumidity                    = htons(src->inHumidity);
     dest->outHumidity                   = htons(src->outHumidity);
-    dest->windSpeed.isNull              = htons(src->windSpeed.isNull);
-    dest->windSpeed.value               = htons(src->windSpeed.value);
-    dest->windDir.isNull                = htons(src->windDir.isNull);
-    dest->windDir.value                 = htons(src->windDir.value);
+    dest->windSpeed                     = htons(src->windSpeed);
+    dest->windDir                       = htons(src->windDir);
     dest->windGust                      = htons(src->windGust);
     dest->windGustDir                   = htons(src->windGustDir);
 
@@ -223,11 +220,9 @@ int datafeedConvertLOOP_HTON(LOOP_PKT* dest, LOOP_PKT* src)
     dest->sampleRain                    = htonf(src->sampleRain);
     dest->sampleET                      = htonf(src->sampleET);
 
-    dest->radiation.isNull              = htons(src->radiation.isNull);
-    dest->radiation.value               = htons(src->radiation.value);
+    dest->radiation                     = htons(src->radiation);
 
-    dest->UV.isNull                     = htonf(src->UV.isNull);
-    dest->UV.value                      = htonf(src->UV.value);
+    dest->UV                            = htonf(src->UV);
     dest->dewpoint                      = htonf(src->dewpoint);
     dest->windchill                     = htonf(src->windchill);
     dest->heatindex                     = htonf(src->heatindex);
@@ -262,11 +257,11 @@ int datafeedConvertLOOP_HTON(LOOP_PKT* dest, LOOP_PKT* src)
     dest->leafTemp1                     = htonf(src->leafTemp1);
     dest->leafTemp2                     = htonf(src->leafTemp2);
 
-    tempshort = (USHORT*)&(dest->extraHumid1);
+    tempshort = (uint16_t*)&(dest->extraHumid1);
     *tempshort = swapShortHTON(&dest->extraHumid1);
-    tempshort = (USHORT*)&(dest->soilMoist1);
+    tempshort = (uint16_t*)&(dest->soilMoist1);
     *tempshort = swapShortHTON(&dest->soilMoist1);
-    tempshort = (USHORT*)&(dest->leafWet1);
+    tempshort = (uint16_t*)&(dest->leafWet1);
     *tempshort = swapShortHTON(&dest->leafWet1);
 
     dest->wxt510Hail                    = htonf(src->wxt510Hail);
@@ -282,15 +277,15 @@ int datafeedConvertLOOP_HTON(LOOP_PKT* dest, LOOP_PKT* src)
     dest->wxt510Rain                    = htonf(src->wxt510Rain);
     dest->wmr918Pool                    = htonf(src->wmr918Pool);
 
-    tempshort = (USHORT*)&(dest->wmr918Humid3);
+    tempshort = (uint16_t*)&(dest->wmr918Humid3);
     *tempshort = swapShortHTON(&dest->wmr918Humid3);
-    tempshort = (USHORT*)&(dest->wmr918WindBatteryStatus);
+    tempshort = (uint16_t*)&(dest->wmr918WindBatteryStatus);
     *tempshort = swapShortHTON(&dest->wmr918WindBatteryStatus);
-    tempshort = (USHORT*)&(dest->wmr918OutTempBatteryStatus);
+    tempshort = (uint16_t*)&(dest->wmr918OutTempBatteryStatus);
     *tempshort = swapShortHTON(&dest->wmr918OutTempBatteryStatus);
-    tempshort = (USHORT*)&(dest->wmr918poolTempBatteryStatus);
+    tempshort = (uint16_t*)&(dest->wmr918poolTempBatteryStatus);
     *tempshort = swapShortHTON(&dest->wmr918poolTempBatteryStatus);
-    tempshort = (USHORT*)&(dest->wmr918extra2BatteryStatus);
+    tempshort = (uint16_t*)&(dest->wmr918extra2BatteryStatus);
     *tempshort = swapShortHTON(&dest->wmr918extra2BatteryStatus);
 
     return OK;
@@ -298,7 +293,7 @@ int datafeedConvertLOOP_HTON(LOOP_PKT* dest, LOOP_PKT* src)
 
 int datafeedConvertLOOP_NTOH(LOOP_PKT* dest, LOOP_PKT* src)
 {
-    USHORT*         tempshort;
+    uint16_t*         tempshort;
 
     dest->barometer                     = ntohf(src->barometer);
     dest->stationPressure               = ntohf(src->stationPressure);
@@ -308,10 +303,8 @@ int datafeedConvertLOOP_NTOH(LOOP_PKT* dest, LOOP_PKT* src)
 
     dest->inHumidity                    = ntohs(src->inHumidity);
     dest->outHumidity                   = ntohs(src->outHumidity);
-    dest->windSpeed.isNull              = ntohs(src->windSpeed.isNull);
-    dest->windSpeed.value               = ntohs(src->windSpeed.value);
-    dest->windDir.isNull                = ntohs(src->windDir.isNull);
-    dest->windDir.value                 = ntohs(src->windDir.value);
+    dest->windSpeed                     = ntohs(src->windSpeed);
+    dest->windDir                       = ntohs(src->windDir);
     dest->windGust                      = ntohs(src->windGust);
     dest->windGustDir                   = ntohs(src->windGustDir);
 
@@ -319,11 +312,9 @@ int datafeedConvertLOOP_NTOH(LOOP_PKT* dest, LOOP_PKT* src)
     dest->sampleRain                    = ntohf(src->sampleRain);
     dest->sampleET                      = ntohf(src->sampleET);
 
-    dest->radiation.isNull              = ntohs(src->radiation.isNull);
-    dest->radiation.value               = ntohs(src->radiation.value);
+    dest->radiation                     = ntohs(src->radiation);
 
-    dest->UV.isNull                     = ntohf(src->UV.isNull);
-    dest->UV.value                      = ntohf(src->UV.value);
+    dest->UV                            = ntohf(src->UV);
     dest->dewpoint                      = ntohf(src->dewpoint);
     dest->windchill                     = ntohf(src->windchill);
     dest->heatindex                     = ntohf(src->heatindex);
@@ -359,11 +350,11 @@ int datafeedConvertLOOP_NTOH(LOOP_PKT* dest, LOOP_PKT* src)
     dest->leafTemp1                     = ntohf(src->leafTemp1);
     dest->leafTemp2                     = ntohf(src->leafTemp2);
 
-    tempshort = (USHORT*)&(dest->extraHumid1);
+    tempshort = (uint16_t*)&(dest->extraHumid1);
     *tempshort = swapShortNTOH(&dest->extraHumid1);
-    tempshort = (USHORT*)&(dest->soilMoist1);
+    tempshort = (uint16_t*)&(dest->soilMoist1);
     *tempshort = swapShortNTOH(&dest->soilMoist1);
-    tempshort = (USHORT*)&(dest->leafWet1);
+    tempshort = (uint16_t*)&(dest->leafWet1);
     *tempshort = swapShortNTOH(&dest->leafWet1);
 
     dest->wxt510Hail                    = ntohf(src->wxt510Hail);
@@ -379,15 +370,15 @@ int datafeedConvertLOOP_NTOH(LOOP_PKT* dest, LOOP_PKT* src)
     dest->wxt510Rain                    = ntohf(src->wxt510Rain);
     dest->wmr918Pool                    = ntohf(src->wmr918Pool);
 
-    tempshort = (USHORT*)&(dest->wmr918Humid3);
+    tempshort = (uint16_t*)&(dest->wmr918Humid3);
     *tempshort = swapShortNTOH(&dest->wmr918Humid3);
-    tempshort = (USHORT*)&(dest->wmr918WindBatteryStatus);
+    tempshort = (uint16_t*)&(dest->wmr918WindBatteryStatus);
     *tempshort = swapShortNTOH(&dest->wmr918WindBatteryStatus);
-    tempshort = (USHORT*)&(dest->wmr918OutTempBatteryStatus);
+    tempshort = (uint16_t*)&(dest->wmr918OutTempBatteryStatus);
     *tempshort = swapShortNTOH(&dest->wmr918OutTempBatteryStatus);
-    tempshort = (USHORT*)&(dest->wmr918poolTempBatteryStatus);
+    tempshort = (uint16_t*)&(dest->wmr918poolTempBatteryStatus);
     *tempshort = swapShortNTOH(&dest->wmr918poolTempBatteryStatus);
-    tempshort = (USHORT*)&(dest->wmr918extra2BatteryStatus);
+    tempshort = (uint16_t*)&(dest->wmr918extra2BatteryStatus);
     *tempshort = swapShortNTOH(&dest->wmr918extra2BatteryStatus);
 
     return OK;
@@ -403,7 +394,15 @@ int datafeedConvertArchive_HTON(ARCHIVE_PKT* dest, ARCHIVE_PKT* src)
 
     for (index = 0; index < DATA_INDEX_MAX; index ++)
     {
-        dest->value[index]      = htonf(src->value[index]);
+        // Workaround needed because htonf/ntohf don't support -100000.
+        if (src->value[index] <= ARCHIVE_VALUE_NULL)
+        {
+            dest->value[index]  = -32767.0;
+        }
+        else
+        {
+            dest->value[index]  = htonf(src->value[index]);
+        }
     }
 
     return OK;
@@ -419,7 +418,15 @@ int datafeedConvertArchive_NTOH(ARCHIVE_PKT* dest, ARCHIVE_PKT* src)
 
     for (index = 0; index < DATA_INDEX_MAX; index ++)
     {
-        dest->value[index]      = ntohf(src->value[index]);
+        // Workaround needed because htonf/ntohf don't support -100000.
+        if (src->value[index] <= -32767.0)
+        {
+            dest->value[index]  = ARCHIVE_VALUE_NULL;
+        }
+        else
+        {
+            dest->value[index]  = ntohf(src->value[index]);
+        }
     }
 
     return OK;

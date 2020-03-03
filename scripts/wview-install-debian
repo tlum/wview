@@ -72,6 +72,7 @@ apt-get install --yes libsqlite3-dev sqlite3
 apt-get install --yes libgd2-noxpm-dev libssl-dev
 apt-get install --yes sendmail sendemail
 apt-get install --yes libcurl4-openssl-dev
+apt-get install --yes libusb-1.0-0-dev
 
 echo ""
 echo "---------------------------------------------------------------------------" 

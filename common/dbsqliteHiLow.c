@@ -9,7 +9,6 @@
 //  REVISION HISTORY:
 //        Date            Engineer        Revision        Remarks
 //        08/31/2008      M.S. Teel       0               Original
-//        10/03/2011      T. Lum          1               Null properties for optional values
 //
 //  NOTES:
 //
@@ -333,7 +332,7 @@ static int hilowInsertData(time_t timestamp, SENSOR_TYPES type, float value, flo
         }
         else
         {
-            radsqliteFieldSetBigIntValue(field, (ULONGLONG)hilowTime);
+            radsqliteFieldSetBigIntValue(field, (uint64_t)hilowTime);
         }
 
         field = radsqliteFieldGet(row, "low");
@@ -357,7 +356,7 @@ static int hilowInsertData(time_t timestamp, SENSOR_TYPES type, float value, flo
         }
         else
         {
-            radsqliteFieldSetBigIntValue(field, (ULONGLONG)timestamp);
+            radsqliteFieldSetBigIntValue(field, (uint64_t)timestamp);
         }
 
         field = radsqliteFieldGet(row, "high");
@@ -381,7 +380,7 @@ static int hilowInsertData(time_t timestamp, SENSOR_TYPES type, float value, flo
         }
         else
         {
-            radsqliteFieldSetBigIntValue(field, (ULONGLONG)timestamp);
+            radsqliteFieldSetBigIntValue(field, (uint64_t)timestamp);
         }
 
         field = radsqliteFieldGet(row, "whenHigh");
@@ -417,7 +416,7 @@ static int hilowInsertData(time_t timestamp, SENSOR_TYPES type, float value, flo
         }
         else
         {
-            radsqliteFieldSetBigIntValue(field, (ULONGLONG)1);
+            radsqliteFieldSetBigIntValue(field, (uint64_t)1);
         }
 
         // insert the row:
@@ -488,7 +487,7 @@ static int hilowInsertWindDir (time_t timestamp, int value)
         }
         else
         {
-            radsqliteFieldSetBigIntValue(field, (ULONGLONG)hilowTime);
+            radsqliteFieldSetBigIntValue(field, (uint64_t)hilowTime);
         }
 
         for (i = 0; i < WAVG_NUM_BINS; i ++)
@@ -506,11 +505,11 @@ static int hilowInsertWindDir (time_t timestamp, int value)
                 if (i == binIndex)
                 {
                     // This is our guy:
-                    radsqliteFieldSetBigIntValue(field, (ULONGLONG)1);
+                    radsqliteFieldSetBigIntValue(field, (uint64_t)1);
                 }
                 else
                 {
-                    radsqliteFieldSetBigIntValue(field, (ULONGLONG)0);
+                    radsqliteFieldSetBigIntValue(field, (uint64_t)0);
                 }
             }
         }
@@ -634,8 +633,7 @@ static int hilowUpdateTableWithSample (SENSOR_TYPES type, time_t timestamp, LOOP
         hilowInsertData(timestamp, type, pkt->barometer, 0);
         break;
     case SENSOR_WSPEED:
-    	  if(!pkt->windSpeed.isNull)
-            hilowInsertData(timestamp, type, pkt->windSpeed.value, 0);
+        hilowInsertData(timestamp, type, pkt->windSpeed, 0);
         break;
     case SENSOR_WGUST:
         hilowInsertData(timestamp, type, pkt->windGust, pkt->windGustDir);
@@ -660,14 +658,12 @@ static int hilowUpdateTableWithSample (SENSOR_TYPES type, time_t timestamp, LOOP
             hilowInsertData(timestamp, type, pkt->sampleET, 0);
         break;
     case SENSOR_UV:
-        if(!pkt->UV.isNull)
-            if (pkt->UV.value < 100)
-                hilowInsertData(timestamp, type, pkt->UV.value, 0);
+        if (pkt->UV < 100)
+            hilowInsertData(timestamp, type, pkt->UV, 0);
         break;
     case SENSOR_SOLRAD:
-    	  if(!pkt->radiation.isNull)
-            if (pkt->radiation.value < 10000)
-                hilowInsertData(timestamp, type, pkt->radiation.value, 0);
+        if (pkt->radiation < 10000)
+            hilowInsertData(timestamp, type, pkt->radiation, 0);
         break;
     case SENSOR_HAIL:
         if (pkt->wxt510Hail >= 0 && pkt->wxt510Hail < 100)
@@ -683,8 +679,8 @@ static int hilowUpdateTableWithSample (SENSOR_TYPES type, time_t timestamp, LOOP
 
 static int hilowGetDataTimeFrame
 (
-    time_t                  first,
-    time_t                  last,
+    int32_t                 first,
+    int32_t                 last,
     SENSOR_STORE*           sensors,
     SENSOR_TIMEFRAMES       timeFrame
 )
@@ -710,7 +706,7 @@ static int hilowGetDataTimeFrame
     {
         // grab the rows:
         sprintf (query, "SELECT * FROM %s WHERE dateTime >= '%d' AND dateTime < '%d' ORDER BY dateTime ASC", 
-                 sensorTables[index], (int)first, (int)last);
+                 sensorTables[index], first, last);
     
         // Execute the query:
         if (radsqlitedirectQuery(hilowDB, query, TRUE) == ERROR)
@@ -866,8 +862,9 @@ static void hilowInitPerRecord (ARCHIVE_PKT* rec, void* data)
 {
     struct tm           bknTime;
     SENSOR_TYPES        index;
+    time_t              Time = (time_t)rec->dateTime;
 
-    localtime_r(&rec->dateTime, &bknTime);
+    localtime_r(&Time, &bknTime);
     if (bknTime.tm_hour == 0 && 
         bknTime.tm_min == rec->interval)
     {
@@ -1274,8 +1271,9 @@ int dbsqliteHiLowInit(int update)
                  archiveTime = dbsqliteArchiveGetNextRecord(archiveTime, &archiveRec))
             {
                 LastArchiveTime = archiveTime;
-    
-                localtime_r(&archiveRec.dateTime, &bknTime);
+
+                time_t Time = (time_t)archiveRec.dateTime;
+                localtime_r(&Time, &bknTime);
                 if (bknTime.tm_hour == 0 && 
                     bknTime.tm_min == archiveRec.interval)
                 {
@@ -1366,8 +1364,7 @@ int dbsqliteHiLowStoreSample (time_t timestamp, LOOP_PKT* sample)
     }
 
     // Update wind direction:
-    if(!sample->windDir.isNull)
-        hilowInsertWindDir(timestamp, sample->windDir.value);
+    hilowInsertWindDir(timestamp, sample->windDir);
 
     sprintf (fileName, "%s/export/%s", wvutilsGetConfigPath(), WVIEW_HILOW_MARKER_FILE);
     wvutilsWriteMarkerFile(fileName, timestamp);

@@ -9,8 +9,8 @@
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         08/14/03        M.S. Teel       0               Original
-        07/10/2008      T. Lum          1               Null properties for optional values
-        08/04/2008      M.S. Teel       2               Change config to wvconfig.h
+        08/04/2008      M.S. Teel       1               Change config to 
+                                                        wvconfig.h
 
   NOTES:
 
@@ -83,22 +83,27 @@ static int daemonStationLoopComplete (void)
 
     wviewdWork.loopPkt.inHumidity       *= wviewdWork.calMInHumidity;
     wviewdWork.loopPkt.inHumidity       += wviewdWork.calCInHumidity;
+    if (wviewdWork.loopPkt.inHumidity > 100)
+    {
+        wviewdWork.loopPkt.inHumidity = 100;
+    }
 
     wviewdWork.loopPkt.outHumidity      *= wviewdWork.calMOutHumidity;
     wviewdWork.loopPkt.outHumidity      += wviewdWork.calCOutHumidity;
-
-    if(!wviewdWork.loopPkt.windSpeed.isNull)
+    if (wviewdWork.loopPkt.outHumidity > 100)
     {
-        wviewdWork.loopPkt.windSpeed.value        *= wviewdWork.calMWindSpeed;
-        wviewdWork.loopPkt.windSpeed.value        += wviewdWork.calCWindSpeed;
+        wviewdWork.loopPkt.outHumidity = 100;
     }
 
-    if(!wviewdWork.loopPkt.windDir.isNull)
-    {
-        wviewdWork.loopPkt.windDir.value          *= wviewdWork.calMWindDir;
-        wviewdWork.loopPkt.windDir.value          += wviewdWork.calCWindDir;
-        wviewdWork.loopPkt.windDir.value          %= 360;
-    }
+    wviewdWork.loopPkt.windSpeed        *= wviewdWork.calMWindSpeed;
+    wviewdWork.loopPkt.windSpeed        += wviewdWork.calCWindSpeed;
+
+    wviewdWork.loopPkt.windDir          *= wviewdWork.calMWindDir;
+    wviewdWork.loopPkt.windDir          += wviewdWork.calCWindDir;
+    wviewdWork.loopPkt.windDir          %= 360;
+
+    wviewdWork.loopPkt.windGust         *= wviewdWork.calMWindSpeed;
+    wviewdWork.loopPkt.windGust         += wviewdWork.calCWindSpeed;
 
     wviewdWork.loopPkt.sampleRain       *= wviewdWork.calMRain;
     wviewdWork.loopPkt.sampleRain       += wviewdWork.calCRain;
@@ -109,9 +114,8 @@ static int daemonStationLoopComplete (void)
     // now calculate a few after all calibrations:
     wviewdWork.loopPkt.dewpoint = wvutilsCalculateDewpoint(wviewdWork.loopPkt.outTemp,
                                                            (float)wviewdWork.loopPkt.outHumidity);
-    if(!wviewdWork.loopPkt.windSpeed.isNull)
-        wviewdWork.loopPkt.windchill = wvutilsCalculateWindChill(wviewdWork.loopPkt.outTemp,
-                                                             (float)wviewdWork.loopPkt.windSpeed.value);
+    wviewdWork.loopPkt.windchill = wvutilsCalculateWindChill(wviewdWork.loopPkt.outTemp,
+                                                             (float)wviewdWork.loopPkt.windSpeed);
     wviewdWork.loopPkt.heatindex = wvutilsCalculateHeatIndex(wviewdWork.loopPkt.outTemp,
                                                              (float)wviewdWork.loopPkt.outHumidity);
 
@@ -248,7 +252,7 @@ static void daemonStoreArchiveRecord (ARCHIVE_PKT *newRecord)
 {
     float           carryOverRain, carryOverET, sampleRain, tempf;
     int             deltaTime, tempInt;
-    USHORT          tempRainBits;
+    uint16_t        tempRainBits;
 
     if (newRecord == NULL)
     {
@@ -489,7 +493,7 @@ static void defaultSigHandler (int signum)
         case SIGSYS:
             // unrecoverable radProcessSignalCatch- we must exit right now!
             radMsgLog (PRI_CATASTROPHIC, "wviewd: recv sig %d: shutting down!", signum);
-            abort ();
+            abort();
 
         case SIGCHLD:
             wvutilsWaitForChildren();
@@ -803,6 +807,22 @@ int main (int argc, char *argv[])
             wvstrncpy(wviewdWork.stationInterface, sValue, sizeof(wviewdWork.stationInterface));
         }
     
+        // grab the Weatherlink retrieve archives flag:
+        iValue = wvconfigGetBooleanValue(configItem_STATION_STATION_RETRIEVE_ARCHIVE);
+        if (iValue >= 0)
+        {
+            wviewdWork.stationGeneratesArchives = iValue;
+            radMsgLog (PRI_MEDIUM,
+                       "station %s archive records",
+                       ((iValue) ? "generates" : "does not generate"));
+        }
+        else
+        {
+            // Default to the typical scenario. Stations not supporting archives 
+            // will overwrite it. 
+            wviewdWork.stationGeneratesArchives = TRUE;
+        }
+
         // process the interface type
         if (!strcmp (wviewdWork.stationInterface, "serial"))
         {
@@ -883,7 +903,6 @@ int main (int argc, char *argv[])
                     {
                         wviewdWork.stationIsWLIP = FALSE;
                     }
-    
                 }
             }
         }
@@ -1464,5 +1483,11 @@ int main (int argc, char *argv[])
     radProcessExit ();
     radSystemExit (WVIEW_SYSTEM_ID);
     exit (0);
+}
+
+// Retrieve exit status:
+int wviewdIsExiting(void)
+{
+    return wviewdWork.exiting;
 }
 

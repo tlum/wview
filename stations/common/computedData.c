@@ -9,8 +9,7 @@
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         08/07/2005      M.S. Teel       0               Original
-        07/10/2008      T. Lum          1               Null properties for optional values
-         
+ 
   NOTES:
  
  
@@ -111,19 +110,17 @@ static int computeDataChanges (WVIEWD_WORK *work)
             store->weekchangetemp = 0;
 
         if (arcRecord.value[DATA_INDEX_windSpeed] > ARCHIVE_VALUE_NULL)
-            if( !current->windSpeed.isNull )
-                store->weekchangewind = current->windSpeed.value - (float)arcRecord.value[DATA_INDEX_windSpeed];
+            store->weekchangewind = current->windSpeed - (float)arcRecord.value[DATA_INDEX_windSpeed];
         else
             store->weekchangewind = 0;
 
         if (arcRecord.value[DATA_INDEX_windDir] >= 0)
-            if (!current->windDir.isNull)
-                store->weekchangewinddir = (short)((float)current->windDir.value - (float)arcRecord.value[DATA_INDEX_windDir]);
+            store->weekchangewinddir = (int16_t)((float)current->windDir - (float)arcRecord.value[DATA_INDEX_windDir]);
         else
             store->weekchangewinddir = 0;
 
         if (arcRecord.value[DATA_INDEX_outHumidity] > ARCHIVE_VALUE_NULL)
-            store->weekchangehumid = current->outHumidity - (USHORT)arcRecord.value[DATA_INDEX_outHumidity];
+            store->weekchangehumid = current->outHumidity - (uint16_t)arcRecord.value[DATA_INDEX_outHumidity];
         else
             store->weekchangehumid = 0;
 
@@ -160,19 +157,17 @@ static int computeDataChanges (WVIEWD_WORK *work)
             store->daychangetemp = 0;
 
         if (arcRecord.value[DATA_INDEX_windSpeed] > ARCHIVE_VALUE_NULL)
-            if(!current->windSpeed.isNull)
-                store->daychangewind = current->windSpeed.value - (float)arcRecord.value[DATA_INDEX_windSpeed];
+            store->daychangewind = current->windSpeed - (float)arcRecord.value[DATA_INDEX_windSpeed];
         else
             store->daychangewind = 0;
 
         if (arcRecord.value[DATA_INDEX_windDir] >= 0)
-            if(!current->windDir.isNull)
-                store->daychangewinddir = (short)((float)current->windDir.value - (float)arcRecord.value[DATA_INDEX_windDir]);
+            store->daychangewinddir = (int16_t)((float)current->windDir - (float)arcRecord.value[DATA_INDEX_windDir]);
         else
             store->daychangewinddir = 0;
 
         if (arcRecord.value[DATA_INDEX_outHumidity] > ARCHIVE_VALUE_NULL)
-            store->daychangehumid = current->outHumidity - (USHORT)arcRecord.value[DATA_INDEX_outHumidity];
+            store->daychangehumid = current->outHumidity - (uint16_t)arcRecord.value[DATA_INDEX_outHumidity];
         else
             store->daychangehumid = 0;
 
@@ -209,19 +204,17 @@ static int computeDataChanges (WVIEWD_WORK *work)
             store->hourchangetemp = 0;
 
         if (arcRecord.value[DATA_INDEX_windSpeed] > ARCHIVE_VALUE_NULL)
-        	  if(!current->windSpeed.isNull)
-                store->hourchangewind = current->windSpeed.value - (float)arcRecord.value[DATA_INDEX_windSpeed];
+            store->hourchangewind = current->windSpeed - (float)arcRecord.value[DATA_INDEX_windSpeed];
         else
             store->hourchangewind = 0;
 
         if (arcRecord.value[DATA_INDEX_windDir] >= 0)
-        	  if(!current->windDir.isNull)
-                store->hourchangewinddir = (short)((float)current->windDir.value - (float)arcRecord.value[DATA_INDEX_windDir]);
+            store->hourchangewinddir = (int16_t)((float)current->windDir - (float)arcRecord.value[DATA_INDEX_windDir]);
         else
             store->hourchangewinddir = 0;
 
         if (arcRecord.value[DATA_INDEX_outHumidity] > ARCHIVE_VALUE_NULL)
-            store->hourchangehumid = current->outHumidity - (USHORT)arcRecord.value[DATA_INDEX_outHumidity];
+            store->hourchangehumid = current->outHumidity - (uint16_t)arcRecord.value[DATA_INDEX_outHumidity];
         else
             store->hourchangehumid = 0;
 
@@ -764,7 +757,7 @@ static void intervalHousekeepingInit (WVIEWD_WORK *work)
     windAvg = sensorGetAvg (&work->sensors.sensor[STF_HOUR][SENSOR_WSPEED]);
     tempAvg = sensorGetAvg (&work->sensors.sensor[STF_HOUR][SENSOR_OUTTEMP]);
     work->loopPkt.intervalAvgWCHILL = wvutilsCalculateWindChill(tempAvg, windAvg);
-    work->loopPkt.intervalAvgWSPEED = (USHORT)windAvg;
+    work->loopPkt.intervalAvgWSPEED = (uint16_t)windAvg;
 
 
     return;
@@ -780,7 +773,7 @@ static void intervalHousekeeping (WVIEWD_WORK *work)
     windAvg = sensorGetAvg (&work->sensors.sensor[STF_INTERVAL][SENSOR_WSPEED]);
     tempAvg = sensorGetAvg (&work->sensors.sensor[STF_INTERVAL][SENSOR_OUTTEMP]);
     work->loopPkt.intervalAvgWCHILL = wvutilsCalculateWindChill(tempAvg, windAvg);
-    work->loopPkt.intervalAvgWSPEED = (USHORT)windAvg;
+    work->loopPkt.intervalAvgWSPEED = (uint16_t)windAvg;
 
 
     return;
@@ -805,8 +798,7 @@ int computedDataStoreSample (WVIEWD_WORK *work)
     sensorUpdate (&sample[SENSOR_INHUMID], (float)work->loopPkt.inHumidity);
     sensorUpdate (&sample[SENSOR_OUTHUMID], (float)work->loopPkt.outHumidity);
     sensorUpdate (&sample[SENSOR_BP], work->loopPkt.barometer);
-    if (!work->loopPkt.windSpeed.isNull)
-        sensorUpdate (&sample[SENSOR_WSPEED], (float)work->loopPkt.windSpeed.value);
+    sensorUpdate (&sample[SENSOR_WSPEED], (float)work->loopPkt.windSpeed);
     sensorUpdateWhen (&sample[SENSOR_WGUST],
                       (float)work->loopPkt.windGust,
                       (float)work->loopPkt.windGustDir);
@@ -818,11 +810,11 @@ int computedDataStoreSample (WVIEWD_WORK *work)
 
     if (work->loopPkt.sampleET > ARCHIVE_VALUE_NULL)
         sensorUpdate (&sample[SENSOR_ET], work->loopPkt.sampleET);
-    if(!work->loopPkt.UV.isNull)
-        sensorUpdate (&sample[SENSOR_UV], (float)work->loopPkt.UV.value);
-    if(!work->loopPkt.radiation.isNull)
-        sensorUpdate (&sample[SENSOR_SOLRAD], (float)work->loopPkt.radiation.value);
-   if (work->loopPkt.wxt510Hail > ARCHIVE_VALUE_NULL)
+    if (work->loopPkt.UV != 0xFFFF)
+        sensorUpdate (&sample[SENSOR_UV], (float)work->loopPkt.UV);
+    if (work->loopPkt.radiation != 0xFFFF)
+        sensorUpdate (&sample[SENSOR_SOLRAD], (float)work->loopPkt.radiation);
+    if (work->loopPkt.wxt510Hail > ARCHIVE_VALUE_NULL)
         sensorUpdate (&sample[SENSOR_HAIL], work->loopPkt.wxt510Hail);
     if (work->loopPkt.wxt510Hailrate > ARCHIVE_VALUE_NULL)
         sensorUpdate (&sample[SENSOR_HAILRATE], work->loopPkt.wxt510Hailrate);
@@ -831,8 +823,7 @@ int computedDataStoreSample (WVIEWD_WORK *work)
     sensorPropogateSample (work->sensors.sensor[STF_INTERVAL], sample);
 
     // store the wind direction
-    if( !work->loopPkt.windDir.isNull)
-        windAverageAddValue (&work->sensors.wind[STF_INTERVAL], work->loopPkt.windDir.value);
+    windAverageAddValue (&work->sensors.wind[STF_INTERVAL], work->loopPkt.windDir);
 
     // Store to the HILOW database:
     dbsqliteHiLowStoreSample(time(NULL), &work->loopPkt);
@@ -902,7 +893,7 @@ ARCHIVE_PKT *computedDataGenerateArchive (WVIEWD_WORK *work)
     // create the time_t time for the record:
     localtime_r (&nowtime, &bknTime);
     bknTime.tm_sec  = 0;
-    ArcRecStore.dateTime = mktime(&bknTime);
+    ArcRecStore.dateTime = (int32_t)mktime(&bknTime);
 
     ArcRecStore.usUnits  = 1;
     ArcRecStore.interval = work->archiveInterval;
@@ -945,6 +936,10 @@ ARCHIVE_PKT *computedDataGenerateArchive (WVIEWD_WORK *work)
     {
         ArcRecStore.value[DATA_INDEX_windGust]   = 0;
     }
+
+    // save the high wind speed in the loop packet
+    work->loopPkt.windGust = (uint16_t)ArcRecStore.value[DATA_INDEX_windGust];
+
     ArcRecStore.value[DATA_INDEX_dewpoint]       =
         wvutilsCalculateDewpoint ((float)ArcRecStore.value[DATA_INDEX_outTemp],
                                   (float)ArcRecStore.value[DATA_INDEX_outHumidity]);
@@ -963,9 +958,9 @@ ARCHIVE_PKT *computedDataGenerateArchive (WVIEWD_WORK *work)
     }
 
     // These are conditional based on loop data being populated:
-    if (!work->loopPkt.radiation.isNull)
+    if (work->loopPkt.radiation != 0xFFFF)
         ArcRecStore.value[DATA_INDEX_radiation]      = (float)sensorGetAvg (&sample[SENSOR_SOLRAD]);
-    if (!work->loopPkt.UV.isNull)
+    if (work->loopPkt.UV != 0xFFFF)
         ArcRecStore.value[DATA_INDEX_UV]             = (float)sensorGetAvg (&sample[SENSOR_UV]);
     if (work->loopPkt.sampleET != ARCHIVE_VALUE_NULL)
         ArcRecStore.value[DATA_INDEX_ET]             = (float)sensorGetCumulative (&sample[SENSOR_ET]);
