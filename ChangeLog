@@ -2,6 +2,83 @@ RELEASE VERSION HISTORY (newest to oldest)
 ------------------------------------------
 
 
+5.21.5    04-06-2014
+--------------------
+
+radlib version required: 2.12.0 or newer
+
+1)  Remove debug message.
+
+
+
+
+5.21.4    04-06-2014
+--------------------
+
+radlib version required: 2.12.0 or newer
+
+1)  Added stale pid file cleanup to the APT package start script.
+
+2)  WMRUSB HID interface changes. Changed reader thread to blocking IO.
+    Mitigated the console occasionally blasting out bogus data. Now zero
+    packet loss. Fixed issue with pressure sanity check. Added sanity
+    check for bogus rain accumulator values from the WMR console.
+
+
+
+
+5.21.3    03-31-2014
+--------------------
+
+radlib version required: 2.12.0 or newer
+
+1)  Further WMRUSB interface improvements. Better packet framing.
+
+
+
+
+5.21.2    03-30-2014
+--------------------
+
+radlib version required: 2.12.0 or newer
+
+1)  Updated debian APT postinst script to include copying the exfoliation skin
+    for new installs.
+
+2)  Enabled checksum processing for WMR stations.
+
+3)  Changed LOOP windspeed items to floats for better precision.
+    NOTE: If you use custom datafeed clients the LOOP data structure has changed.
+
+4)  Added temp only packet support for WMRUSB stations. This adds support for
+    add-on sensors such as the pool sensor.
+
+5)  Fixed APT installs changing the wview.log file ownership incorrectly. Also
+    restarts rsyslog automatically if a new install.
+
+
+
+
+5.21.1    03-13-2014
+--------------------
+
+radlib version required: 2.12.0 or newer
+
+1)  Modified HILOW database storage so higher precision is used for cumulative
+    data such as rain and ET.
+
+2)  Fixed issue with yearly historical charts when generated at wview start
+    (as opposed to at midnight). The current day was erroneously being included in
+    the history data. This was most apparent with the UV and Solar Radiation
+    charts.
+
+3)  Fixed bug introduced in 5.21.0 release causing NULL wind direction to have
+    360 added to it (to normalize calibration result). A value of -99640 was
+    being stored/displayed.
+
+
+
+
 5.21.0    03-05-2014
 --------------------
 

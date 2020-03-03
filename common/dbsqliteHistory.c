@@ -128,9 +128,63 @@ static int getHistoryRecord (SQLITE_DATABASE_ID historyDB, time_t date, HISTORY_
     SQLITE_DIRECT_ROW       rowDescr;
     Data_Indices            index;
     SQLITE_FIELD_ID         field;
+    struct tm               locTime;
+    char                    dayString[64];
+    int                     RowCount = 0;
 
+    // First let's make sure there aren't 2 records for the same day;
+    // if there are, delete them both and return ERROR.
+    localtime_r (&date, &locTime);
+    snprintf (dayString, 64, "%4.4d-%2.2d-%2.2d",
+              locTime.tm_year + 1900,
+              locTime.tm_mon + 1,
+              locTime.tm_mday);
+
+    // get a count of matching rows:
+    sprintf (query,
+             "select count(date) from %s where date(date, 'unixepoch', 'localtime') = '%s'",
+             WVIEW_DAY_HISTORY_TABLE, dayString);
+
+    // Execute the query:
+    if (radsqlitedirectQuery(historyDB, query, TRUE) == ERROR)
+    {
+        radMsgLog (PRI_MEDIUM, "dbsqliteHistory: row count query failed.");
+        return ERROR;
+    }
+    rowDescr = radsqlitedirectGetRow(historyDB);
+    if (rowDescr == NULL)
+    {
+        radMsgLog (PRI_MEDIUM, "dbsqliteHistory: row count get row failed.");
+        radsqlitedirectReleaseResults(historyDB);
+        return ERROR;
+    }
+    field = radsqlitedirectFieldGet(rowDescr, "count(date)");
+    if ((field == NULL) || ((radsqliteFieldGetType(field) & SQLITE_FIELD_VALUE_IS_NULL) != 0))
+    {
+        radMsgLog (PRI_MEDIUM, "dbsqliteHistory: row count get field failed.");
+        radsqlitedirectReleaseResults(historyDB);
+        return ERROR;
+    }
+    RowCount = (int)radsqliteFieldGetBigIntValue(field);
+    radsqlitedirectReleaseResults(historyDB);
+
+    if (RowCount > 1)
+    {
+        // Delete all rows, we'll regenerate from archive data:
+        sprintf (query,
+                 "delete from %s where date(date, 'unixepoch', 'localtime') = '%s'",
+                 WVIEW_DAY_HISTORY_TABLE, dayString);
+
+        // Execute the query:
+        radsqliteQuery(historyDB, query, FALSE);
+
+        // Return ERROR regardless...
+        return ERROR;
+    }
+
+    // Proceed as normal if here.
     // grab the entire row:
-    sprintf (query, "SELECT * FROM %s WHERE date = '%d'", 
+    sprintf (query, "SELECT * FROM %s WHERE date = '%d'",
              WVIEW_DAY_HISTORY_TABLE, (int)date);
 
     // Execute the query:

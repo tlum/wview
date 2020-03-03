@@ -152,8 +152,8 @@ typedef struct
     int             stationPressure;
     int             altimeter;
     int             winddir;
-    int             wspeed;
-    int             hiwspeed;
+    float           wspeedF;
+    float           hiwspeedF;
     float           sampleRain;
     float           rainHour;
     float           rainDay;

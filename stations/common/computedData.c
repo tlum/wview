@@ -110,7 +110,7 @@ static int computeDataChanges (WVIEWD_WORK *work)
             store->weekchangetemp = 0;
 
         if (arcRecord.value[DATA_INDEX_windSpeed] > ARCHIVE_VALUE_NULL)
-            store->weekchangewind = current->windSpeed - (float)arcRecord.value[DATA_INDEX_windSpeed];
+            store->weekchangewind = current->windSpeedF - (float)arcRecord.value[DATA_INDEX_windSpeed];
         else
             store->weekchangewind = 0;
 
@@ -157,7 +157,7 @@ static int computeDataChanges (WVIEWD_WORK *work)
             store->daychangetemp = 0;
 
         if (arcRecord.value[DATA_INDEX_windSpeed] > ARCHIVE_VALUE_NULL)
-            store->daychangewind = current->windSpeed - (float)arcRecord.value[DATA_INDEX_windSpeed];
+            store->daychangewind = current->windSpeedF - (float)arcRecord.value[DATA_INDEX_windSpeed];
         else
             store->daychangewind = 0;
 
@@ -204,7 +204,7 @@ static int computeDataChanges (WVIEWD_WORK *work)
             store->hourchangetemp = 0;
 
         if (arcRecord.value[DATA_INDEX_windSpeed] > ARCHIVE_VALUE_NULL)
-            store->hourchangewind = current->windSpeed - (float)arcRecord.value[DATA_INDEX_windSpeed];
+            store->hourchangewind = current->windSpeedF - (float)arcRecord.value[DATA_INDEX_windSpeed];
         else
             store->hourchangewind = 0;
 
@@ -760,7 +760,7 @@ static void intervalHousekeepingInit (WVIEWD_WORK *work)
     windAvg = sensorGetAvg (&work->sensors.sensor[STF_HOUR][SENSOR_WSPEED]);
     tempAvg = sensorGetAvg (&work->sensors.sensor[STF_HOUR][SENSOR_OUTTEMP]);
     work->loopPkt.intervalAvgWCHILL = wvutilsCalculateWindChill(tempAvg, windAvg);
-    work->loopPkt.intervalAvgWSPEED = (uint16_t)windAvg;
+    work->loopPkt.intervalAvgWSPEEDF = windAvg;
 
     return;
 }
@@ -775,7 +775,7 @@ static void intervalHousekeeping (WVIEWD_WORK *work)
     windAvg = sensorGetAvg (&work->sensors.sensor[STF_INTERVAL][SENSOR_WSPEED]);
     tempAvg = sensorGetAvg (&work->sensors.sensor[STF_INTERVAL][SENSOR_OUTTEMP]);
     work->loopPkt.intervalAvgWCHILL = wvutilsCalculateWindChill(tempAvg, windAvg);
-    work->loopPkt.intervalAvgWSPEED = (uint16_t)windAvg;
+    work->loopPkt.intervalAvgWSPEEDF = windAvg;
 
     return;
 }
@@ -797,9 +797,9 @@ int computedDataStoreSample (WVIEWD_WORK *work)
     sensorUpdate (&sample[SENSOR_INHUMID], (float)work->loopPkt.inHumidity);
     sensorUpdate (&sample[SENSOR_OUTHUMID], (float)work->loopPkt.outHumidity);
     sensorUpdate (&sample[SENSOR_BP], work->loopPkt.barometer);
-    sensorUpdate (&sample[SENSOR_WSPEED], (float)work->loopPkt.windSpeed);
+    sensorUpdate (&sample[SENSOR_WSPEED], work->loopPkt.windSpeedF);
     sensorUpdateWhen (&sample[SENSOR_WGUST],
-                      (float)work->loopPkt.windGust,
+                      work->loopPkt.windGustF,
                       (float)work->loopPkt.windGustDir);
     sensorUpdate (&sample[SENSOR_DEWPOINT], work->loopPkt.dewpoint);
     sensorUpdate (&sample[SENSOR_RAIN], work->loopPkt.sampleRain);
@@ -886,7 +886,7 @@ ARCHIVE_PKT *computedDataGenerateArchive (WVIEWD_WORK *work)
     }
 
     // save the high wind speed in the loop packet
-    work->loopPkt.windGust = (uint16_t)ArcRecStore.value[DATA_INDEX_windGust];
+    work->loopPkt.windGustF = ArcRecStore.value[DATA_INDEX_windGust];
 
     ArcRecStore.value[DATA_INDEX_dewpoint]       =
         wvutilsCalculateDewpoint ((float)ArcRecStore.value[DATA_INDEX_outTemp],

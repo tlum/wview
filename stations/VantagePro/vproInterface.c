@@ -740,10 +740,8 @@ static void convertToArchivePkt(WVIEWD_WORK *work, ARCHIVE_RECORD* newRecord, AR
 static void storeLoopPkt (WVIEWD_WORK *work, LOOP_DATA *src)
 {
     LOOP_PKT*   dest = &(work->loopPkt);
-    float       tempfloat;
     uint16_t    tempshort;
     int         intTemp;
-    float       scaledRain;
 
     // Clear optional data:
     stationClearLoopData(work);
@@ -840,8 +838,8 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_DATA *src)
         dest->outHumidity = src->outHumidity;
     if (src->windSpeed != 0xFF)
     {
-        dest->windSpeed = src->windSpeed;
-        dest->windGust = src->windSpeed;
+        dest->windSpeedF = (float)src->windSpeed;
+        dest->windGustF = (float)src->windSpeed;
     }
     tempshort = SHORT_SWAP(src->windDir);
     if (tempshort != 0xFFFF && tempshort != 0x7FFF)
@@ -872,17 +870,17 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_DATA *src)
     dest->forecastRule = src->forecastRule;
     dest->txBatteryStatus = src->txBatteryStatus;
     dest->consBatteryVoltage = SHORT_SWAP(src->consBatteryVoltage);
-    dest->extraTemp1 = (float)(src->extraTemp1 - 90);
-    dest->extraTemp2 = (float)(src->extraTemp2 - 90);
-    dest->extraTemp3 = (float)(src->extraTemp3 - 90);
+    dest->extraTemp[0] = (float)(src->extraTemp1 - 90);
+    dest->extraTemp[1] = (float)(src->extraTemp2 - 90);
+    dest->extraTemp[2] = (float)(src->extraTemp3 - 90);
     dest->soilTemp1 = (float)(src->soilTemp1 - 90);
     dest->soilTemp2 = (float)(src->soilTemp2 - 90);
     dest->soilTemp3 = (float)(src->soilTemp3 - 90);
     dest->soilTemp4 = (float)(src->soilTemp4 - 90);
     dest->leafTemp1 = (float)(src->leafTemp1 - 90);
     dest->leafTemp2 = (float)(src->leafTemp2 - 90);
-    dest->extraHumid1 = src->extraHumid1;
-    dest->extraHumid2 = src->extraHumid2;
+    dest->extraHumidity[0] = src->extraHumid1;
+    dest->extraHumidity[1] = src->extraHumid2;
     dest->soilMoist1 = src->soilMoist1;
     dest->soilMoist2 = src->soilMoist2;
     if (src->leafWet1 != 0xFF)
@@ -927,7 +925,7 @@ static int processArchivePage (WVIEWD_WORK *work, ARCHIVE_PAGE *page)
         numNewRecords ++;
 
         // save the high wind speed
-        work->loopPkt.windGust = (uint16_t)page->record[i].highWindSpeed;
+        work->loopPkt.windGustF = (float)page->record[i].highWindSpeed;
 
         // clear the retry flag here
         vpWorkData.archiveRetryFlag = FALSE;
@@ -964,17 +962,19 @@ static int processArchivePage (WVIEWD_WORK *work, ARCHIVE_PAGE *page)
         archivePkt.value[DATA_INDEX_windSpeed]          *= work->calMWindSpeed;
         archivePkt.value[DATA_INDEX_windSpeed]          += work->calCWindSpeed;
 
-        archivePkt.value[DATA_INDEX_windDir]          *= work->calMWindDir;
-        archivePkt.value[DATA_INDEX_windDir]          += work->calCWindDir;
-        if (archivePkt.value[DATA_INDEX_windDir] < 0)
+        if (archivePkt.value[DATA_INDEX_windDir] > ARCHIVE_VALUE_NULL)
         {
-            archivePkt.value[DATA_INDEX_windDir] += 360;
+            archivePkt.value[DATA_INDEX_windDir]          *= work->calMWindDir;
+            archivePkt.value[DATA_INDEX_windDir]          += work->calCWindDir;
+            if (archivePkt.value[DATA_INDEX_windDir] < 0)
+            {
+                archivePkt.value[DATA_INDEX_windDir] += 360;
+            }
+            if (archivePkt.value[DATA_INDEX_windDir] > 360)
+            {
+                archivePkt.value[DATA_INDEX_windDir] -= 360;
+            }
         }
-        if (archivePkt.value[DATA_INDEX_windDir] > 360)
-        {
-            archivePkt.value[DATA_INDEX_windDir] -= 360;
-        }
-    
         archivePkt.value[DATA_INDEX_rain]          *= work->calMRain;
         archivePkt.value[DATA_INDEX_rain]          += work->calCRain;
         if (archivePkt.value[DATA_INDEX_rain] < 0)
@@ -1574,7 +1574,6 @@ int vpifReadMessage (WVIEWD_WORK *work, int expectACK)
     uint16_t            temp[VP_BYTE_LENGTH_MAX/2];     // short align
     uint8_t             *chPtr = (uint8_t *)temp;
     ARCHIVE_PAGE        *arcRec = (ARCHIVE_PAGE *)temp;
-    ARCHIVE_INTERVAL    *interval = (ARCHIVE_INTERVAL *)temp;
     DMPAFT_HDR          *dmphdr = (DMPAFT_HDR *)temp;
     LOOP_DATA           *loop = (LOOP_DATA *)temp;
     int                 retVal;

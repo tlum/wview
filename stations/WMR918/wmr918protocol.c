@@ -437,8 +437,7 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_PKT *dest, WMR918_DATA *src)
     if (0 <= src->windSpeed && src->windSpeed <= 250)
     {
         tempfloat = src->windSpeed;
-        tempfloat += 0.5;
-        dest->windSpeed                     = (uint16_t)tempfloat;
+        dest->windSpeedF                    = tempfloat;
     }
 
     if (0 <= src->windDir && src->windDir <= 360)
@@ -451,8 +450,7 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_PKT *dest, WMR918_DATA *src)
     if (0 <= src->maxWindSpeed && src->maxWindSpeed <= 250)
     {
         tempfloat = src->maxWindSpeed;
-        tempfloat += 0.5;
-        dest->windGust                      = (uint16_t)tempfloat;
+        dest->windGustF                     = tempfloat;
     }
 
     if (0 <= src->maxWindDir && src->maxWindDir <= 360)
@@ -511,17 +509,17 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_PKT *dest, WMR918_DATA *src)
     tempfloat += 0.5;
     dest->inHumidity                    = (uint16_t)tempfloat;
 
-    dest->extraTemp1                    = (float)src->extraTemp[0];
+    dest->extraTemp[0]                  = (float)src->extraTemp[0];
     tempfloat = src->extraHumidity[0];
     tempfloat += 0.5;
-    dest->extraHumid1                   = (uint16_t)tempfloat;
+    dest->extraHumidity[0]              = (uint16_t)tempfloat;
 
-    dest->extraTemp2                    = (float)src->extraTemp[1];
+    dest->extraTemp[1]                  = (float)src->extraTemp[1];
     tempfloat = src->extraHumidity[1];
     tempfloat += 0.5;
-    dest->extraHumid2                   = (uint16_t)tempfloat;
+    dest->extraHumidity[1]              = (uint16_t)tempfloat;
 
-    dest->extraTemp3                    = (float)src->extraTemp[2];
+    dest->extraTemp[2]                  = (float)src->extraTemp[2];
 
     // WMR918 specific:
     tempfloat = src->extraHumidity[2];

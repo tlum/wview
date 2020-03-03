@@ -665,11 +665,11 @@ static void processAlarms (LOOP_PKT *loopData)
             case WindSpeed:
                 if (alarmsWork.isMetric)
                 {
-                    tempFloat = wvutilsConvertMPHToKPH((float)loopData->windSpeed);
+                    tempFloat = wvutilsConvertMPHToKPH(loopData->windSpeedF);
                 }
                 else
                 {
-                    tempFloat = (float)loopData->windSpeed;
+                    tempFloat = loopData->windSpeedF;
                 }
                 break;
 
@@ -810,33 +810,33 @@ static void processAlarms (LOOP_PKT *loopData)
             case ExtraTemp1:
                 if (alarmsWork.isMetric)
                 {
-                    tempFloat = wvutilsConvertFToC(loopData->extraTemp1);
+                    tempFloat = wvutilsConvertFToC(loopData->extraTemp[0]);
                 }
                 else
                 {
-                    tempFloat = loopData->extraTemp1;
+                    tempFloat = loopData->extraTemp[0];
                 }
                 break;
 
             case ExtraTemp2:
                 if (alarmsWork.isMetric)
                 {
-                    tempFloat = wvutilsConvertFToC(loopData->extraTemp2);
+                    tempFloat = wvutilsConvertFToC(loopData->extraTemp[1]);
                 }
                 else
                 {
-                    tempFloat = loopData->extraTemp2;
+                    tempFloat = loopData->extraTemp[1];
                 }
                 break;
 
             case ExtraTemp3:
                 if (alarmsWork.isMetric)
                 {
-                    tempFloat = wvutilsConvertFToC(loopData->extraTemp3);
+                    tempFloat = wvutilsConvertFToC(loopData->extraTemp[2]);
                 }
                 else
                 {
-                    tempFloat = loopData->extraTemp3;
+                    tempFloat = loopData->extraTemp[2];
                 }
                 break;
 
@@ -907,11 +907,11 @@ static void processAlarms (LOOP_PKT *loopData)
                 break;
 
             case ExtraHumid1:
-                tempFloat = (float)loopData->extraHumid1;
+                tempFloat = (float)loopData->extraHumidity[0];
                 break;
 
             case ExtraHumid2:
-                tempFloat = (float)loopData->extraHumid2;
+                tempFloat = (float)loopData->extraHumidity[1];
                 break;
 
             case Wxt510Hail:

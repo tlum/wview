@@ -485,7 +485,7 @@ static int generateWind (HTML_IMG *img)
     retVal = htmlGenPngDialWind (temp,
                     (int)img->mgrWork->loopStore.windDir,
                     (int)sensorGetDailyWhenHigh(img->mgrWork->hilowStore.sensor, SENSOR_WGUST),
-                    (float)img->mgrWork->loopStore.windSpeed,
+                    img->mgrWork->loopStore.windSpeedF,
                     sensorGetDailyHigh(img->mgrWork->hilowStore.sensor, SENSOR_WGUST),
                     img->title);
 

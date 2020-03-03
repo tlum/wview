@@ -36,10 +36,10 @@ DEP			= gcc -MM
 LIBS			= \
 			-lc \
 			-lz \
-			-lsqlite3 \
-			-lrad
+			-lrad \
+			-lsqlite3
 
-LIBPATH 		= -L/usr/lib -L/usr/local/lib
+LIBPATH 		= -L/usr/local/lib -L/usr/lib
 
 #  Declare build defines
 DEFINES			= \
@@ -66,9 +66,7 @@ TEST_OBJS		= \
 
 $(EXE_IMAGE):	$(TEST_OBJS)
 	@echo "Linking $@..."
-	@$(LD) $(LD_OPTS) $(LIBPATH) -o $@ \
-	$(TEST_OBJS) \
-	$(LIBS)
+	$(LD) $(LD_OPTS) $(LIBPATH) -o $@ $(TEST_OBJS) $(LIBS)
 
 
 all: clean $(EXE_IMAGE)

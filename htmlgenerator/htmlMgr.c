@@ -867,10 +867,9 @@ int htmlmgrGenerate
 int htmlmgrHistoryInit (HTML_MGR_ID id)
 {
     HISTORY_DATA    data;
-    int             startmin, starthour, startday, startmonth, startyear;
-    time_t          ntime, baseTime, tempTime, arcTime;
+    time_t          ntime, baseTime, arcTime;
     struct tm       locTime;
-    int             i, j, k, retVal, saveHour;
+    int             i, j, retVal, saveHour;
 
     // Compute when last archive record should have been:
     arcTime = time(NULL);
@@ -1030,20 +1029,13 @@ int htmlmgrHistoryInit (HTML_MGR_ID id)
     dbsqliteHistoryInit();
     dbsqliteHistoryPragmaSet("synchronous", "off");
 
-    ntime = arcTime;
-    ntime -= WV_SECONDS_IN_YEAR;
-
-    localtime_r (&ntime, &locTime);
-    locTime.tm_hour = 0;
-    locTime.tm_min  = id->archiveInterval;
-    locTime.tm_sec  = 0;
-    locTime.tm_isdst = -1;
-    ntime = mktime(&locTime);
+    ntime = wvutilsGetYearStartTime (id->archiveInterval);
 
     id->yearStartTime_T = ntime;
 
     for (i = 0; i < YEARLY_NUM_VALUES; i ++)
     {
+        data.startTime = ntime;
         if (dbsqliteHistoryGetDay(ntime, &data) == ERROR)
         {
             retVal = dbsqliteArchiveGetAverages(id->isMetricUnits,
@@ -1054,7 +1046,6 @@ int htmlmgrHistoryInit (HTML_MGR_ID id)
 
             if (retVal <= 0)
             {
-                data.startTime = ntime;
                 for (j = 0; j < DATA_INDEX_MAX(id->isExtendedData); j ++)
                 {
                     data.values[j] = ARCHIVE_VALUE_NULL;
@@ -1063,7 +1054,6 @@ int htmlmgrHistoryInit (HTML_MGR_ID id)
             else
             {
                 // Add to the database:
-                data.startTime = ntime;
                 radMsgLog(PRI_STATUS, "htmlHistoryInit: storing day history for %s",
                           ctime(&ntime));
                 dbsqliteHistoryInsertDay(&data);

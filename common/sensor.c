@@ -498,6 +498,8 @@ float sensorGetWindRun (SENSOR_TIMEFRAMES frame, WV_SENSOR *sensor)
         case STF_YEAR:
             retVal *= (nowtime - jan1time);
             break;
+        default:
+            break;
     }
 
     retVal /= 3600;

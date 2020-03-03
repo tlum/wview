@@ -41,8 +41,6 @@ static void             (*ArchiveIndicator) (ARCHIVE_PKT* newRecord);
 
 static void serialPortConfig (int fd);
 
-
-
 ////////////****////****  S T A T I O N   A P I  ****////****////////////
 /////  Must be provided by each supported wview station interface  //////
 
@@ -94,17 +92,6 @@ int stationInit
     // generate them
     work->stationGeneratesArchives = FALSE;
 
-    // The WMRUSB is a USB-only device:
-    if (usbhidMediumInit (&work->medium, WMR_VENDOR_ID, WMR_PRODUCT_ID, FALSE) == ERROR)
-    {
-        radMsgLog (PRI_HIGH, "stationInit: USB MediumInit failed");
-        return ERROR;
-    }
-
-    radMsgLog (PRI_STATUS, "WMR on USB %4.4X:%4.4X opened ...",
-               WMR_VENDOR_ID, WMR_PRODUCT_ID);
-
-
     // grab the station configuration now
     if (stationGetConfigValueInt (work,
                                   STATION_PARM_ELEVATION,
@@ -112,7 +99,6 @@ int stationInit
             == ERROR)
     {
         radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!");
-        (*(work->medium.usbhidExit)) (&work->medium);
         return ERROR;
     }
     if (stationGetConfigValueFloat (work,
@@ -121,7 +107,6 @@ int stationInit
             == ERROR)
     {
         radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!");
-        (*(work->medium.usbhidExit)) (&work->medium);
         return ERROR;
     }
     if (stationGetConfigValueFloat (work,
@@ -130,7 +115,6 @@ int stationInit
             == ERROR)
     {
         radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!");
-        (*(work->medium.usbhidExit)) (&work->medium);
         return ERROR;
     }
     if (stationGetConfigValueInt (work,
@@ -139,7 +123,6 @@ int stationInit
             == ERROR)
     {
         radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!");
-        (*(work->medium.usbhidExit)) (&work->medium);
         return ERROR;
     }
     if (stationGetConfigValueInt (work,
@@ -148,7 +131,6 @@ int stationInit
             == ERROR)
     {
         radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt outside channel failed!");
-        (*(work->medium.usbhidExit)) (&work->medium);
         return ERROR;
     }
 
@@ -162,7 +144,6 @@ int stationInit
         radMsgLog (PRI_HIGH, "stationInit: stationVerifyArchiveInterval failed!");
         radMsgLog (PRI_HIGH, "You must either move old archive data out of the way -or-");
         radMsgLog (PRI_HIGH, "fix the interval setting...");
-        (*(work->medium.usbhidExit)) (&work->medium);
         return ERROR;
     }
     else
@@ -176,9 +157,11 @@ int stationInit
     if (wmrInit (work) == ERROR)
     {
         radMsgLog (PRI_HIGH, "stationInit: wmrInit failed!");
-        (*(work->medium.usbhidExit)) (&work->medium);
         return ERROR;
     }
+
+    radMsgLog (PRI_STATUS, "WMR on USB %4.4X:%4.4X opened ...",
+               WMR_VENDOR_ID, WMR_PRODUCT_ID);
 
     return OK;
 }
@@ -327,7 +310,20 @@ void stationIFTimerExpiry (WVIEWD_WORK *work)
     radProcessTimerStart (work->ifTimer, WMR_PROCESS_TIME_INTERVAL);
 
     // Process data:
-    wmrProcessData (work);
+    while (wmrProcessData (work));
+
+#ifdef WMR_COUNT_BYTES
+    if (++StatCount >= 60)
+    {
+        radMsgLog(PRI_MEDIUM, "STATS: raw:%d stream:%d pkt:%d cksum:%d unk:%d",
+                  UsbRawBytes,
+                  StreamBytes,
+                  PacketBytes,
+                  ChecksumBytes,
+                  UnknownPacketType);
+        StatCount = 0;
+    }
+#endif
 
     return;
 }

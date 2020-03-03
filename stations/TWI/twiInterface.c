@@ -562,9 +562,8 @@ static void storeLoopPkt (WVIEWD_WORK* work, LOOP_PKT *dest, TWI_DATA *src)
     if (0 <= src->windSpeed && src->windSpeed <= 250)
     {
         tempfloat = src->windSpeed;
-        tempfloat += 0.5;
-        dest->windSpeed                     = (uint16_t)tempfloat;
-        dest->windGust                      = (uint16_t)tempfloat;
+        dest->windSpeedF                    = tempfloat;
+        dest->windGustF                     = tempfloat;
     }
 
     if (0 <= src->windDir && src->windDir < 360)

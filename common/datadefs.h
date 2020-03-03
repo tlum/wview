@@ -237,9 +237,9 @@ typedef struct
     float               outTemp;                /* ! degrees F            */
     uint16_t            inHumidity;             /* ! percent              */
     uint16_t            outHumidity;            /* ! percent              */
-    uint16_t            windSpeed;              /* ! mph                  */
+    float               windSpeedF;             /* ! mph                  */
     uint16_t            windDir;                /* ! degrees              */
-    uint16_t            windGust;               /* ! mph                  */
+    float               windGustF;              /* ! mph                  */
     uint16_t            windGustDir;            /* ! degrees              */
     float               rainRate;               /* ! in/hr                */
     float               sampleRain;             /* ! inches               */
@@ -260,7 +260,7 @@ typedef struct
     float               monthET;                /* inches                 */
     float               yearET;                 /* inches                 */
     float               intervalAvgWCHILL;      /* degrees F              */
-    uint16_t            intervalAvgWSPEED;      /* mph                    */
+    float               intervalAvgWSPEEDF;     /* mph                    */
     uint16_t            yearRainMonth;          /* 1-12 Rain Start Month  */
 
     // --- The following may or may not be supported for a given station ---
@@ -272,17 +272,12 @@ typedef struct
     uint16_t            forecastRule;           /* VP only                */
     uint16_t            txBatteryStatus;        /* VP only                */
     uint16_t            consBatteryVoltage;     /* VP only                */
-    float               extraTemp1;             /* degrees F              */
-    float               extraTemp2;             /* degrees F              */
-    float               extraTemp3;             /* degrees F              */
     float               soilTemp1;              /* degrees F              */
     float               soilTemp2;              /* degrees F              */
     float               soilTemp3;              /* degrees F              */
     float               soilTemp4;              /* degrees F              */
     float               leafTemp1;              /* degrees F              */
     float               leafTemp2;              /* degrees F              */
-    uint8_t             extraHumid1;            /* percent                */
-    uint8_t             extraHumid2;            /* percent                */
     uint8_t             soilMoist1;
     uint8_t             soilMoist2;
     uint8_t             leafWet1;

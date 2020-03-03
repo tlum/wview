@@ -84,7 +84,7 @@ static int usbhidInit (WVIEW_MEDIUM *medium)
     }
 
     // Set to non-blocking so we can do timed read exact:
-    if (hid_set_nonblocking(medium->hidDevice, 1) != 0)
+    if (hid_set_nonblocking(medium->hidDevice, !usbhidWork->blocking) != 0)
     {
         radMsgLog (PRI_HIGH, "USBHID: hid_set_nonblocking failed!");
         usbhidExit(medium);
@@ -116,8 +116,14 @@ static int usbhidRead
     uint8_t                 *ptr = (uint8_t *)buffer;
     MEDIUM_USBHID           *usbhidWork = (MEDIUM_USBHID *)medium->workData;
 
-    while (index < length && cumTime < msTimeout)
+    while (index < length)
     {
+        // Bail out if non-blocking IO and timeout has expired.
+        if (!usbhidWork->blocking && cumTime >= msTimeout)
+        {
+            return index;
+        }
+
         readTime = radTimeGetMSSinceEpoch ();
         rval = hid_read(medium->hidDevice, &ptr[index], length - index);
         if (rval < 0)
@@ -139,7 +145,7 @@ static int usbhidRead
 
         readTime = radTimeGetMSSinceEpoch () - readTime;
         cumTime += (int)readTime;
-        if (index < length && cumTime < msTimeout)
+        if (!usbhidWork->blocking && index < length && cumTime < msTimeout)
         {
             readTime = radTimeGetMSSinceEpoch ();
             radUtilsSleep (9);
@@ -270,7 +276,8 @@ int usbhidMediumInit
     WVIEW_MEDIUM    *medium,
     uint16_t        vendor_id,
     uint16_t        product_id,
-    int             enableDebug
+    int             enableDebug,
+    int             blocking
 )
 {
     MEDIUM_USBHID   *work = &mediumUSB;
@@ -281,6 +288,7 @@ int usbhidMediumInit
     work->vendorId  = vendor_id;
     work->productId = product_id;
     work->debug     = enableDebug;
+    work->blocking  = blocking;
 
     medium->type = MEDIUM_TYPE_USBHID;
 

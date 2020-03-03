@@ -95,7 +95,7 @@ int stationInit
     work->stationGeneratesArchives = FALSE;
 
     // The TE923 is a USB-only device:
-    if (usbhidMediumInit (&work->medium, TE923_VENDOR_ID, TE923_PRODUCT_ID, FALSE) == ERROR)
+    if (usbhidMediumInit (&work->medium, TE923_VENDOR_ID, TE923_PRODUCT_ID, FALSE, FALSE) == ERROR)
     {
         radMsgLog (PRI_HIGH, "stationInit: USB MediumInit failed");
         return ERROR;

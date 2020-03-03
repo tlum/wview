@@ -43,9 +43,29 @@
 */
 #include <datadefs.h>
 #include <dbsqlite.h>
+#include <usbhid.h>
 #include <daemon.h>
 #include <parser.h>
 #include <sensor.h>
+
+// Uncomment this to enable debug messages (lots of logs).
+//#define WMR_DEBUG           1
+
+// Uncomment this to enable byte counts (USB raw, stream, packet).
+//#define WMR_COUNT_BYTES     1
+
+// Uncomment this to dump raw USB RX bytes (lots of logs).
+//#define WMR_DUMP_RAW_USB    1
+
+#ifdef WMR_COUNT_BYTES
+extern int      UsbRawBytes;
+extern int      StreamBytes;
+extern int      PacketBytes;
+extern int      ChecksumBytes;
+extern int      StatCount;
+extern int      UnknownPacketType;
+#endif
+
 
 /* WMR-200  <vendorid, productid> */
 #define WMR_VENDOR_ID               0x0fde
@@ -53,8 +73,8 @@
 
 
 #define WMR_BUFFER_LENGTH           255
+#define WMR_READ_WAIT               1000
 #define WMR_TEMP_SENSOR_COUNT       10
-#define WMR_THREAD_SLEEP            100                 // ms
 #define WMR_REESTABLISH_SLEEP       10000               // 10 secs
 #define WMR_PROCESS_TIME_INTERVAL   1000                // 1 second
 #define WMR_HEARTBEAT_INTERVAL      10                  // seconds
@@ -111,6 +131,7 @@ typedef enum
 {
     WMR_FFFF_RAIN                   = 0x41,
     WMR_FFFF_TEMP                   = 0x42,
+    WMR_FFFF_TEMPONLY               = 0x44,
     WMR_FFFF_PRESSURE               = 0x46,
     WMR_FFFF_UV                     = 0x47,
     WMR_FFFF_WIND                   = 0x48,
@@ -150,7 +171,6 @@ typedef struct
 {
     WMR_PROTOCOL_TYPE   protocol;
     int                 started;
-    int                 reopenNeeded;
     WMR_DATA            sensorData;
     uint8_t             readData[WMR_BUFFER_LENGTH];
     int                 readIndex;
@@ -184,7 +204,7 @@ extern void wmrExit (WVIEWD_WORK *work);
 extern void wmrReadData (WVIEWD_WORK *work, WMRUSB_MSG_DATA* msg);
 
 // Enforce packet framing and pass to parse engine if a packet frame is complete:
-extern void wmrProcessData (WVIEWD_WORK *work);
+extern int wmrProcessData (WVIEWD_WORK *work);
 
 // get loop packet data:
 extern void wmrGetReadings (WVIEWD_WORK *work);

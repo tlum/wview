@@ -95,15 +95,15 @@ static int daemonStationLoopComplete (void)
         wviewdWork.loopPkt.outHumidity = 100;
     }
 
-    wviewdWork.loopPkt.windSpeed        *= wviewdWork.calMWindSpeed;
-    wviewdWork.loopPkt.windSpeed        += wviewdWork.calCWindSpeed;
+    wviewdWork.loopPkt.windSpeedF       *= wviewdWork.calMWindSpeed;
+    wviewdWork.loopPkt.windSpeedF       += wviewdWork.calCWindSpeed;
 
     wviewdWork.loopPkt.windDir          *= wviewdWork.calMWindDir;
     wviewdWork.loopPkt.windDir          += wviewdWork.calCWindDir;
     wviewdWork.loopPkt.windDir          %= 360;
 
-    wviewdWork.loopPkt.windGust         *= wviewdWork.calMWindSpeed;
-    wviewdWork.loopPkt.windGust         += wviewdWork.calCWindSpeed;
+    wviewdWork.loopPkt.windGustF        *= wviewdWork.calMWindSpeed;
+    wviewdWork.loopPkt.windGustF        += wviewdWork.calCWindSpeed;
 
     wviewdWork.loopPkt.sampleRain       *= wviewdWork.calMRain;
     wviewdWork.loopPkt.sampleRain       += wviewdWork.calCRain;
@@ -115,22 +115,15 @@ static int daemonStationLoopComplete (void)
     wviewdWork.loopPkt.dewpoint = wvutilsCalculateDewpoint(wviewdWork.loopPkt.outTemp,
                                                            (float)wviewdWork.loopPkt.outHumidity);
     wviewdWork.loopPkt.windchill = wvutilsCalculateWindChill(wviewdWork.loopPkt.outTemp,
-                                                             (float)wviewdWork.loopPkt.windSpeed);
+                                                             wviewdWork.loopPkt.windSpeedF);
     wviewdWork.loopPkt.heatindex = wvutilsCalculateHeatIndex(wviewdWork.loopPkt.outTemp,
                                                              (float)wviewdWork.loopPkt.outHumidity);
 
     // store the results:
     computedDataStoreSample (&wviewdWork);
 
-    // lose any trace amounts to avoid rounding up by sprintf:
     sampleRain = sensorGetCumulative(&wviewdWork.sensors.sensor[STF_INTERVAL][SENSOR_RAIN]);
-    sampleRain *= 100;
-    sampleRain = floorf (sampleRain);
-    sampleRain /= 100;
     sampleET = sensorGetCumulative(&wviewdWork.sensors.sensor[STF_INTERVAL][SENSOR_ET]);
-    sampleET *= 1000;
-    sampleET = floorf (sampleET);
-    sampleET /= 1000;
 
     // do some post-processing on the LOOP data:
     tempf = stormRainGet();
@@ -547,8 +540,6 @@ static void evtHandler
     void        *userData
 )
 {
-    STIM        stim;
-
     // bleed off our special events
     if (eventsRx & STATION_INIT_COMPLETE_EVENT)
     {

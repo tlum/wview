@@ -49,6 +49,7 @@ typedef struct
 {
     uint16_t        vendorId;
     uint16_t        productId;
+    int             blocking;
     int             debug;
 } MEDIUM_USBHID;
 
@@ -59,10 +60,11 @@ typedef struct
 // this is the only globally visible method
 extern int usbhidMediumInit 
 (
-    WVIEW_MEDIUM    *medium, 
-    uint16_t        vendor_id, 
+    WVIEW_MEDIUM    *medium,
+    uint16_t        vendor_id,
     uint16_t        product_id,
-    int             enableDebug
+    int             enableDebug,
+    int             blocking
 );
 
 #endif

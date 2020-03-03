@@ -103,9 +103,9 @@ int stationSendArchiveNotifications (WVIEWD_WORK *work, float sampleRain)
     notify.stationPressure  = (int)floorf(work->loopPkt.stationPressure * 1000);
     notify.altimeter        = (int)floorf(work->loopPkt.altimeter * 1000);
     notify.winddir          = work->loopPkt.windDir;
-    notify.wspeed           = work->loopPkt.windSpeed;
+    notify.wspeedF          = work->loopPkt.windSpeedF;
     notify.dewpoint         = (int)floorf(work->loopPkt.dewpoint * 10);
-    notify.hiwspeed         = work->loopPkt.windGust;
+    notify.hiwspeedF        = work->loopPkt.windGustF;
     notify.rxPercent        = work->loopPkt.rxCheckPercent;
     notify.sampleRain       = sampleRain;
     notify.UV               = work->loopPkt.UV;

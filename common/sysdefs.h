@@ -371,6 +371,7 @@ extern void wvutilsSendPMONPollResponse (int mask, PMON_PROCESS_TYPES process);
 extern int    wvutilsGetDayStartTime   (int archiveInterval);
 extern time_t wvutilsGetWeekStartTime  (int archiveInterval);
 extern time_t wvutilsGetMonthStartTime (int archiveInterval);
+extern time_t wvutilsGetYearStartTime  (int archiveInterval);
 
 // Time utilities:
 extern int wvutilsGetYear  (time_t ntime);

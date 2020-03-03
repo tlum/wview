@@ -95,7 +95,7 @@ int stationInit
     work->stationGeneratesArchives = FALSE;
 
     // The WH1080 is a USB-only device:
-    if (usbhidMediumInit (&work->medium, WH1080_VENDOR_ID, WH1080_PRODUCT_ID, FALSE) == ERROR)
+    if (usbhidMediumInit (&work->medium, WH1080_VENDOR_ID, WH1080_PRODUCT_ID, FALSE, FALSE) == ERROR)
     {
         radMsgLog (PRI_HIGH, "stationInit: USB MediumInit failed");
         return ERROR;

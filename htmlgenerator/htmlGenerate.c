@@ -857,7 +857,7 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
     case 17:
         sprintf (store, 
                  "%.1f",
-                 wvutilsGetWindSpeed((float)id->loopStore.windSpeed));
+                 wvutilsGetWindSpeed(id->loopStore.windSpeedF));
         break;
     case 18:
         if (id->isMetricUnits)
@@ -1342,33 +1342,33 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         if (id->isMetricUnits)
         {
             sprintf (store, "%.1f",
-                     wvutilsConvertFToC(id->loopStore.extraTemp1));
+                     wvutilsConvertFToC(id->loopStore.extraTemp[0]));
         }
         else
         {
-            sprintf (store, "%.0f", id->loopStore.extraTemp1);
+            sprintf (store, "%.0f", id->loopStore.extraTemp[0]);
         }
         break;
     case 79:
         if (id->isMetricUnits)
         {
             sprintf (store, "%.1f",
-                     wvutilsConvertFToC(id->loopStore.extraTemp2));
+                     wvutilsConvertFToC(id->loopStore.extraTemp[1]));
         }
         else
         {
-            sprintf (store, "%.0f", id->loopStore.extraTemp2);
+            sprintf (store, "%.0f", id->loopStore.extraTemp[1]);
         }
         break;
     case 80:
         if (id->isMetricUnits)
         {
             sprintf (store, "%.1f",
-                     wvutilsConvertFToC(id->loopStore.extraTemp3));
+                     wvutilsConvertFToC(id->loopStore.extraTemp[2]));
         }
         else
         {
-            sprintf (store, "%.0f", id->loopStore.extraTemp3);
+            sprintf (store, "%.0f", id->loopStore.extraTemp[2]);
         }
         break;
     case 81:
@@ -1438,10 +1438,10 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         }
         break;
     case 87:
-        sprintf (store, "%d", (int)id->loopStore.extraHumid1);
+        sprintf (store, "%d", (int)id->loopStore.extraHumidity[0]);
         break;
     case 88:
-        sprintf (store, "%d", (int)id->loopStore.extraHumid2);
+        sprintf (store, "%d", (int)id->loopStore.extraHumidity[1]);
         break;
     case 89:
         if (id->loopStore.forecastRule <= HTML_MAX_FCAST_RULE &&
@@ -2193,7 +2193,7 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         // intervalAvgWindSpeed
         sprintf (store, 
                  "%.1f",
-                 wvutilsGetWindSpeed((float)id->loopStore.intervalAvgWSPEED));
+                 wvutilsGetWindSpeed(id->loopStore.intervalAvgWSPEEDF));
         break;
     case 213:
         // stationPressure
@@ -2251,12 +2251,12 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
 
     case 219:
         // windBeaufortScale
-        sprintf (store, "%s", wvutilsConvertToBeaufortScale(id->loopStore.windSpeed));
+        sprintf (store, "%s", wvutilsConvertToBeaufortScale((int)id->loopStore.windSpeedF));
         break;
 
     case 220:
         // intervalAvgBeaufortScale
-        sprintf (store, "%s", wvutilsConvertToBeaufortScale(id->loopStore.intervalAvgWSPEED));
+        sprintf (store, "%s", wvutilsConvertToBeaufortScale((int)id->loopStore.intervalAvgWSPEEDF));
         break;
 
     case 221:
@@ -2453,7 +2453,7 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         // ###### Begin EXTRA Wind #######################
     case 246:
         // "<!--windSpeed_ms-->"
-        tempfloat = wvutilsConvertMPHToMPS ((float)id->loopStore.windSpeed);
+        tempfloat = wvutilsConvertMPHToMPS (id->loopStore.windSpeedF);
         sprintf (store, "%.1f", tempfloat);
         break;
 
@@ -2462,7 +2462,7 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         tempfloat = (float)sensorGetHigh(&sensors->sensor[STF_INTERVAL][SENSOR_WGUST]);
         if (tempfloat < 0)
         {
-            tempfloat = (float)id->loopStore.windSpeed;
+            tempfloat = id->loopStore.windSpeedF;
         }
         tempfloat = wvutilsConvertMPHToMPS (tempfloat);
         sprintf (store, "%.1f", tempfloat);
@@ -2470,7 +2470,7 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
 
     case 248:
         // <!--intervalAvgWindSpeed_ms-->
-        tempfloat = wvutilsConvertMPHToMPS ((float)id->loopStore.intervalAvgWSPEED);
+        tempfloat = wvutilsConvertMPHToMPS (id->loopStore.intervalAvgWSPEEDF);
         sprintf (store, "%.1f", tempfloat);
         break;
 
@@ -2548,16 +2548,16 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
 
     case 261:
         // "<!--windSpeed_kts-->",
-        tempfloat = wvutilsConvertMPHToKnots ((float)id->loopStore.windSpeed);
+        tempfloat = wvutilsConvertMPHToKnots (id->loopStore.windSpeedF);
         sprintf (store, "%.1f", tempfloat);
         break;
 
     case 262:
         //  "<!--windGustSpeed_kts-->",
-        tempfloat = (float)sensorGetHigh(&sensors->sensor[STF_INTERVAL][SENSOR_WGUST]);
+        tempfloat = sensorGetHigh(&sensors->sensor[STF_INTERVAL][SENSOR_WGUST]);
         if (tempfloat < 0)
         {
-            tempfloat = ((float)id->loopStore.windSpeed);
+            tempfloat = (id->loopStore.windSpeedF);
         }
         tempfloat = wvutilsConvertMPHToKnots (tempfloat);
         sprintf (store, "%.1f", tempfloat);
@@ -2565,7 +2565,7 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
 
     case 263:
         // <!--intervalAvgWindSpeed_kts-->
-        tempfloat = wvutilsConvertMPHToKnots ((float)(id->loopStore.intervalAvgWSPEED));
+        tempfloat = wvutilsConvertMPHToKnots (id->loopStore.intervalAvgWSPEEDF);
         sprintf (store, "%.1f", tempfloat);
         break;
 
@@ -2955,13 +2955,16 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
         if (id->isMetricUnits)
         {
             sprintf (store, "%.1f",
-                     wvutilsConvertFToC(wvutilsCalculateApparentTemp(id->loopStore.outTemp, (float)id->loopStore.windSpeed, id->loopStore.outHumidity)));
+                     wvutilsConvertFToC(wvutilsCalculateApparentTemp(id->loopStore.outTemp,
+                                                                     id->loopStore.windSpeedF,
+                                                                     id->loopStore.outHumidity)));
 
         }
         else
         {
             sprintf (store, "%.1f",
-                     wvutilsCalculateApparentTemp(id->loopStore.outTemp, (float)id->loopStore.windSpeed, id->loopStore.outHumidity));
+                     wvutilsCalculateApparentTemp(id->loopStore.outTemp, id->loopStore.windSpeedF,
+                                                  id->loopStore.outHumidity));
         }
         break;
     case 320:
@@ -4125,8 +4128,8 @@ int htmlgenMesonetFile (HTML_MGR_ID id, WVIEW_MSG_ARCHIVE_NOTIFY *armsg)
     fprintf (outfile, "TempEx %.0f\n",
              wvutilsConvertFToC ((float)armsg->temp/10));
 
-    fprintf (outfile, "WindHi %d\n", armsg->hiwspeed);
-    fprintf (outfile, "WindAv %d\n", armsg->wspeed);
+    fprintf (outfile, "WindHi %d\n", (int)armsg->hiwspeedF);
+    fprintf (outfile, "WindAv %d\n", (int)armsg->wspeedF);
     fprintf (outfile, "WindDr %d\n", armsg->winddir);
 
     fprintf (outfile, "BarmPs %d\n", armsg->barom);
@@ -4982,8 +4985,8 @@ int htmlGenPngDialWind
     char                *fname,
     int                 direction,              // 0-359 degrees
     int                 highDirection,          // 0-359 degrees
-    int                 speed,
-    int                 highSpeed,
+    float               speedF,
+    float               highSpeedF,
     char                *title
 )
 {
@@ -5042,7 +5045,7 @@ int htmlGenPngDialWind
     gdImageFilledEllipse (im, (plotPrefs.dialImageWidth/2), (plotPrefs.dialImageWidth/2),
                           plotPrefs.dialCtrDiameter, plotPrefs.dialCtrDiameter, centercolor);
 
-    sprintf (text, "%02d", (int)wvutilsGetWindSpeed((float)speed));
+    sprintf (text, "%2.1f", wvutilsGetWindSpeed(speedF));
 
     // center it
     angle = plotPrefs.dialDiameter - (gdFontGiant->w * strlen (text));
@@ -5051,7 +5054,7 @@ int htmlGenPngDialWind
     if (angle < 0)
         angle = 0;
     gdImageString (im, gdFontGiant, (int)angle, (plotPrefs.dialImageWidth/2)+32, (uint8_t *)text, centertext);
-    sprintf (text, "%02d", (int)wvutilsGetWindSpeed((float)highSpeed));
+    sprintf (text, "%2.1f", wvutilsGetWindSpeed(highSpeedF));
 
     // center it
     angle = plotPrefs.dialDiameter - (gdFontSmall->w * strlen (text));

@@ -48,6 +48,10 @@ case "$1" in
             mkdir -p /etc/wview/html/classic/plus
             mkdir -p /etc/wview/html/classic/static
             mkdir -p /etc/wview/html/classic/standard
+            mkdir -p /etc/wview/html/exfoliation
+            mkdir -p /etc/wview/html/exfoliation/plus
+            mkdir -p /etc/wview/html/exfoliation/static
+            mkdir -p /etc/wview/html/exfoliation/standard
             mkdir -p /etc/wview/alarms
             cp -fp /usr/share/wview/etc/wview/*.* /etc/wview
             chmod +x /etc/wview/pre-generate.sh
@@ -60,6 +64,9 @@ case "$1" in
             cp -fp /usr/share/wview/etc/wview/html/classic/plus/*.* /etc/wview/html/classic/plus
             cp -fp /usr/share/wview/etc/wview/html/classic/static/*.* /etc/wview/html/classic/static
             cp -fp /usr/share/wview/etc/wview/html/classic/standard/*.* /etc/wview/html/classic/standard
+            cp -fp /usr/share/wview/etc/wview/html/exfoliation/plus/*.* /etc/wview/html/exfoliation/plus
+            cp -fp /usr/share/wview/etc/wview/html/exfoliation/static/*.* /etc/wview/html/exfoliation/static
+            cp -fp /usr/share/wview/etc/wview/html/exfoliation/standard/*.* /etc/wview/html/exfoliation/standard
             cp -fp /usr/share/wview/etc/wview/alarms/*.* /etc/wview/alarms
             cp -fp /usr/share/wview/etc/wview/html/chrome/standard/awekas_wl.htx-us /etc/wview/html/awekas_wl.htx
             /usr/bin/sqlite3 /etc/wview/wview-conf.sdb '.read /etc/wview/wview-conf.sql-deb-pkg'
@@ -140,11 +147,12 @@ case "$1" in
 #       Copy our rsyslog configuration file if rsyslog is installed:
         if [ -e /etc/rsyslog.d ]; then
             cp -fp /usr/share/wview/etc/rsyslog.d/99-wview.conf /etc/rsyslog.d
-            touch /var/log/wview.log
-            chown root:adm /var/log/wview.log
-            chmod 664 /var/log/wview.log
-            echo "You may want to restart rsyslog so wview log file settings will take effect:"
-            echo "\"#> sudo /etc/init.d/rsyslog restart\""
+            if [ ! -e /var/log/wview.log ]; then
+                touch /var/log/wview.log
+                chown syslog:adm /var/log/wview.log
+                chmod 664 /var/log/wview.log
+                /etc/init.d/rsyslog restart
+            fi
             echo "wview logs will be found at: /var/log/wview.log"
         fi
 

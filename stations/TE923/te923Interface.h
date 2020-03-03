@@ -52,6 +52,7 @@
 #include <station.h>
 #include <serial.h>
 #include <ethernet.h>
+#include <usbhid.h>
 
 #include <te923Protocol.h>
 

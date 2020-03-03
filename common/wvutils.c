@@ -1038,7 +1038,7 @@ time_t wvutilsGetWeekStartTime(int archiveInterval)
     return ntime;
 }
 
-time_t wvutilsGetMonthStartTime(int archiveInterval)
+time_t wvutilsGetMonthStartTime (int archiveInterval)
 {
     time_t          ntime = time(NULL);
     struct tm       locTime;
@@ -1047,6 +1047,22 @@ time_t wvutilsGetMonthStartTime(int archiveInterval)
     ntime -= WV_SECONDS_IN_HOUR;
     localtime_r (&ntime, &locTime);
     locTime.tm_min = 0;
+    ntime = mktime (&locTime);
+    return ntime;
+}
+
+time_t wvutilsGetYearStartTime (int archiveInterval)
+{
+    time_t          ntime = time(NULL);
+    struct tm       locTime;
+
+    ntime -= WV_SECONDS_IN_YEAR;
+    ntime -= SECONDS_IN_INTERVAL(archiveInterval);
+    localtime_r (&ntime, &locTime);
+    locTime.tm_hour = 0;
+    locTime.tm_min  = archiveInterval;
+    locTime.tm_sec  = 0;
+    locTime.tm_isdst = -1;
     ntime = mktime (&locTime);
     return ntime;
 }

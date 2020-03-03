@@ -66,6 +66,7 @@
 #include <daemon.h>
 #include <parser.h>
 #include <sensor.h>
+#include <usbhid.h>
 
 /* WH1080  <vendorid, productid> */
 #define WH1080_VENDOR_ID                0x1941

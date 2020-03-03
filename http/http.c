@@ -89,20 +89,20 @@ static void processWUNDERGROUND (WVIEW_MSG_ARCHIVE_NOTIFY *notify)
     length += sprintf (&httpBuffer[length], "ID=%s&PASSWORD=%s",
                        httpWork.stationId, httpWork.password);
 
-    length += sprintf (&httpBuffer[length], "&dateutc=%4.4d-%2.2d-%2.2d+%2.2d%%3a%2.2d%%3a%2.2d",
+    length += sprintf (&httpBuffer[length], "&dateutc=%4.4d-%2.2d-%2.2d+%2.2d:%2.2d:%2.2d",
                        gmTime.tm_year + 1900, gmTime.tm_mon + 1, gmTime.tm_mday, 
                        gmTime.tm_hour, gmTime.tm_min, gmTime.tm_sec);
 
     // check for any wind registered
-    if (notify->wspeed >= 0 || notify->hiwspeed >= 0)
+    if (notify->wspeedF >= 0 || notify->hiwspeedF >= 0)
     {
         length += sprintf (&httpBuffer[length], "&winddir=%3.3d", notify->winddir);
     }
     
-    length += sprintf (&httpBuffer[length], "&windspeedmph=%3.3d", 
-                       (notify->wspeed >= 0) ? notify->wspeed : 0);
-    length += sprintf (&httpBuffer[length], "&windgustmph=%3.3d", 
-                       (notify->hiwspeed >= 0) ? notify->hiwspeed : 0);
+    length += sprintf (&httpBuffer[length], "&windspeedmph=%3.1f",
+                       (notify->wspeedF >= 0) ? notify->wspeedF : 0);
+    length += sprintf (&httpBuffer[length], "&windgustmph=%3.1f",
+                       (notify->hiwspeedF >= 0) ? notify->hiwspeedF : 0);
 
     if (notify->humidity >= 0 && notify->humidity <= 100)
     {
@@ -138,7 +138,7 @@ static void processWUNDERGROUND (WVIEW_MSG_ARCHIVE_NOTIFY *notify)
     wvutilsLogEvent (PRI_STATUS, "WUNDERGROUND-send: %s", tempBfr);
     if (strlen(httpBuffer) > 191)
     {
-        wvstrncpy (tempBfr, &httpBuffer[191], 192);
+        wvstrncpy (tempBfr, &httpBuffer[192], 192);
         wvutilsLogEvent (PRI_STATUS, "WUNDERGROUND-send: %s", tempBfr);
     }
 
@@ -193,20 +193,20 @@ static void processWEATHERFORYOU (WVIEW_MSG_ARCHIVE_NOTIFY *notify)
     length += sprintf (&httpBuffer[length], "ID=%s&PASSWORD=%s",
                        httpWork.youstationId, httpWork.youpassword);
 
-    length += sprintf (&httpBuffer[length], "&dateutc=%4.4d-%2.2d-%2.2d+%2.2d%%3a%2.2d%%3a%2.2d",
+    length += sprintf (&httpBuffer[length], "&dateutc=%4.4d-%2.2d-%2.2d+%2.2d:%2.2d:%2.2d",
                        gmTime.tm_year + 1900, gmTime.tm_mon + 1, gmTime.tm_mday, 
                        gmTime.tm_hour, gmTime.tm_min, gmTime.tm_sec);
 
     // check for any wind registered
-    if (notify->wspeed >= 0 || notify->hiwspeed >= 0)
+    if (notify->wspeedF >= 0 || notify->hiwspeedF >= 0)
     {
         length += sprintf (&httpBuffer[length], "&winddir=%3.3d", notify->winddir);
     }
     
-    length += sprintf (&httpBuffer[length], "&windspeedmph=%d.0", 
-                       (notify->wspeed >= 0) ? notify->wspeed : 0);
-    length += sprintf (&httpBuffer[length], "&windgustmph=%d.0", 
-                       (notify->hiwspeed >= 0) ? notify->hiwspeed : 0);
+    length += sprintf (&httpBuffer[length], "&windspeedmph=%.1f",
+                       (notify->wspeedF >= 0) ? notify->wspeedF : 0);
+    length += sprintf (&httpBuffer[length], "&windgustmph=%.1f",
+                       (notify->hiwspeedF >= 0) ? notify->hiwspeedF : 0);
 
     length += sprintf (&httpBuffer[length], "&tempf=%d.%d", 
                        notify->temp/10, notify->temp%10);

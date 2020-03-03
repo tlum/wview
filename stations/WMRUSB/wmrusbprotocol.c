@@ -1,21 +1,21 @@
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         wmrusbprotocol.c
- 
+
   PURPOSE:
         Provide protocol utilities for WMR station communication.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         03/10/2011      M.S. Teel       0               Original.
- 
+
   NOTES:
- 
+
   LICENSE:
-        This source code is released for free distribution under the terms 
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -50,11 +50,17 @@
 
 /*  ... global memory declarations
 */
-// Uncomment this to enable debug messages.
-//#define WMR_DEBUG           1
 
 /*  ... local memory
 */
+#ifdef WMR_COUNT_BYTES
+int      UsbRawBytes;
+int      StreamBytes;
+int      PacketBytes;
+int      ChecksumBytes;
+int      StatCount;
+int      UnknownPacketType;
+#endif
 
 static WMR_WORK             wmrWork;
 
@@ -79,7 +85,9 @@ static float d2temp (int a, int b)
         return -(t / 10.0);
     }
     else
-        return t / 10.0;
+    {
+        return (t / 10.0);
+    }
 }
 
 static int checksum (unsigned char *ptr, int len)
@@ -89,7 +97,7 @@ static int checksum (unsigned char *ptr, int len)
     int b = ptr[len-1];
 
     int compare = (b << 8) | a;
-    len-=2;
+    len -= 2;
     while (len)
     {
         sum += *ptr++;
@@ -113,17 +121,17 @@ static void decodeRain (unsigned char *ptr)
 
         wmrWork.dataRXMask |= WMR_SENSOR_RAIN;
 
-        if (! wmrWork.started)
+        if (!wmrWork.started)
         {
             radMsgLog (PRI_MEDIUM, "received RAIN packet...");
         }
 #ifdef WMR_DEBUG
-radMsgLog(PRI_MEDIUM, "RAIN: Rate:%f, 1H:%f, 24H:%f, ACCUM:%f",
-          wmrWork.sensorData.rainRate,
-          wmrWork.sensorData.rain1h,
-          wmrWork.sensorData.rain24h,
-          wmrWork.sensorData.rainAccum);
-radMsgLogData(ptr, 8);
+        radMsgLog(PRI_MEDIUM, "RAIN: Rate:%f, 1H:%f, 24H:%f, ACCUM:%f",
+                  wmrWork.sensorData.rainRate,
+                  wmrWork.sensorData.rain1h,
+                  wmrWork.sensorData.rain24h,
+                  wmrWork.sensorData.rainAccum);
+        radMsgLogData(ptr, 8);
 #endif
     }
 }
@@ -157,7 +165,7 @@ static void decodeWind (unsigned char *ptr)
 
         wmrWork.dataRXMask |= WMR_SENSOR_WIND;
 
-        if (! wmrWork.started)
+        if (!wmrWork.started)
         {
             radMsgLog (PRI_MEDIUM, "received WIND packet...");
         }
@@ -189,12 +197,32 @@ static void decodeTemp (unsigned char *ptr)
         if (sensor == WMR_TEMP_SENSOR_OUT)
         {
             wmrWork.dataRXMask |= WMR_SENSOR_OUT_TEMP;
-    
-            if (! wmrWork.started)
+
+            if (!wmrWork.started)
             {
                 radMsgLog (PRI_MEDIUM, "received TEMP packet...");
             }
         }
+    }
+}
+
+static void decodeTempOnly (unsigned char *ptr)
+{
+    unsigned int    sensor = ptr[0] & 0x0F;
+    float           temp;
+
+    if (sensor < WMR_TEMP_SENSOR_COUNT)
+    {
+        temp  = wvutilsConvertCToF(d2temp(ptr[1], ptr[2]));
+
+        // Sanity check the values:
+        if ((temp < -150) || (temp > 150))
+        {
+            // this packet is bogus:
+            return;
+        }
+
+        wmrWork.sensorData.temp[sensor]     = temp;
     }
 }
 
@@ -207,7 +235,7 @@ static void decodePressure (unsigned char *ptr)
     pressure = wvutilsConvertHPAToINHG(pressure);
 
     // Sanity check it:
-    if ((pressure < 27) || (pressure > 33))
+    if ((pressure < 20) || (pressure > 40))
     {
         // packet is bogus:
         return;
@@ -216,7 +244,7 @@ static void decodePressure (unsigned char *ptr)
     wmrWork.sensorData.pressure = pressure;
     wmrWork.dataRXMask |= WMR_SENSOR_PRESSURE;
 
-    if (! wmrWork.started)
+    if (!wmrWork.started)
     {
         radMsgLog (PRI_MEDIUM, "received PRESSURE packet...");
     }
@@ -264,70 +292,64 @@ static int IsPacketStart (uint8_t* pValue)
     }
 }
 
-static int getFFFFPktLength(int type)
+static int getFFFFPktLength(uint8_t* bfr, int maxLen)
 {
-    switch (type)
+    uint8_t*    tempPtr = bfr;
+    int         RetVal;
+    int         LoopMax = ((maxLen <= 64) ? maxLen : 64);
+
+    // Skip first two FF's.
+    for (RetVal = 2; RetVal < LoopMax-1; RetVal ++)
     {
-        case WMR_FFFF_RAIN:
-            return 12;
-        case WMR_FFFF_TEMP:
-            return 10;
-        case WMR_FFFF_PRESSURE:
-            return 10;
-        case WMR_FFFF_WIND:
-            return 9;
-        case WMR_FFFF_UV:
-            return 5;
-        case WMR_FFFF_DATETIME:
-            return 14;
-        default:
-            return 4;
+        if ((tempPtr[RetVal] == 0xFF) && (tempPtr[RetVal+1] == 0xFF))
+        {
+            return RetVal;
+        }
     }
+
+    // If here no end of packet found.
+    return ((maxLen <= 64) ? 0 : -1);
 }
 
 static int checkD0PktLength(uint8_t type, uint8_t length)
 {
+    int     RetVal = TRUE;
+
     switch ((int)type)
     {
-
-        case WMR_D0_HISTORY:
-            if (((int)length < 49) || ((int)length > 112))
-                return FALSE;
-            else
-                return TRUE;
-        case WMR_D0_RAIN:
-            if ((int)length != 22)
-                return FALSE;
-            else
-                return TRUE;
-        case WMR_D0_TEMP:
-            if ((int)length != 16)
-                return FALSE;
-            else
-                return TRUE;
-        case WMR_D0_PRESSURE:
-            if ((int)length != 13)
-                return FALSE;
-            else
-                return TRUE;
-        case WMR_D0_WIND:
-            if ((int)length != 16)
-                return FALSE;
-            else
-                return TRUE;
-        case WMR_D0_STATUS:
-            if ((int)length != 8)
-                return FALSE;
-            else
-                return TRUE;
-        case WMR_D0_UV:
-            if ((int)length != 10)
-                return FALSE;
-            else
-                return TRUE;
-        default:
-            return FALSE;
+    case WMR_D0_HISTORY:
+        if (((int)length < 49) || ((int)length > 112))
+            RetVal = FALSE;
+        break;
+    case WMR_D0_RAIN:
+        if ((int)length != 22)
+            RetVal = FALSE;
+        break;
+    case WMR_D0_TEMP:
+        if ((int)length != 16)
+            RetVal = FALSE;
+        break;
+    case WMR_D0_PRESSURE:
+        if ((int)length != 13)
+            RetVal = FALSE;
+        break;
+    case WMR_D0_WIND:
+        if ((int)length != 16)
+            RetVal = FALSE;
+        break;
+    case WMR_D0_STATUS:
+        if ((int)length != 8)
+            RetVal = FALSE;
+        break;
+    case WMR_D0_UV:
+        if ((int)length != 10)
+            RetVal = FALSE;
+        break;
+    default:
+        break;
     }
+
+    return RetVal;
 }
 
 static void shiftUpReadBuffer(int numToShift)
@@ -347,94 +369,90 @@ static void shiftUpReadBuffer(int numToShift)
     wmrWork.readIndex -= numToShift;
 }
 
-static int parseStationData()
+static int parseStationData(int length)
 {
     uint8_t   *ptr = &wmrWork.readData[0];
 
 #ifdef WMR_DEBUG
     radMsgLog(PRI_MEDIUM, "WMRDBG: parse packet");
-    radMsgLogData(&wmrWork.readData[0], wmrWork.readIndex);
+    radMsgLogData(&wmrWork.readData[0], length);
 #endif
     if (wmrWork.protocol == WMR_PROTOCOL_FFFF)
     {
+        // Check checksum:
+        if (!checksum(ptr+2, length-2))
+        {
+            // Bad checksum:
+#ifdef WMR_DEBUG
+            radMsgLog(PRI_MEDIUM, "RX packet checksum error: discarding %d bytes", length);
+            radMsgLogData(&wmrWork.readData[0], length);
+#endif
+            return ERROR;
+        }
+
         switch ((int)ptr[3])
         {
-            case WMR_FFFF_RAIN:
-                radthreadLock();
-                wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
-                radthreadUnlock();
-                decodeRain(ptr+4);
-                break;
-            case WMR_FFFF_TEMP:
-                radthreadLock();
-                wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
-                radthreadUnlock();
-                decodeTemp(ptr+4);
-                break;  
-            case WMR_FFFF_PRESSURE:
-                radthreadLock();
-                wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
-                radthreadUnlock();
-                decodePressure(ptr+4);
-                break;
-            case WMR_FFFF_WIND:
-                radthreadLock();
-                wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
-                radthreadUnlock();
-                decodeWind(ptr+4);
-                break;
-            case WMR_FFFF_UV:
-                radthreadLock();
-                wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
-                radthreadUnlock();
-                decodeUV(ptr+5);
-                break;
-            default:
-                break;
+        case WMR_FFFF_RAIN:
+            decodeRain(ptr+4);
+            break;
+        case WMR_FFFF_TEMP:
+            decodeTemp(ptr+4);
+            break;
+        case WMR_FFFF_TEMPONLY:
+            decodeTempOnly(ptr+4);
+            break;
+        case WMR_FFFF_PRESSURE:
+            decodePressure(ptr+4);
+            break;
+        case WMR_FFFF_WIND:
+            decodeWind(ptr+4);
+            break;
+        case WMR_FFFF_UV:
+            decodeUV(ptr+5);
+            break;
+        default:
+#ifdef WMR_COUNT_BYTES
+            UnknownPacketType ++;
+#endif
+            break;
         }
     }
     else
     {
+        // Check checksum:
+        if (!checksum(ptr, length))
+        {
+            // Bad checksum:
+            radMsgLog(PRI_MEDIUM, "packet checksum error");
+            radMsgLogData(&wmrWork.readData[0], length);
+            return ERROR;
+        }
+
         switch ((int)ptr[0])
         {
-            case WMR_D0_RAIN:
-                radthreadLock();
-                wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
-                radthreadUnlock();
-                decodeRain(ptr+7);
-                break;
-            case WMR_D0_TEMP:
-                radthreadLock();
-                wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
-                radthreadUnlock();
-                decodeTemp(ptr+7);
-                break;  
-            case WMR_D0_PRESSURE:
-                radthreadLock();
-                wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
-                radthreadUnlock();
-                decodePressure(ptr+7);
-                break;
-            case WMR_D0_WIND:
-                radthreadLock();
-                wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
-                radthreadUnlock();
-                decodeWind(ptr+7);
-                break;
-            case WMR_D0_STATUS:
-                //radthreadLock();
-                //wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
-                //radthreadUnlock();
-                //decodeStatus(ptr+7);
-                break;
-            case WMR_D0_UV:
-                radthreadLock();
-                wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
-                radthreadUnlock();
-                decodeUV(ptr+7);
-                break;
-            default:
-                break;
+        case WMR_D0_RAIN:
+            decodeRain(ptr+7);
+            break;
+        case WMR_D0_TEMP:
+            decodeTemp(ptr+7);
+            break;
+        case WMR_D0_PRESSURE:
+            decodePressure(ptr+7);
+            break;
+        case WMR_D0_WIND:
+            decodeWind(ptr+7);
+            break;
+        case WMR_D0_STATUS:
+            //decodeStatus(ptr+7);
+            break;
+        case WMR_D0_UV:
+            decodeUV(ptr+7);
+            break;
+        default:
+#ifdef WMR_COUNT_BYTES
+            UnknownPacketType ++;
+#endif
+            break;
         }
     }
 
@@ -452,7 +470,7 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_PKT *dest, WMR_DATA *src)
     stationClearLoopData(work);
 
     if ((10 < src->pressure && src->pressure < 50) &&
-        (-150 < src->temp[WMR_TEMP_SENSOR_OUT] && src->temp[WMR_TEMP_SENSOR_OUT] < 150))
+            (-150 < src->temp[WMR_TEMP_SENSOR_OUT] && src->temp[WMR_TEMP_SENSOR_OUT] < 150))
     {
         // wmr has Station Pressure:
         dest->stationPressure  = src->pressure;
@@ -466,21 +484,21 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_PKT *dest, WMR_DATA *src)
                                           src->temp[WMR_TEMP_SENSOR_OUT],
                                           (float)ifWorkData->elevation);
         dest->barometer                     = tempfloat;
-    
+
         // calculate altimeter
         tempfloat = wvutilsConvertSPToAltimeter(dest->stationPressure,
                                                 (float)ifWorkData->elevation);
         dest->altimeter                     = tempfloat;
     }
 
-    if (-150 < src->temp[WMR_TEMP_SENSOR_OUT] && 
-        src->temp[WMR_TEMP_SENSOR_OUT] < 150)
+    if (-150 < src->temp[WMR_TEMP_SENSOR_OUT] &&
+            src->temp[WMR_TEMP_SENSOR_OUT] < 150)
     {
         dest->outTemp  = src->temp[WMR_TEMP_SENSOR_OUT];
     }
 
     if (0 <= src->humidity[WMR_TEMP_SENSOR_OUT] &&
-        src->humidity[WMR_TEMP_SENSOR_OUT] <= 100)
+            src->humidity[WMR_TEMP_SENSOR_OUT] <= 100)
     {
         tempfloat = src->humidity[WMR_TEMP_SENSOR_OUT];
         tempfloat += 0.5;
@@ -490,8 +508,7 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_PKT *dest, WMR_DATA *src)
     if (0 <= src->windAvgSpeed && src->windAvgSpeed <= 250)
     {
         tempfloat = src->windAvgSpeed;
-        tempfloat += 0.5;
-        dest->windSpeed  = (uint16_t)tempfloat;
+        dest->windSpeedF     = tempfloat;
     }
 
     if (0 <= src->windDir && src->windDir <= 360)
@@ -505,11 +522,10 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_PKT *dest, WMR_DATA *src)
     if (0 <= src->windGustSpeed && src->windGustSpeed <= 250)
     {
         tempfloat = src->windGustSpeed;
-        tempfloat += 0.5;
-        dest->windGust    = (uint16_t)tempfloat;
-        if (dest->windGust < dest->windSpeed)
+        dest->windGustF      = tempfloat;
+        if (dest->windGustF < dest->windSpeedF)
         {
-            dest->windGust = dest->windSpeed;
+            dest->windGustF = dest->windSpeedF;
         }
     }
 
@@ -524,11 +540,19 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_PKT *dest, WMR_DATA *src)
         }
         else
         {
-            // process the rain accumulator
-            if (src->rainAccum - ifWorkData->totalRain >= 0)
+            // process the rain accumulator; check for crazy values:
+            if ((src->rainAccum - ifWorkData->totalRain) >= 0)
             {
-                dest->sampleRain = src->rainAccum - ifWorkData->totalRain;
-                ifWorkData->totalRain = src->rainAccum;
+                if ((src->rainAccum - ifWorkData->totalRain) < 2)
+                {
+                    dest->sampleRain = src->rainAccum - ifWorkData->totalRain;
+                    ifWorkData->totalRain = src->rainAccum;
+                }
+                else
+                {
+                    // Value too large, ignore it.
+                    dest->sampleRain = 0;
+                }
             }
             else
             {
@@ -575,7 +599,6 @@ static int sendAck(WVIEWD_WORK *work)
 {
     unsigned char       buf[32];
 
-    // send the heartbeat message so the console will stream live data:
     memcpy(buf, "\x00\x00\x00\x00\x00\x00\x00\x00", 8);
     (*(work->medium.usbhidWrite))(&work->medium, buf, 0x08);
     (*(work->medium.usbhidWrite))(&work->medium, buf, 0x08);
@@ -614,9 +637,6 @@ static int sendReset(WVIEWD_WORK *work)
     // send the heartbeat message so the console will stream live data:
     sendHeartbeat(work);
 
-    // Toss any previously received data:
-    wmrWork.readIndex = 0;
-
     return OK;
 }
 
@@ -627,22 +647,7 @@ static void readDataDirect (WVIEWD_WORK *work)
     int     retVal, length;
     uint8_t buf[8];
 
-    if (wmrWork.reopenNeeded)
-    {
-        // Try to establish:
-        if ((*(work->medium.usbhidInit))(&work->medium) != OK)
-        {
-            radMsgLog (PRI_HIGH, "readDataDirect: failed to re-open HID device!");
-            wmrWork.reopenNeeded = TRUE;
-            return;
-        }
-        else
-        {
-            radMsgLog (PRI_HIGH, "readDataDirect: re-opened HID device successfully");
-            wmrWork.reopenNeeded = FALSE;
-        }
-    }
-    else if ((radTimeGetSECSinceEpoch() - wmrWork.lastDataRX) >= 60)
+    if ((radTimeGetSECSinceEpoch() - wmrWork.lastDataRX) >= 60)
     {
         // It has been too long since the last valid data packet was received,
         // send a RESET:
@@ -660,24 +665,27 @@ static void readDataDirect (WVIEWD_WORK *work)
     // Read on the USB interface:
     while (wmrWork.readIndex < WMR_BUFFER_LENGTH)
     {
-        retVal = (*(work->medium.usbhidRead))(&work->medium, buf, 8, 250);
+        retVal = (*(work->medium.usbhidRead))(&work->medium, buf, 8, WMR_READ_WAIT);
         if (retVal == 8)
         {
             sendAck(work);
             // first octet is a length field:
-            length = buf[0]; 
+            length = buf[0];
             if ((length < 8) && ((wmrWork.readIndex + length) < WMR_BUFFER_LENGTH))
             {
                 memcpy(&wmrWork.readData[wmrWork.readIndex], buf+1, length);
                 wmrWork.readIndex += length;
+#ifdef WMR_DEBUG
+                radMsgLog(PRI_MEDIUM, "WMRDBG: USB RX %d", length);
+                radMsgLogData(&wmrWork.readData[0], wmrWork.readIndex);
+#endif
             }
+
+            wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
         }
         else if (retVal == ERROR)
         {
-            // Schedule to re-open the device:
-            radMsgLog (PRI_HIGH, "readDataDirect: read error: scheduling re-open...");
-            (*(work->medium.usbhidExit))(&work->medium);
-            wmrWork.reopenNeeded = TRUE;
+            radMsgLog (PRI_HIGH, "readDataDirect: read error...");
             return;
         }
         else
@@ -694,8 +702,7 @@ static void readDataDirect (WVIEWD_WORK *work)
 // a FFFF 00XX (WMR88A/WMR100N) station so we know how to decode the packets:
 static int detectStationProtocol (WVIEWD_WORK *work)
 {
-    unsigned char       buf[32];
-    int                 retVal, length, index, isD0 = FALSE, isFFFF = FALSE;
+    int                 index;
 
     radMsgLog(PRI_MEDIUM, "wmrInit: Auto-detecting protocol...");
 
@@ -705,7 +712,7 @@ static int detectStationProtocol (WVIEWD_WORK *work)
     while (wmrWork.readIndex < 32)
     {
         readDataDirect(work);
-        radUtilsSleep(10);
+        radUtilsSleep(250);
     }
 
     // OK, now we have some data to examine:
@@ -737,110 +744,100 @@ static int detectStationProtocol (WVIEWD_WORK *work)
 // The reader thread:
 static void ReaderThread(RAD_THREAD_ID threadId, void* threadData)
 {
-    int                 retVal, length, sendMsgFlag;
-    int                 SleepTime = WMR_THREAD_SLEEP;
-    uint32_t            lastDataTime;
+    int                 retVal, length, RestartNeeded;
     WMRUSB_MSG_DATA     msg;
     uint8_t             buf[8];
     WVIEWD_WORK*        work = (WVIEWD_WORK*)threadData;
 
     radMsgLog (PRI_STATUS, "wmr: read thread started...");
 
-    // Initialize the USB interface:
-    if ((*(work->medium.usbhidInit))(&work->medium) != OK)
+#ifdef WMR_COUNT_BYTES
+    UsbRawBytes = StreamBytes = PacketBytes = ChecksumBytes = StatCount = 0;
+#endif
+
+    // Recreate medium blocking:
+    if (usbhidMediumInit (&work->medium, WMR_VENDOR_ID, WMR_PRODUCT_ID, FALSE, TRUE) == ERROR)
     {
-        radMsgLog (PRI_HIGH, "wmr: read thread failed to open HID device!");
+        radMsgLog (PRI_HIGH, "ReaderThread: USB MediumInit failed");
         return;
     }
 
     // Main loop:
-    while (! radthreadShouldExit(threadId))
+    while (!radthreadShouldExit(threadId))
     {
-        // Protect this as the parent thread modifies it:
-        radthreadLock();
-        lastDataTime = wmrWork.lastDataRX;
-        radthreadUnlock();
-        SleepTime = WMR_THREAD_SLEEP;
-
-        if (wmrWork.reopenNeeded)
+        // Open the interface.
+        if ((*(work->medium.usbhidInit))(&work->medium) != OK)
         {
-            // Try to establish:
-            if ((*(work->medium.usbhidInit))(&work->medium) != OK)
+            radMsgLog (PRI_HIGH, "wmr: read thread failed to open HID device!");
+            radUtilsSleep(WMR_REESTABLISH_SLEEP);
+            continue;
+        }
+
+        // Read on the USB interface:
+        RestartNeeded = FALSE;
+        msg.length = 0;
+        while (!RestartNeeded && !radthreadShouldExit(threadId))
+        {
+            if ((radTimeGetSECSinceEpoch() - wmrWork.lastDataRX) >= 60)
             {
-                radMsgLog (PRI_HIGH, "wmr: failed to re-open HID device!");
-                SleepTime = WMR_REESTABLISH_SLEEP;
-                wmrWork.reopenNeeded = TRUE;
+                // It has been too long since the last valid data packet was received,
+                // send a RESET:
+                sendReset(work);
+
+                // Restart to bump the HID interface.
+                RestartNeeded = TRUE;
+
+                wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
+            }
+            else if ((radTimeGetSECSinceEpoch() - wmrWork.heartBeatCounter) >= WMR_HEARTBEAT_INTERVAL)
+            {
+                // send the heartbeat message so the console will keep streaming live data:
+                sendHeartbeat(work);
+                wmrWork.heartBeatCounter = radTimeGetSECSinceEpoch();
+                radUtilsSleep(10);
             }
             else
             {
-                radMsgLog (PRI_HIGH, "wmr: re-opened HID device successfully");
-                wmrWork.reopenNeeded = FALSE;
-            }
-        }
-        else if ((radTimeGetSECSinceEpoch() - lastDataTime) >= 60)
-        {
-            // It has been too long since the last valid data packet was received,
-            // send a RESET:
-            sendReset(work);
-
-            radthreadLock();
-            wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
-            radthreadUnlock();
-        }
-        else if ((radTimeGetSECSinceEpoch() - wmrWork.heartBeatCounter) >= WMR_HEARTBEAT_INTERVAL)
-        {
-            // send the heartbeat message so the console will keep streaming live data:
-            sendHeartbeat(work);
-            wmrWork.heartBeatCounter = radTimeGetSECSinceEpoch();
-            radUtilsSleep(10);
-        }
-
-        if (! wmrWork.reopenNeeded)
-        {
-            // Read on the USB interface:
-            msg.length = 0;
-            sendMsgFlag = FALSE;
-            while ((! sendMsgFlag) && (msg.length < WMR_BUFFER_LENGTH))
-            {
-                retVal = (*(work->medium.usbhidRead))(&work->medium, buf, 8, 50);
+                // Read on the interface:
+                // We are using blocking IO.
+                retVal = (*(work->medium.usbhidRead))(&work->medium, buf, 8, 0);
                 if (retVal == 8)
                 {
                     sendAck(work);
+
                     // first octet is a length field:
-                    length = buf[0]; 
-                    if ((length < 8) && ((msg.length + length) < WMR_BUFFER_LENGTH))
+                    length = buf[0];
+                    if (length < 8)
                     {
+#ifdef WMR_COUNT_BYTES
+                        UsbRawBytes += length;
+#ifdef WMR_DUMP_RAW_USB
+                        radMsgLog(PRI_HIGH, "USBRAW RX: %d: %2.2X%2.2X%2.2X%2.2X%2.2X%2.2X%2.2X",
+                                  (int)buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7]);
+#endif
+#endif
                         memcpy(&msg.data[msg.length], buf+1, length);
                         msg.length += length;
+
+                        if (msg.length > 8)
+                        {
+                            // Send to our consumer:
+                            radMsgRouterMessageSend(WVIEW_MSG_TYPE_STATION_DATA, &msg, sizeof(msg));
+                            msg.length = 0;
+                        }
                     }
+
+                    wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
                 }
                 else if (retVal == ERROR)
                 {
-                    // Schedule to re-open the device:
-                    radMsgLog (PRI_HIGH, "wmr: read error: scheduling re-open...");
-                    (*(work->medium.usbhidExit))(&work->medium);
-                    wmrWork.reopenNeeded = TRUE;
-                    break;
-                }
-                else
-                {
-                    sendMsgFlag = TRUE;
+                    radMsgLog (PRI_HIGH, "wmr: read error...");
+                    RestartNeeded = TRUE;
                 }
             }
         }
 
-        if (msg.length > 0)
-        {
-            // Send to our consumer:
-            radMsgRouterMessageSend(WVIEW_MSG_TYPE_STATION_DATA, &msg, sizeof(msg));
-        }
-
-        radUtilsSleep(SleepTime);
-    }
-
-    if (!wmrWork.reopenNeeded)
-    {
-        // Close HID interface:
+        // Close the interface.
         (*(work->medium.usbhidExit))(&work->medium);
     }
 
@@ -877,6 +874,13 @@ int wmrInit (WVIEWD_WORK *work)
                              recordStore.value[DATA_INDEX_rain]);
     }
 
+    // Open non-blocking:
+    if (usbhidMediumInit (&work->medium, WMR_VENDOR_ID, WMR_PRODUCT_ID, FALSE, FALSE) == ERROR)
+    {
+        radMsgLog (PRI_HIGH, "stationInit: USB MediumInit failed");
+        return ERROR;
+    }
+
     // Initialize the USB interface:
     if ((*(work->medium.usbhidInit))(&work->medium) != OK)
     {
@@ -886,28 +890,34 @@ int wmrInit (WVIEWD_WORK *work)
     // Send a reset:
     sendReset(work);
 
+    // Toss any previously received data:
+    wmrWork.readIndex = 0;
+
     radUtilsSleep(10);
+
+    // Initialize the data RX time:
+    wmrWork.lastDataRX = radTimeGetSECSinceEpoch();
 
     // Autodetect FFFF or D0-DF framing:
     detectStationProtocol(work);
 
     // Get initial readings:
-    radMsgLog (PRI_MEDIUM, 
-        "wmrInit: waiting for first sensor packets (this may take some time):");
     radMsgLog (PRI_MEDIUM,
-        "wview requires one packet from each sensor suite (except rain) before it can complete initialization.");
-    radMsgLog (PRI_MEDIUM, 
-        "If one of your sensors is out of range or malfunctioning, wview will not complete initialization.");
-    printCounter = 5000;
-    while ((wmrWork.dataRXMask < WMR_SENSOR_ALL) && (! work->exiting))
+               "wmrInit: waiting for first sensor packets (this may take some time):");
+    radMsgLog (PRI_MEDIUM,
+               "wview requires one packet from each sensor suite (except rain) before it can complete initialization.");
+    radMsgLog (PRI_MEDIUM,
+               "If one of your sensors is out of range or malfunctioning, wview will not complete initialization.");
+    printCounter = 10;
+    while ((wmrWork.dataRXMask < WMR_SENSOR_ALL) && (!work->exiting))
     {
-        if (++printCounter >= 5000/(250 + WMR_PROCESS_TIME_INTERVAL))
+        if (++printCounter >= 10)
         {
             // Log what we are waiting for:
             length = 0;
             for (i = 0; i < 4; i ++)
             {
-                if (! (wmrWork.dataRXMask & (1 << i)))
+                if (!(wmrWork.dataRXMask & (1 << i)))
                 {
                     length += sprintf(&outString[length], "%s ", WMRSensorNames[i]);
                 }
@@ -923,13 +933,16 @@ int wmrInit (WVIEWD_WORK *work)
 
     wmrWork.dataRXMask = 0;
 
-    if (! work->exiting)
+    // Close the USB interface. The reader thread will reopen it.
+    (*(work->medium.usbhidExit))(&work->medium);
+
+    if (!work->exiting)
     {
         radMsgLog (PRI_MEDIUM, "wmrInit: first sensor packets received.");
     }
 
-    // Close the USB interface (the reader thread will re-open it):
-    (*(work->medium.usbhidExit))(&work->medium);
+    // Reset the USB buffer.
+    wmrWork.readIndex = 0;
 
     // Create the USB reader thread:
     work->threadId = radthreadCreate(ReaderThread, work);
@@ -958,7 +971,7 @@ int wmrInit (WVIEWD_WORK *work)
 void wmrExit (WVIEWD_WORK *work)
 {
     radthreadWaitExit(work->threadId);
-    radUtilsSleep(WMR_THREAD_SLEEP);
+    radUtilsSleep(100);
     radMsgLog (PRI_MEDIUM, "wmrExit: read thread stopped.");
     return;
 }
@@ -970,19 +983,24 @@ void wmrReadData (WVIEWD_WORK *work, WMRUSB_MSG_DATA* msg)
     {
         memcpy(&wmrWork.readData[wmrWork.readIndex], msg->data, msg->length);
         wmrWork.readIndex += msg->length;
-    }
 
 #ifdef WMR_DEBUG
-    radMsgLog(PRI_MEDIUM, "WMRDBG: USB RX");
-    radMsgLogData(&wmrWork.readData[0], wmrWork.readIndex);
+        radMsgLog(PRI_MEDIUM, "WMRDBG: USB RX");
+        radMsgLogData(&wmrWork.readData[0], wmrWork.readIndex);
 #endif
+#ifdef WMR_COUNT_BYTES
+        StreamBytes += msg->length;
+#endif
+    }
+
     return;
 }
 
 // Enforce packet framing and pass to parse engine if a packet frame is complete:
-void wmrProcessData (WVIEWD_WORK *work)
+int wmrProcessData (WVIEWD_WORK *work)
 {
-    int     pktLength, index = 0;
+    int     pktLength, rval, index = 0;
+    int     retVal = FALSE;
 
     // First, hunt for a packet start sequence (0xFFFF or 0xD2-0xD9):
     while ((index < wmrWork.readIndex - 1) && !IsPacketStart(&wmrWork.readData[index]))
@@ -993,15 +1011,11 @@ void wmrProcessData (WVIEWD_WORK *work)
     // Do we need to toss junk at the front of the buffer?
     if (index > 0)
     {
-        // Are we FFFF protocol and at the last octet and is it 0xFF?
-        if ((wmrWork.protocol == WMR_PROTOCOL_FFFF) && (index == (wmrWork.readIndex - 1)))
-        {
-            if (wmrWork.readData[index] != 0xFF)
-            {
-                // Delete last octet too:
-                index ++;
-            }
-        }
+
+#ifdef WMR_DEBUG
+        radMsgLog(PRI_MEDIUM, "WMRDBG: Frame: Tossing %d bytes", index);
+        radMsgLogData(&wmrWork.readData[0], index);
+#endif
 
         // Lose the rubbish:
         shiftUpReadBuffer(index);
@@ -1013,29 +1027,38 @@ void wmrProcessData (WVIEWD_WORK *work)
         if (wmrWork.readIndex >= 4)
         {
             // Get the packet length and see if we have a complete packet:
-            pktLength = getFFFFPktLength((int)wmrWork.readData[3]);
-    
-            if (pktLength <= 4)
-            {
-                // Invalid:
-                shiftUpReadBuffer(1);
-            }
-            else if (pktLength > 20)
-            {
-                // Not possible:
-                shiftUpReadBuffer(1);
-            }
-            else if (pktLength <= wmrWork.readIndex)
+            pktLength = getFFFFPktLength(wmrWork.readData, wmrWork.readIndex);
+
+            if (pktLength > 4)
             {
                 // We have a completion, process it:
-                parseStationData();
-    
+                rval = parseStationData(pktLength);
+                retVal = TRUE;
+                rval = rval;
+
+#ifdef WMR_COUNT_BYTES
+                if (rval != ERROR)
+                {
+                    PacketBytes += pktLength;
+                    radMsgLog(PRI_MEDIUM, "PKT RX: %d", pktLength);
+                }
+                else
+                {
+                    ChecksumBytes += pktLength;
+                }
+#endif
+
                 // Delete it:
                 shiftUpReadBuffer(pktLength);
             }
+            else if (pktLength != 0)
+            {
+                // Shift up two, something's amiss.
+                shiftUpReadBuffer(2);
+            }
         }
     }
-    else
+    else  // wmrWork.protocol == WMR_PROTOCOL_D0
     {
         // Do we have a packet start and length?
         if (wmrWork.readIndex >= 2)
@@ -1046,10 +1069,10 @@ void wmrProcessData (WVIEWD_WORK *work)
             if (pktLength < 2)
             {
                 // Invalid:
-                shiftUpReadBuffer(2);
+                shiftUpReadBuffer(1);
             }
             // Sanity check the length:
-            else if (! checkD0PktLength(wmrWork.readData[0], wmrWork.readData[1]))
+            else if (!checkD0PktLength(wmrWork.readData[0], wmrWork.readData[1]))
             {
                 // Invalid:
                 shiftUpReadBuffer(1);
@@ -1057,13 +1080,20 @@ void wmrProcessData (WVIEWD_WORK *work)
             else if (pktLength <= wmrWork.readIndex)
             {
                 // We have a completion, process it:
-                parseStationData();
-    
+                parseStationData(pktLength);
+                retVal = TRUE;
+
+#ifdef WMR_COUNT_BYTES
+PacketBytes += pktLength;
+#endif
+
                 // Delete it:
                 shiftUpReadBuffer(pktLength);
             }
         }
     }
+
+    return retVal;
 }
 
 void wmrGetReadings (WVIEWD_WORK *work)

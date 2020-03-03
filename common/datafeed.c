@@ -221,9 +221,9 @@ int datafeedConvertLOOP_HTON(LOOP_PKT* dest, LOOP_PKT* src)
 
     dest->inHumidity                    = htons(src->inHumidity);
     dest->outHumidity                   = htons(src->outHumidity);
-    dest->windSpeed                     = htons(src->windSpeed);
+    dest->windSpeedF                    = htonf(src->windSpeedF);
     dest->windDir                       = htons(src->windDir);
-    dest->windGust                      = htons(src->windGust);
+    dest->windGustF                     = htonf(src->windGustF);
     dest->windGustDir                   = htons(src->windGustDir);
 
     dest->rainRate                      = htonf(src->rainRate);
@@ -248,7 +248,7 @@ int datafeedConvertLOOP_HTON(LOOP_PKT* dest, LOOP_PKT* src)
     dest->yearET                        = htonf(src->yearET);
     dest->intervalAvgWCHILL             = htonf(src->intervalAvgWCHILL);
 
-    dest->intervalAvgWSPEED             = htons(src->intervalAvgWSPEED);
+    dest->intervalAvgWSPEEDF            = htonf(src->intervalAvgWSPEEDF);
     dest->yearRainMonth                 = htons(src->yearRainMonth);
     dest->rxCheckPercent                = htons(src->rxCheckPercent);
     dest->tenMinuteAvgWindSpeed         = htons(src->tenMinuteAvgWindSpeed);
@@ -257,9 +257,9 @@ int datafeedConvertLOOP_HTON(LOOP_PKT* dest, LOOP_PKT* src)
     dest->txBatteryStatus               = htons(src->txBatteryStatus);
     dest->consBatteryVoltage            = htons(src->consBatteryVoltage);
 
-    dest->extraTemp1                    = htonf(src->extraTemp1);
-    dest->extraTemp2                    = htonf(src->extraTemp2);
-    dest->extraTemp3                    = htonf(src->extraTemp3);
+    dest->extraTemp[0]                  = htonf(src->extraTemp[0]);
+    dest->extraTemp[1]                  = htonf(src->extraTemp[1]);
+    dest->extraTemp[2]                  = htonf(src->extraTemp[2]);
     dest->soilTemp1                     = htonf(src->soilTemp1);
     dest->soilTemp2                     = htonf(src->soilTemp2);
     dest->soilTemp3                     = htonf(src->soilTemp3);
@@ -267,10 +267,10 @@ int datafeedConvertLOOP_HTON(LOOP_PKT* dest, LOOP_PKT* src)
     dest->leafTemp1                     = htonf(src->leafTemp1);
     dest->leafTemp2                     = htonf(src->leafTemp2);
 
-    dest->extraHumid1                   = src->extraHumid1;
+    dest->extraHumidity[0]              = src->extraHumidity[0];
     dest->soilMoist1                    = src->soilMoist1;
     dest->leafWet1                      = src->leafWet1;
-    dest->extraHumid2                   = src->extraHumid2;
+    dest->extraHumidity[1]              = src->extraHumidity[1];
     dest->soilMoist2                    = src->soilMoist2;
     dest->leafWet2                      = src->leafWet2;
 
@@ -313,9 +313,9 @@ int datafeedConvertLOOP_NTOH(LOOP_PKT* dest, LOOP_PKT* src)
 
     dest->inHumidity                    = ntohs(src->inHumidity);
     dest->outHumidity                   = ntohs(src->outHumidity);
-    dest->windSpeed                     = ntohs(src->windSpeed);
+    dest->windSpeedF                    = ntohf(src->windSpeedF);
     dest->windDir                       = ntohs(src->windDir);
-    dest->windGust                      = ntohs(src->windGust);
+    dest->windGustF                     = ntohf(src->windGustF);
     dest->windGustDir                   = ntohs(src->windGustDir);
 
     dest->rainRate                      = ntohf(src->rainRate);
@@ -340,7 +340,7 @@ int datafeedConvertLOOP_NTOH(LOOP_PKT* dest, LOOP_PKT* src)
     dest->yearET                        = ntohf(src->yearET);
     dest->intervalAvgWCHILL             = ntohf(src->intervalAvgWCHILL);
 
-    dest->intervalAvgWSPEED             = ntohs(src->intervalAvgWSPEED);
+    dest->intervalAvgWSPEEDF            = ntohf(src->intervalAvgWSPEEDF);
     dest->yearRainMonth                 = ntohs(src->yearRainMonth);
     dest->rxCheckPercent                = ntohs(src->rxCheckPercent);
     dest->tenMinuteAvgWindSpeed         = ntohs(src->tenMinuteAvgWindSpeed);
@@ -350,9 +350,9 @@ int datafeedConvertLOOP_NTOH(LOOP_PKT* dest, LOOP_PKT* src)
     dest->yearRainMonth                 = ntohs(src->yearRainMonth);
     dest->consBatteryVoltage            = ntohs(src->consBatteryVoltage);
 
-    dest->extraTemp1                    = ntohf(src->extraTemp1);
-    dest->extraTemp2                    = ntohf(src->extraTemp2);
-    dest->extraTemp3                    = ntohf(src->extraTemp3);
+    dest->extraTemp[0]                  = ntohf(src->extraTemp[0]);
+    dest->extraTemp[1]                  = ntohf(src->extraTemp[1]);
+    dest->extraTemp[2]                  = ntohf(src->extraTemp[2]);
     dest->soilTemp1                     = ntohf(src->soilTemp1);
     dest->soilTemp2                     = ntohf(src->soilTemp2);
     dest->soilTemp3                     = ntohf(src->soilTemp3);
@@ -360,8 +360,8 @@ int datafeedConvertLOOP_NTOH(LOOP_PKT* dest, LOOP_PKT* src)
     dest->leafTemp1                     = ntohf(src->leafTemp1);
     dest->leafTemp2                     = ntohf(src->leafTemp2);
 
-    tempshort = (uint16_t*)&(dest->extraHumid1);
-    *tempshort = swapShortNTOH(&dest->extraHumid1);
+    tempshort = (uint16_t*)&(dest->extraHumidity[0]);
+    *tempshort = swapShortNTOH((uint8_t*)&dest->extraHumidity[0]);
     tempshort = (uint16_t*)&(dest->soilMoist1);
     *tempshort = swapShortNTOH(&dest->soilMoist1);
     tempshort = (uint16_t*)&(dest->leafWet1);

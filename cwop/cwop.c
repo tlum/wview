@@ -142,7 +142,7 @@ static void processCWOP ()
                        cwopWork.latitude, cwopWork.longitude);
 
     // check for any wind registered
-    if (Notify.wspeed < 0)
+    if (Notify.wspeedF < 0)
     {
         length += sprintf (&cwopBuffer[length], "_...");
     }
@@ -151,8 +151,8 @@ static void processCWOP ()
         length += sprintf (&cwopBuffer[length], "_%3.3d", Notify.winddir);
     }
     
-    length += sprintf (&cwopBuffer[length], "/%3.3d", Notify.wspeed);
-    length += sprintf (&cwopBuffer[length], "g%3.3d", Notify.hiwspeed);
+    length += sprintf (&cwopBuffer[length], "/%3.3d", (int)Notify.wspeedF);
+    length += sprintf (&cwopBuffer[length], "g%3.3d", (int)Notify.hiwspeedF);
 
     if (Notify.temp < 0)
     {

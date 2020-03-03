@@ -298,7 +298,7 @@ static int hilowInsertData(time_t timestamp, SENSOR_TYPES type, float value, flo
         sprintf(query, 
                 "UPDATE %s SET low = '%.3f', timeLow = '%d', "
                 "high = '%.3f', timeHigh = '%d', whenHigh = '%.3f', "
-                "cumulative = '%.3f', samples = '%d' "
+                "cumulative = '%.6f', samples = '%d' "
                 "WHERE dateTime = '%d'",
                 sensorTables[type],
                 store.low, (int)store.time_low,
@@ -607,6 +607,8 @@ static int hilowUpdateTableWithArchive (SENSOR_TYPES type, ARCHIVE_PKT* pkt)
         if (pkt->value[DATA_INDEX_hailrate] >= 0 && pkt->value[DATA_INDEX_hailrate] < 100)
             hilowInsertData(pkt->dateTime - (60*pkt->interval), type, pkt->value[DATA_INDEX_hailrate], 0);
         break;
+    default:
+        break;
     }
     return OK;
 }
@@ -633,10 +635,10 @@ static int hilowUpdateTableWithSample (SENSOR_TYPES type, time_t timestamp, LOOP
         hilowInsertData(timestamp, type, pkt->barometer, 0);
         break;
     case SENSOR_WSPEED:
-        hilowInsertData(timestamp, type, pkt->windSpeed, 0);
+        hilowInsertData(timestamp, type, pkt->windSpeedF, 0);
         break;
     case SENSOR_WGUST:
-        hilowInsertData(timestamp, type, pkt->windGust, pkt->windGustDir);
+        hilowInsertData(timestamp, type, pkt->windGustF, pkt->windGustDir);
         break;
     case SENSOR_DEWPOINT:
         hilowInsertData(timestamp, type, pkt->dewpoint, 0);
@@ -672,6 +674,8 @@ static int hilowUpdateTableWithSample (SENSOR_TYPES type, time_t timestamp, LOOP
     case SENSOR_HAILRATE:
         if (pkt->wxt510Hailrate >= 0 && pkt->wxt510Hailrate < 100)
             hilowInsertData(timestamp, type, pkt->wxt510Hailrate, 0);
+        break;
+    default:
         break;
     }
     return OK;

@@ -330,8 +330,8 @@ extern int htmlGenPngDialWind
     char            *fname,
     int             direction,               // 0 - 359 degrees
     int             highDirection,           // 0-359 degrees
-    int             speed,
-    int             highSpeed,
+    float           speed,
+    float           highSpeed,
     char            *title
 );
 

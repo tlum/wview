@@ -373,7 +373,7 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_PKT *dest)
     // vary WINDSPD from 5 to 15
     tempfloat = 10;
     tempfloat += sin((float)DataGenerator*RAD/PERIOD_FACTOR) * 5.0;
-    dest->windSpeed = (uint16_t)tempfloat;
+    dest->windSpeedF = tempfloat;
 
     // vary WINDDIR from 0 to 90
     tempfloat = 0;
@@ -383,7 +383,7 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_PKT *dest)
     // vary MAXWIND from 15 to 25
     tempfloat = 20;
     tempfloat += sin((float)DataGenerator*RAD/PERIOD_FACTOR) * 5.0;
-    dest->windGust = (uint16_t)tempfloat;
+    dest->windGustF = tempfloat;
 
     // vary MAXWINDDIR from 0 to 90
     tempfloat = 45;
