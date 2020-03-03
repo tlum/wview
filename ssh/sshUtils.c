@@ -189,6 +189,21 @@ int sshUtilsInit (SSH_DATA* data)
             radMsgLog (PRI_STATUS, "SSH: RULE %d: using SSH login %s", i, sValue);
         }
 
+        // Get the SSH timeout:
+        sprintf (conftype, "SSH_%1.1d_TIMEOUT", i);
+        iValue = wvconfigGetINTValue(conftype);
+        if (iValue == ERROR)
+        {
+            // No timeout defined, set to default:
+            radMsgLog (PRI_STATUS, "SSH: RULE %d: using default timeout of 120", i);
+            rule->timeout = 120;
+        }
+        else
+        {
+            rule->timeout = iValue;
+            radMsgLog (PRI_STATUS, "SSH: RULE %d: using SSH timeout %d", i, iValue);
+        }
+
         sprintf (conftype, "SSH_%1.1d_DESTINATION", i);
         sValue = wvconfigGetStringValue(conftype);
         if (sValue == NULL || strlen(sValue) == 0)
@@ -216,7 +231,6 @@ int sshUtilsSendFiles (SSH_ID id, char *workdir)
 {
     SSH_RULE_ID     rule;
     int             done, numRules = 0;
-    int             retVal, isUpdated = FALSE;
     char            rsync[_MAX_PATH];
     char            cmndLine[2048];
     int             index, cmndLength;
@@ -237,7 +251,7 @@ int sshUtilsSendFiles (SSH_ID id, char *workdir)
         // Build the command:
         cmndLength = 0;
         cmndLength += sprintf(&cmndLine[cmndLength], "%s ", id->rsyncPath);
-        cmndLength += sprintf(&cmndLine[cmndLength], "-azL --timeout=120 ");
+        cmndLength += sprintf(&cmndLine[cmndLength], "-azL --timeout=%d ", rule->timeout);
         if (strlen(rule->sshUser) > 0)
         {
             cmndLength += sprintf(&cmndLine[cmndLength], "--rsh=\'ssh -p %d -l %s\' ",

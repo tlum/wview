@@ -1205,6 +1205,20 @@ int wvstrncpy(char *d, const char *s, size_t bufsize)
 	return ret;
 }
 
+void wvstrtrim(char *d)
+{
+    char* end = d + strlen(d);
+
+    // find the last non-whitespace character:
+    while ((end != d) && isspace( *(end-1) ))
+    {
+        --end;
+    }
+
+    *end = '\0';
+    return;
+}
+
 static int      lastDSTState;
 int wvutilsDetectDSTInit(void)
 {
@@ -1333,3 +1347,44 @@ float wvutilsCalculateApparentTemp(float temp, float windspeed, float humidity)
     return (float)result;
 }
 
+// Calculate the wet bulb temperature:
+// Based on NOAA Java Script http://www.srh.noaa.gov/epz/?n=wxcalc_rh
+float wvutilsCalculateWetBulbTemp( float temp, float humidity, float pressure)
+{
+    float   tempC = wvutilsConvertFToC(temp);
+    float   pressureMB = wvutilsConvertINHGToHPA(pressure);
+    float   Ewguess, Eguess;
+    float   Es = 6.112 * exp(17.67 * tempC / (tempC + 243.5));
+    float   Twguess = 0.0;
+    float   incr = 10.0;
+    int     previoussign = 1;
+    int     cursign;
+    float   Edifference = 1;
+    float   E2 = Es * (humidity/100.0);
+
+    while (fabs(Edifference) > 0.05)
+    {
+        Ewguess = 6.112 * exp((17.67 * Twguess) / (Twguess + 243.5));
+        Eguess = Ewguess - pressureMB * (tempC - Twguess) * 0.00066 * (1.0 + (0.00115 * Twguess));
+        Edifference = E2 - Eguess;
+        if (Edifference == 0)
+        {
+            break;
+        }
+        else
+        {
+            if (Edifference < 0)
+                cursign = -1;
+            else cursign = 1;
+
+            if (cursign != previoussign)
+            {
+                previoussign = cursign;
+                incr = incr/10;
+            }
+        }
+        Twguess = Twguess + incr * previoussign;
+    }
+
+    return wvutilsConvertCToF(Twguess);
+}

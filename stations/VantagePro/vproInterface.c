@@ -934,86 +934,60 @@ static int processArchivePage (WVIEWD_WORK *work, ARCHIVE_PAGE *page)
 
         newRecord = &page->record[i];
 
-        // Calibrate archive record contents:
-        tempf                   = newRecord->barometer;
-        tempf                   /= 1000;
-        tempf                   *= work->calMBarometer;
-        tempf                   += work->calCBarometer;
-        tempf                   *= 1000;
-        newRecord->barometer    = (uint16_t)floorf (tempf);
-    
-        tempf                   = newRecord->inTemp;
-        tempf                   /= 10;
-        tempf                   *= work->calMInTemp;
-        tempf                   += work->calCInTemp;
-        tempf                   *= 10;
-        newRecord->inTemp       = (int16_t)floorf (tempf);
-    
-        tempf                   = newRecord->outTemp;
-        tempf                   /= 10;
-        tempf                   *= work->calMOutTemp;
-        tempf                   += work->calCOutTemp;
-        tempf                   *= 10;
-        newRecord->outTemp      = (int16_t)floorf (tempf);
-    
-        tempf                   = newRecord->inHumidity;
-        tempf                   *= work->calMInHumidity;
-        tempf                   += work->calCInHumidity;
-        newRecord->inHumidity   = (uint8_t)floorf (tempf);
-        if (newRecord->inHumidity > 100)
-        {
-            newRecord->inHumidity = 100;
-        }
-    
-        tempf                   = newRecord->outHumidity;
-        tempf                   *= work->calMOutHumidity;
-        tempf                   += work->calCOutHumidity;
-        newRecord->outHumidity   = (uint8_t)floorf (tempf);
-        if (newRecord->outHumidity > 100)
-        {
-            newRecord->outHumidity = 100;
-        }
-    
-        if (newRecord->avgWindSpeed != 255)
-        {
-            tempf                   = newRecord->avgWindSpeed;
-            tempf                   *= work->calMWindSpeed;
-            tempf                   += work->calCWindSpeed;
-            newRecord->avgWindSpeed = (uint8_t)floorf (tempf);
-        }
-    
-        if (newRecord->prevWindDir != 255)
-        {
-            tempf                   = newRecord->prevWindDir;
-            tempf                   *= 22.5;
-            tempf                   *= work->calMWindDir;
-            tempf                   += work->calCWindDir;
-            tempf                   /= 22.5;
-            tempInt                 = (int)floorf (tempf);
-            tempInt                 %= 16;
-            newRecord->prevWindDir  = (uint8_t)tempInt;
-        }
-    
-        tempf                   = newRecord->rain & 0xFFF;
-        tempRainBits            = newRecord->rain & 0xF000;
-        tempf                   /= 100;
-        tempf                   *= work->calMRain;
-        tempf                   += work->calCRain;
-        tempf                   *= 100;
-        tempf                   += 0.5;
-        newRecord->rain         = (uint16_t)floorf (tempf);
-        newRecord->rain         |= tempRainBits;
-    
-        tempf                   = newRecord->highRainRate;
-        tempf                   /= 100;
-        tempf                   *= work->calMRainRate;
-        tempf                   += work->calCRainRate;
-        tempf                   *= 100;
-        tempf                   += 0.5;
-        newRecord->highRainRate = (uint16_t)floorf (tempf);
-
         // Convert to the wview internal archive format:
         convertToArchivePkt(work, newRecord, &archivePkt);
+
+        // Calibrate archive record contents:
+        archivePkt.value[DATA_INDEX_barometer]        *= work->calMBarometer;
+        archivePkt.value[DATA_INDEX_barometer]        += work->calCBarometer;
+
+        archivePkt.value[DATA_INDEX_inTemp]           *= work->calMInTemp;
+        archivePkt.value[DATA_INDEX_inTemp]           += work->calCInTemp;
+
+        archivePkt.value[DATA_INDEX_outTemp]          *= work->calMOutTemp;
+        archivePkt.value[DATA_INDEX_outTemp]          += work->calCOutTemp;
+
+        archivePkt.value[DATA_INDEX_inHumidity]       *= work->calMInHumidity;
+        archivePkt.value[DATA_INDEX_inHumidity]       += work->calCInHumidity;
+        if (archivePkt.value[DATA_INDEX_inHumidity] > 100)
+        {
+            archivePkt.value[DATA_INDEX_inHumidity] = 100;
+        }
+
+        archivePkt.value[DATA_INDEX_outHumidity]      *= work->calMOutHumidity;
+        archivePkt.value[DATA_INDEX_outHumidity]      += work->calCOutHumidity;
+        if (archivePkt.value[DATA_INDEX_outHumidity] > 100)
+        {
+            archivePkt.value[DATA_INDEX_outHumidity] = 100;
+        }
+
+        archivePkt.value[DATA_INDEX_windSpeed]          *= work->calMWindSpeed;
+        archivePkt.value[DATA_INDEX_windSpeed]          += work->calCWindSpeed;
+
+        archivePkt.value[DATA_INDEX_windDir]          *= work->calMWindDir;
+        archivePkt.value[DATA_INDEX_windDir]          += work->calCWindDir;
+        if (archivePkt.value[DATA_INDEX_windDir] < 0)
+        {
+            archivePkt.value[DATA_INDEX_windDir] += 360;
+        }
+        if (archivePkt.value[DATA_INDEX_windDir] > 360)
+        {
+            archivePkt.value[DATA_INDEX_windDir] -= 360;
+        }
+    
+        archivePkt.value[DATA_INDEX_rain]          *= work->calMRain;
+        archivePkt.value[DATA_INDEX_rain]          += work->calCRain;
+        if (archivePkt.value[DATA_INDEX_rain] < 0)
+        {
+            archivePkt.value[DATA_INDEX_rain] = 0;
+        }
+
+        archivePkt.value[DATA_INDEX_rainRate]          *= work->calMRainRate;
+        archivePkt.value[DATA_INDEX_rainRate]          += work->calCRainRate;
+        if (archivePkt.value[DATA_INDEX_rainRate] < 0)
+        {
+            archivePkt.value[DATA_INDEX_rainRate] = 0;
+        }
 
         // Add for the 12-hour temp average:
         sensorAccumAddSample(vp12HourTempAvg, archivePkt.dateTime, archivePkt.value[DATA_INDEX_outTemp]);

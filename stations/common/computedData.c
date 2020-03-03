@@ -245,7 +245,7 @@ static int computeDataChanges (WVIEWD_WORK *work)
 static int computeDataHour (WVIEWD_WORK *work, time_t lastTime)
 {
     int                 numrecs = 0;
-    time_t              retVal, timenow = time(NULL);
+    time_t              timenow = time(NULL);
     struct tm           bkntimenow;
     SENSOR_STORE        *store = &work->sensors;
 
@@ -739,11 +739,14 @@ static void resetRainRecordYear (WVIEWD_WORK *work)
     sensorInit (&work->sensors.sensor[STF_YEAR][SENSOR_RAINRATE]);
     sensorInit (&work->sensors.sensor[STF_YEAR][SENSOR_ET]);
     sensorAddSample (&work->sensors.sensor[STF_YEAR][SENSOR_RAIN],
-                     &work->sensors.sensor[STF_INTERVAL][SENSOR_RAIN]);
+                     &work->sensors.sensor[STF_INTERVAL][SENSOR_RAIN],
+                     FALSE);
     sensorAddSample (&work->sensors.sensor[STF_YEAR][SENSOR_RAINRATE],
-                     &work->sensors.sensor[STF_INTERVAL][SENSOR_RAINRATE]);
+                     &work->sensors.sensor[STF_INTERVAL][SENSOR_RAINRATE],
+                     FALSE);
     sensorAddSample (&work->sensors.sensor[STF_YEAR][SENSOR_ET],
-                     &work->sensors.sensor[STF_INTERVAL][SENSOR_ET]);
+                     &work->sensors.sensor[STF_INTERVAL][SENSOR_ET],
+                     FALSE);
     return;
 }
 
@@ -758,7 +761,6 @@ static void intervalHousekeepingInit (WVIEWD_WORK *work)
     tempAvg = sensorGetAvg (&work->sensors.sensor[STF_HOUR][SENSOR_OUTTEMP]);
     work->loopPkt.intervalAvgWCHILL = wvutilsCalculateWindChill(tempAvg, windAvg);
     work->loopPkt.intervalAvgWSPEED = (uint16_t)windAvg;
-
 
     return;
 }
@@ -775,7 +777,6 @@ static void intervalHousekeeping (WVIEWD_WORK *work)
     work->loopPkt.intervalAvgWCHILL = wvutilsCalculateWindChill(tempAvg, windAvg);
     work->loopPkt.intervalAvgWSPEED = (uint16_t)windAvg;
 
-
     return;
 }
 
@@ -783,12 +784,10 @@ static void intervalHousekeeping (WVIEWD_WORK *work)
 /////////////////////////////////   A P I  /////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
-// store a new data sample for all sensors to the pending archive interval
+// store a new data sample for all sensors to the current archive interval:
 int computedDataStoreSample (WVIEWD_WORK *work)
 {
     WV_SENSOR       sample[SENSOR_MAX];
-    int             tempInt;
-    float           tempfloat;
 
     sensorClearSet (sample);
 
@@ -831,62 +830,10 @@ int computedDataStoreSample (WVIEWD_WORK *work)
     return OK;
 }
 
-// check interval HILOWs against the station-generated archive record
-// (the VP is a goofy animal in terms of protocol)
-int computedDataCheckHiLows (WVIEWD_WORK *work, ARCHIVE_PKT *newRecord)
-{
-    WV_SENSOR       *sample = work->sensors.sensor[STF_INTERVAL];
-    float           chill, dew, heat;
-
-    if (sensorGetHigh(&sample[SENSOR_OUTTEMP]) < ((float)newRecord->value[DATA_INDEX_outTemp]))
-    {
-        // update the high value only
-        sensorUpdateHighValue (&sample[SENSOR_OUTTEMP], (float)newRecord->value[DATA_INDEX_outTemp]);
-    }
-
-    if (sensorGetLow(&sample[SENSOR_OUTTEMP]) > ((float)newRecord->value[DATA_INDEX_outTemp]))
-    {
-        // update the low value only
-        sensorUpdateLowValue (&sample[SENSOR_OUTTEMP], (float)newRecord->value[DATA_INDEX_outTemp]);
-    }
-
-    if (sensorGetHigh(&sample[SENSOR_WGUST]) < (float)newRecord->value[DATA_INDEX_windGust])
-    {
-        // update the high and when high values only
-        sensorUpdateWhenHighValue (&sample[SENSOR_WGUST],
-                                   (float)newRecord->value[DATA_INDEX_windGust],
-                                   (float)newRecord->value[DATA_INDEX_windGustDir]);
-    }
-
-    if (sensorGetHigh(&sample[SENSOR_RAINRATE]) < ((float)newRecord->value[DATA_INDEX_rainRate]))
-    {
-        // update the high value only
-        sensorUpdateHighValue (&sample[SENSOR_RAINRATE], (float)newRecord->value[DATA_INDEX_rainRate]);
-    }
-
-    if ((newRecord->value[DATA_INDEX_rain] == 0) ||
-            (sensorGetCumulative(&sample[SENSOR_RAIN]) < ((float)newRecord->value[DATA_INDEX_rain])))
-    {
-        // update the cumulative value only
-        sensorUpdateCumulative (&sample[SENSOR_RAIN], (float)newRecord->value[DATA_INDEX_rain]);
-    }
-
-    if ((newRecord->value[DATA_INDEX_ET] == 0) ||
-            (sensorGetCumulative(&sample[SENSOR_ET]) < ((float)newRecord->value[DATA_INDEX_ET])))
-    {
-        // update the cumulative value only
-        sensorUpdateCumulative (&sample[SENSOR_ET], (float)newRecord->value[DATA_INDEX_ET]);
-    }
-
-    return OK;
-}
-
 ARCHIVE_PKT *computedDataGenerateArchive (WVIEWD_WORK *work)
 {
     WV_SENSOR       *sample = work->sensors.sensor[STF_INTERVAL];
     time_t          nowtime = time (NULL);
-    int             tempInt;
-    float           tempfloat, tempfloat1;
     struct tm       bknTime;
     Data_Indices    index;
 
@@ -909,6 +856,7 @@ ARCHIVE_PKT *computedDataGenerateArchive (WVIEWD_WORK *work)
     {
         // we have not - squawk about it and exit
         radMsgLog (PRI_MEDIUM, "computedDataGenerateArchive: no samples for this interval!");
+        emailAlertSend(ALERT_TYPE_STATION_LOOP);
         return NULL;
     }
 
@@ -990,19 +938,24 @@ ARCHIVE_PKT *computedDataGenerateArchive (WVIEWD_WORK *work)
     if (work->loopPkt.wmr918InTempBatteryStatus != 0xFF)
         ArcRecStore.value[DATA_INDEX_inTempBatteryStatus] = (float)work->loopPkt.wmr918InTempBatteryStatus;
 
+    if (work->loopPkt.extraTemp[0] != ARCHIVE_VALUE_NULL)
+        ArcRecStore.value[DATA_INDEX_extraTemp1] = (float)work->loopPkt.extraTemp[0];
+    if (work->loopPkt.extraTemp[1] != ARCHIVE_VALUE_NULL)
+        ArcRecStore.value[DATA_INDEX_extraTemp2] = (float)work->loopPkt.extraTemp[1];
+    if (work->loopPkt.extraTemp[2] != ARCHIVE_VALUE_NULL)
+        ArcRecStore.value[DATA_INDEX_extraTemp3]= (float)work->loopPkt.extraTemp[2];
+    if (work->loopPkt.extraHumidity[0] != ARCHIVE_VALUE_NULL)
+        ArcRecStore.value[DATA_INDEX_extraHumid1] = (float)work->loopPkt.extraHumidity[0];
+    if (work->loopPkt.extraHumidity[1] != ARCHIVE_VALUE_NULL)
+        ArcRecStore.value[DATA_INDEX_extraHumid2] = (float)work->loopPkt.extraHumidity[1];
+
     return &ArcRecStore;
 }
 
-void computedDataClearInterval (WVIEWD_WORK *work, float rainCarry, float etCarry)
+void computedDataClearInterval (WVIEWD_WORK *work)
 {
     // clear our interval store to start the next cycle
     sensorClearSet (work->sensors.sensor[STF_INTERVAL]);
-
-    // add back the accumulator trace amounts
-    sensorUpdateCumulative (&work->sensors.sensor[STF_INTERVAL][SENSOR_RAIN],
-                            rainCarry);
-    sensorUpdateCumulative (&work->sensors.sensor[STF_INTERVAL][SENSOR_ET],
-                            etCarry);
 
     windAverageReset (&work->sensors.wind[STF_INTERVAL]);
     return;
@@ -1102,10 +1055,10 @@ void computedDataExit (WVIEWD_WORK *work)
     return;
 }
 
-// update the computed values based on a new archive record
-int computedDataUpdate (WVIEWD_WORK *work, ARCHIVE_PKT *newRecord)
+// update the computed values based on a new archive interval:
+int computedDataUpdate (WVIEWD_WORK *work)
 {
-    time_t          timenow = time (NULL);
+    time_t          timenow = time(NULL);
     struct tm       bkntimenow;
 
     // do some per-interval housekeeping
@@ -1118,16 +1071,6 @@ int computedDataUpdate (WVIEWD_WORK *work, ARCHIVE_PKT *newRecord)
 
     // always update the "change" values
     computeDataChanges (work);
-
-    // normalize the accumulator values to the archive record -
-    // we'll add back in the trace amounts in the "clear" call
-    if (newRecord != NULL)
-    {
-        sensorUpdateCumulative (&work->sensors.sensor[STF_INTERVAL][SENSOR_RAIN],
-                                (float)newRecord->value[DATA_INDEX_rain]);
-        sensorUpdateCumulative (&work->sensors.sensor[STF_INTERVAL][SENSOR_ET],
-                                (float)newRecord->value[DATA_INDEX_ET]);
-    }
 
     // start at the lowest timeframe, that way we can bail out early
 
@@ -1217,3 +1160,48 @@ int computedDataUpdate (WVIEWD_WORK *work, ARCHIVE_PKT *newRecord)
     return OK;
 }
 
+// update the computed values based on a new archive record:
+int computedDataNewArchive (WVIEWD_WORK *work, ARCHIVE_PKT *newRecord)
+{
+#if 0
+    float           carryOverRain = 0, carryOverET = 0;
+
+    if (newRecord == NULL)
+    {
+        return ERROR;
+    }
+
+    // save trace accumulator amounts:
+    if (newRecord->value[DATA_INDEX_rain] > ARCHIVE_VALUE_NULL)
+    {
+        carryOverRain = sensorGetCumulative(&work->sensors.sensor[STF_INTERVAL][SENSOR_RAIN]);
+        carryOverRain -= (float)newRecord->value[DATA_INDEX_rain];
+        if (carryOverRain < 0)
+        {
+            carryOverRain = 0;
+        }
+    }
+
+    if (newRecord->value[DATA_INDEX_ET] > ARCHIVE_VALUE_NULL)
+    {
+        carryOverET = sensorGetCumulative(&work->sensors.sensor[STF_INTERVAL][SENSOR_ET]);
+        carryOverET -= (float)newRecord->value[DATA_INDEX_ET];
+        if (carryOverET < 0)
+        {
+            carryOverET = 0;
+        }
+    }
+
+    // normalize the accumulator values to the archive record
+    sensorUpdateCumulative (&work->sensors.sensor[STF_INTERVAL][SENSOR_RAIN],
+                            (float)newRecord->value[DATA_INDEX_rain]);
+    sensorUpdateCumulative (&work->sensors.sensor[STF_INTERVAL][SENSOR_ET],
+                            (float)newRecord->value[DATA_INDEX_ET]);
+
+    // store the accumulator trace amounts for the next clearInterval:
+    work->carryOverRain = carryOverRain;
+    work->carryOverET = carryOverET;
+#endif
+
+    return OK;
+}

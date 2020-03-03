@@ -55,6 +55,18 @@
         <tr height="20">
           <td width="50%">
             <font face="Tw Cen MT" color="#000000">
+            <strong>Wet Bulb Temp:</strong>
+            </font>
+          </td>
+          <td width="50%" align="left">
+            <font face="Tw Cen MT" color="#000000">
+            <b><!--WetBulbTemp--><!--tempUnit--></b>
+            </font>
+          </td>
+        </tr>
+        <tr height="20">
+          <td width="50%">
+            <font face="Tw Cen MT" color="#000000">
             <strong>Dewpoint:</strong>
             </font>
           </td>

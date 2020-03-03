@@ -174,8 +174,6 @@ static int daemonStationLoopComplete (void)
 
 static int daemonStationInitComplete (void *eventData)
 {
-    struct tm           locTime;
-    time_t              nowtime;
     ARCHIVE_PKT         newestRecord;
 
     if (eventData != 0)
@@ -205,7 +203,10 @@ static int daemonStationInitComplete (void *eventData)
         stormRainInit (wviewdWork.stationRainStormTrigger,
                        wviewdWork.stationRainStormIdleHours);
 
-        computedDataClearInterval (&wviewdWork, 0, 0);
+        computedDataClearInterval (&wviewdWork);
+
+        // Clear last loop packet store:
+        memset(&wviewdWork.lastLoopPkt, 0, sizeof(wviewdWork.lastLoopPkt));
 
         // we know it just finished an initial sensor readings, it is a
         // REQUIREMENT of the stationInit API...
@@ -213,7 +214,7 @@ static int daemonStationInitComplete (void *eventData)
 
         // do an initial update to propogate the initial readings
         // (so we have some data to start with)
-        computedDataUpdate (&wviewdWork, NULL);
+        computedDataUpdate (&wviewdWork);
 
         // start the timers...
         stationStartArchiveTimerUniform (&wviewdWork);
@@ -248,11 +249,41 @@ static int daemonStationInitComplete (void *eventData)
     return OK;
 }
 
+static void daemonCheckArchiveRecord (ARCHIVE_PKT *newRecord)
+{
+    static ARCHIVE_PKT      LastPacket;
+    static int              NoChangeCounter = 0;
+
+    // See if any base values have changed:
+    if (LastPacket.value[DATA_INDEX_outTemp] != newRecord->value[DATA_INDEX_outTemp])
+    {
+        NoChangeCounter = 0;
+    }
+    else if (LastPacket.value[DATA_INDEX_windSpeed] != newRecord->value[DATA_INDEX_windSpeed])
+    {
+        NoChangeCounter = 0;
+    }
+    else if (LastPacket.value[DATA_INDEX_windDir] != newRecord->value[DATA_INDEX_windDir])
+    {
+        NoChangeCounter = 0;
+    }
+
+    // If counter exceeds threshold, send alert and reset:
+    if (NoChangeCounter >= WVD_FLATLINE_THRESHOLD(wviewdWork.archiveInterval))
+    {
+        radMsgLog (PRI_MEDIUM, "daemonCheckArchiveRecord: basic data values not changing!");
+        emailAlertSend(ALERT_TYPE_STATION_FLATLINE);
+        NoChangeCounter = 0;
+    }
+
+    // Always reset last packet:
+    LastPacket = *newRecord;
+}
+
 static void daemonStoreArchiveRecord (ARCHIVE_PKT *newRecord)
 {
-    float           carryOverRain, carryOverET, sampleRain, tempf;
-    int             deltaTime, tempInt;
-    uint16_t        tempRainBits;
+    float           sampleRain;
+    int             deltaTime;
 
     if (newRecord == NULL)
     {
@@ -292,6 +323,9 @@ static void daemonStoreArchiveRecord (ARCHIVE_PKT *newRecord)
         return;
     }
 
+    // Check for flatline values:
+    daemonCheckArchiveRecord(newRecord);
+
     // if we are running normally (out of init), do normal activities:
     if (wviewdWork.runningFlag)
     {
@@ -309,34 +343,6 @@ static void daemonStoreArchiveRecord (ARCHIVE_PKT *newRecord)
             // Adjust station time:
             stationSyncTime(&wviewdWork);
         }
-
-        // save trace accumulator amounts:
-        if (newRecord->value[DATA_INDEX_rain] > ARCHIVE_VALUE_NULL)
-        {
-            sampleRain = (float)newRecord->value[DATA_INDEX_rain];
-            carryOverRain = sensorGetCumulative(&wviewdWork.sensors.sensor[STF_INTERVAL][SENSOR_RAIN]);
-            carryOverRain -= sampleRain;
-            if (carryOverRain < 0)
-            {
-                carryOverRain = 0;
-            }
-        }
-
-        if (newRecord->value[DATA_INDEX_ET] > ARCHIVE_VALUE_NULL)
-        {
-            carryOverET = sensorGetCumulative(&wviewdWork.sensors.sensor[STF_INTERVAL][SENSOR_ET]);
-            carryOverET -= (float)newRecord->value[DATA_INDEX_ET];
-            if (carryOverET < 0)
-            {
-                carryOverET = 0;
-            }
-        }
-
-        // compute HILOW data:
-        computedDataUpdate (&wviewdWork, newRecord);
-
-        // clear for the next archive period (saving trace amounts):
-        computedDataClearInterval (&wviewdWork, carryOverRain, carryOverET);
 
         // compute storm rain:
         if (newRecord->value[DATA_INDEX_rain] > ARCHIVE_VALUE_NULL &&
@@ -357,7 +363,7 @@ static void daemonStoreArchiveRecord (ARCHIVE_PKT *newRecord)
         wviewdWork.loopPkt.yearET     = sensorGetCumulative(&wviewdWork.sensors.sensor[STF_YEAR][SENSOR_ET]);
 
         // send archive notification:
-        stationSendArchiveNotifications (&wviewdWork, sampleRain);
+        stationSendArchiveNotifications (&wviewdWork, (float)newRecord->value[DATA_INDEX_rain]);
     }
 
     statusIncrementStat(WVIEW_STATS_ARCHIVE_PKTS_RX);
@@ -368,12 +374,6 @@ static void daemonArchiveIndication (ARCHIVE_PKT *newRecord)
 {
     if (newRecord != NULL)
     {
-        // if we are running normally verify record against LOOP readings
-        if (wviewdWork.runningFlag)
-        {
-            computedDataCheckHiLows (&wviewdWork, newRecord);
-        }
-
         daemonStoreArchiveRecord (newRecord);
 
         // Push to internal clients:
@@ -579,7 +579,6 @@ static void archiveTimerHandler (void *parm)
 {
     ARCHIVE_PKT*    newRec;
     time_t          ntime;
-    int             intSECS;
 
     // get the current time
     ntime = time (NULL);
@@ -617,6 +616,12 @@ static void archiveTimerHandler (void *parm)
             emailAlertSend(ALERT_TYPE_STATION_ARCHIVE);
         }
     }
+
+    // Update computed values:
+    computedDataUpdate (&wviewdWork);
+
+    // clear for the next archive period:
+    computedDataClearInterval (&wviewdWork);
 
     // restart the timer
     stationStartArchiveTimerUniform (&wviewdWork);

@@ -30,7 +30,7 @@
   <h1>
 
     <a name="title"><strong>&nbsp;wview User Manual&nbsp;&nbsp;&nbsp;&nbsp;
-        &nbsp;&nbsp;June 26, 2011</strong></a></h1>
+        &nbsp;&nbsp;March 5, 2014</strong></a></h1>
 
   <!-- Table of Contents -->
   <h1 class="section">
@@ -470,13 +470,8 @@
     <p>
       The wview user's group is hosted on Google Groups: 
       <a href="http://groups.google.com/group/wview"><b>
-          <font color="#0044ff">wview User's Group</font></b></a><br>
-      There you will find a mailing list archive and helpful pages including 
-      <a href="http://groups.google.com/group/wview/web/frequently-asked-questions">
-        <b><font color="#0044ff">Frequently Asked Questions (FAQ)</font></b></a>. 
-      You may join the group or just search the archives or pages. The mailing 
-      list can be used to request help if you cannot find answers in the list 
-      archive or group pages.<br><br>
+          <font color="#0044ff">wview User's Group</font></b></a>
+          <br><br>
       To report problems or vote on enhancements you can use the
       <a href="http://www.wviewweather.com/mantis/login_page.php">
 
@@ -582,31 +577,30 @@
           <table border="1" bgcolor="#d8d8d8" width="65%" cellspacing="0" cellpadding="2">
             <tr>
               <td>
-                <b>For debian lenny:</b><br>
-                deb       http://www.wviewweather.com/apt/lenny lenny main<br>
-                deb-src   http://www.wviewweather.com/apt/lenny lenny main<br>
-                deb       http://backports.debian.org/debian-backports lenny-backports main contrib non-free<br><br>
                 <b>For debian squeeze:</b><br>
                 deb       http://www.wviewweather.com/apt/squeeze squeeze main<br>
                 deb-src   http://www.wviewweather.com/apt/squeeze squeeze main<br>
                 deb       http://backports.debian.org/debian-backports squeeze-backports main contrib non-free<br><br>
-                <b>For ubuntu/kubuntu jaunty:</b><br>
-                deb       http://www.wviewweather.com/apt/jaunty jaunty main<br>
-                deb-src   http://www.wviewweather.com/apt/jaunty jaunty main<br><br>
-                <b>For ubuntu/kubuntu karmic:</b><br>
-                deb       http://www.wviewweather.com/apt/karmic karmic main<br>
-                deb-src   http://www.wviewweather.com/apt/karmic karmic main<br><br>
+                <b>For debian wheezy:</b><br>
+                deb       http://www.wviewweather.com/apt/wheezy wheezy main<br>
+                deb-src   http://www.wviewweather.com/apt/wheezy wheezy main<br>
+                deb       http://backports.debian.org/debian-backports wheezy-backports main contrib non-free<br><br>
                 <b>For ubuntu/kubuntu lucid:</b><br>
                 deb       http://www.wviewweather.com/apt/lucid lucid main<br>
                 deb-src   http://www.wviewweather.com/apt/lucid lucid main<br><br>
-                <b>For ubuntu/kubuntu maverick:</b><br>
-                deb       http://www.wviewweather.com/apt/maverick maverick main<br>
-                deb-src   http://www.wviewweather.com/apt/maverick maverick main<br><br>
-                <b>For ubuntu/kubuntu natty:</b><br>
-                deb       http://www.wviewweather.com/apt/natty natty main<br>
-                deb-src   http://www.wviewweather.com/apt/natty natty main
+                <b>For ubuntu/kubuntu precise:</b><br>
+                deb       http://www.wviewweather.com/apt/precise precise main<br>
+                deb-src   http://www.wviewweather.com/apt/precise precise main<br><br>
+                <b>For ubuntu/kubuntu quantal:</b><br>
+                deb       http://www.wviewweather.com/apt/quantal quantal main<br>
+                deb-src   http://www.wviewweather.com/apt/quantal quantal main<br><br>
+                <b>For ubuntu/kubuntu raring:</b><br>
+                deb       http://www.wviewweather.com/apt/raring raring main<br>
+                deb-src   http://www.wviewweather.com/apt/raring raring main<br><br>
+                <b>For ubuntu/kubuntu saucy:</b><br>
+                deb       http://www.wviewweather.com/apt/saucy saucy main<br>
+                deb-src   http://www.wviewweather.com/apt/saucy saucy main
               </td>
-
             </tr>
           </table>
           <!-- Shell Box End -->
@@ -1189,7 +1183,7 @@
           <blockquote>
             <b>--prefix</b>&nbsp;&nbsp;&nbsp;(default: /usr/local) Controls 
             the installation root for wview.<br>
-            <b>--prefix=/ --bindir=/usr/bin --sysconfdir=/etc --localstatedir=/var/lib --libdir=/usr/lib</b>&nbsp;&nbsp;&nbsp;
+            <b>--prefix=/ --bindir=/usr/bin --exec-prefix=/usr --sysconfdir=/etc --localstatedir=/var/lib --libdir=/usr/lib</b>&nbsp;&nbsp;&nbsp;
               Configure options to use when building from source after a Debian APT installation. This places all binaries 
               and support files in the same locations as the Debian package. This is handy when modifying source code or 
               testing proposed releases.<br>

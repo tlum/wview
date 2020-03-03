@@ -198,6 +198,7 @@ static void timerHandler (void *parm)
 {
     uint64_t    msOffset = radTimeGetMSSinceEpoch ();
     int64_t     netOffset;
+    uint64_t    xoffset;
 
     //  ... allow for timer latency
     if (sshWork.msOffset == 0ULL)
@@ -212,9 +213,21 @@ static void timerHandler (void *parm)
     }
 
     sshWork.msOffset += 60000ULL;               // ALWAYS 1 minute
+    xoffset = sshWork.msOffset;
+
+    // Cope with long scheduling delays or with the time being changed
+    int32_t timerWait = (int32_t)(60000LL - netOffset);
+    if ((timerWait <= 0) || (timerWait > 120000))
+    {
+        radMsgLog (PRI_HIGH, "wviewsshd: unusual wait %d; fixing it up", timerWait);
+        // Keep the offset into the minute to keep updates aligned with the original alignment.
+        uint64_t baseNow = (msOffset / 60000ULL) * 60000ULL;
+        netOffset = 60000ULL;
+        sshWork.msOffset = baseNow + netOffset + (sshWork.msOffset % 60000ULL);
+        radMsgLog (PRI_HIGH, "wviewsshd: fixed offset is %llu", sshWork.msOffset);
+    }
 
     radProcessTimerStart (sshWork.timer, (uint32_t)(60000LL - netOffset));
-
 
     //  ... process the ssh rules
     sshUtilsSendFiles (sshWork.sshId, sshWork.wviewdir);

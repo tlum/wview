@@ -170,11 +170,16 @@
     <td width="180" valign="center" bgcolor="#FFFFFF"></td>
     <td width="10" valign="center" bgcolor="#FFFFFF"></td>
     <td width="130" rowspan="20" valign="top" bgcolor="#6666CC" align="center"> 
-      <br>
-      <br>
-      <div align="center"><font face="Arial" style="font-size: 8pt" color="#FFFFFF"> 
-        Sensors are calibrated as follows: SensorValue * Multiplier + Constant.
-      </font></div>
+    <br>
+    <br>
+    <div align="center"><font face="Arial" style="font-size: 8pt" color="#FFFFFF">
+      Sensors are calibrated as follows: SensorValue * Multiplier + Constant.
+    </font></div>
+    <br>
+    <br>
+    <div align="center"><font face="Arial" style="font-size: 8pt" color="#FFFFFF">
+      Sensors are calibrated using US (imperial) units.
+    </font></div>
     </td>
   </tr>
 

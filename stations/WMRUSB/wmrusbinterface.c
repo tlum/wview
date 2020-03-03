@@ -190,8 +190,6 @@ int stationInit
 void stationExit (WVIEWD_WORK *work)
 {
     wmrExit (work);
-    (*(work->medium.usbhidExit)) (&work->medium);
-
     return;
 }
 

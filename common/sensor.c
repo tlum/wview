@@ -85,6 +85,28 @@ void sensorUpdateWhen (WV_SENSOR *sensor, float value, float whenVal)
     return;
 }
 
+// Initialize sensor with given values:
+void sensorSetValues
+(
+    WV_SENSOR           *sensor,
+    float               low,
+    time_t              time_low,
+    float               high,
+    time_t              time_high,
+    float               when_high,
+    float               cumulative,
+    int                 samples
+)
+{
+    sensor->low         = low;
+    sensor->time_low    = time_low;
+    sensor->high        = high;
+    sensor->time_high   = time_high;
+    sensor->when_high   = when_high;
+    sensor->cumulative  = cumulative;
+    sensor->samples     = samples;
+}
+
 void sensorUpdateLowValue (WV_SENSOR *sensor, float value)
 {
     if (value <= ARCHIVE_VALUE_NULL)
@@ -136,21 +158,41 @@ void sensorAddCumulative (WV_SENSOR *sensor, float value)
     sensor->cumulative += value;
 }
 
-void sensorAddSample (WV_SENSOR *sensor, WV_SENSOR *sample)
+void sensorAddSample (WV_SENSOR *sensor, WV_SENSOR *sample, int DoSensorDbg)
 {
+    if (DoSensorDbg)
+    {
+        radMsgLog(PRI_HIGH, "sensorAddSample: Low %f@%2.2d:%2.2d  High %f@%2.2d:%2.2d",
+                  sample->low, wvutilsGetHour(sample->time_low), wvutilsGetMin(sample->time_low),
+                  sample->high, wvutilsGetHour(sample->time_high), wvutilsGetMin(sample->time_high));
+    }
     if (sample->low <= ARCHIVE_VALUE_NULL || sample->high <= ARCHIVE_VALUE_NULL)
     {
+        if (DoSensorDbg)
+        {
+            radMsgLog(PRI_HIGH, "sensorAddSample: invalid high or low!");
+        }
         return;
     }
 
     if (sensor->low > sample->low)
     {
+    if (DoSensorDbg)
+        {
+            radMsgLog(PRI_HIGH, "sensorAddSample: New Low: %f@%2.2d:%2.2d",
+                      sample->low, wvutilsGetHour(sample->time_low), wvutilsGetMin(sample->time_low));
+        }
         sensor->low = sample->low;
         sensor->time_low = sample->time_low;
     }
     if (sensor->high < sample->high)
     {
-        sensor->high = sample->high;
+    if (DoSensorDbg)
+    {
+        radMsgLog(PRI_HIGH, "sensorAddSample: New High: %f@%2.2d:%2.2d",
+                  sample->high, wvutilsGetHour(sample->time_high), wvutilsGetMin(sample->time_high));
+    }
+    sensor->high = sample->high;
         sensor->when_high = sample->when_high;
         sensor->time_high = sample->time_high;
     }
@@ -167,7 +209,8 @@ void sensorPropogateSample (WV_SENSOR *set, WV_SENSOR *sample)
 
     for (type = 0; type < SENSOR_MAX; type ++)
     {
-        sensorAddSample (&set[type], &sample[type]);
+        // Pass TRUE here to debug:
+        sensorAddSample (&set[type], &sample[type], FALSE);
     }
 
     return;
@@ -562,5 +605,15 @@ float sensorAccumGetAverage (WV_ACCUM_ID id)
     {
         return 0;
     }
+}
+
+static char sensorDebugString[256];
+char* sensorGetString (WV_SENSOR *sensor)
+{
+    snprintf (sensorDebugString, 256, "Low:%.3f@%2.2d:%2.2d High:%.3f@%2.2d:%2.2d Cum:%.3f Samples:%d",
+              sensor->low, wvutilsGetHour(sensor->time_low), wvutilsGetMin(sensor->time_low),
+              sensor->high, wvutilsGetHour(sensor->time_high), wvutilsGetMin(sensor->time_high),
+              sensor->cumulative, sensor->samples);
+    return sensorDebugString;
 }
 

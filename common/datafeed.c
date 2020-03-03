@@ -44,6 +44,11 @@ uint32_t htonf(float f)
     uint32_t    p;
     uint32_t    sign;
 
+    if (f <= ARCHIVE_VALUE_NULL)
+    {
+        f = -32767.0;
+    }
+
     if (f < 0)
     {
         sign = 1;
@@ -69,6 +74,11 @@ float ntohf(uint32_t p)
     {
         f = -f;
     } // sign bit set
+
+    if (f <= -32767.0)
+    {
+        f = ARCHIVE_VALUE_NULL;
+    }
 
     return f;
 }
@@ -257,12 +267,12 @@ int datafeedConvertLOOP_HTON(LOOP_PKT* dest, LOOP_PKT* src)
     dest->leafTemp1                     = htonf(src->leafTemp1);
     dest->leafTemp2                     = htonf(src->leafTemp2);
 
-    tempshort = (uint16_t*)&(dest->extraHumid1);
-    *tempshort = swapShortHTON(&dest->extraHumid1);
-    tempshort = (uint16_t*)&(dest->soilMoist1);
-    *tempshort = swapShortHTON(&dest->soilMoist1);
-    tempshort = (uint16_t*)&(dest->leafWet1);
-    *tempshort = swapShortHTON(&dest->leafWet1);
+    dest->extraHumid1                   = src->extraHumid1;
+    dest->soilMoist1                    = src->soilMoist1;
+    dest->leafWet1                      = src->leafWet1;
+    dest->extraHumid2                   = src->extraHumid2;
+    dest->soilMoist2                    = src->soilMoist2;
+    dest->leafWet2                      = src->leafWet2;
 
     dest->wxt510Hail                    = htonf(src->wxt510Hail);
     dest->wxt510Hailrate                = htonf(src->wxt510Hailrate);
@@ -394,15 +404,7 @@ int datafeedConvertArchive_HTON(ARCHIVE_PKT* dest, ARCHIVE_PKT* src)
 
     for (index = 0; index < DATA_INDEX_MAX; index ++)
     {
-        // Workaround needed because htonf/ntohf don't support -100000.
-        if (src->value[index] <= ARCHIVE_VALUE_NULL)
-        {
-            dest->value[index]  = -32767.0;
-        }
-        else
-        {
-            dest->value[index]  = htonf(src->value[index]);
-        }
+        dest->value[index]  = htonf(src->value[index]);
     }
 
     return OK;
@@ -418,15 +420,7 @@ int datafeedConvertArchive_NTOH(ARCHIVE_PKT* dest, ARCHIVE_PKT* src)
 
     for (index = 0; index < DATA_INDEX_MAX; index ++)
     {
-        // Workaround needed because htonf/ntohf don't support -100000.
-        if (src->value[index] <= -32767.0)
-        {
-            dest->value[index]  = ARCHIVE_VALUE_NULL;
-        }
-        else
-        {
-            dest->value[index]  = ntohf(src->value[index]);
-        }
+        dest->value[index]  = ntohf(src->value[index]);
     }
 
     return OK;

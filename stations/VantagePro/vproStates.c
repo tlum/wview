@@ -238,7 +238,6 @@ int vproRunState (int state, void *stimulus, void *data)
 
     case VP_STIM_ARCHIVE:
         ((VP_IF_DATA *)(work->stationData))->archiveRetryFlag = TRUE;
-
         //  ... wakeup the console
         if (vpifWakeupConsole (work) == ERROR)
         {
@@ -369,6 +368,7 @@ int vproDumpAfterAckState (int state, void *stimulus, void *data)
         if (vpifReadMessage (work, TRUE) == ERROR)
         {
             radProcessTimerStart (work->ifTimer, WVD_READ_RECOVER_INTERVAL);
+            radMsgLog (PRI_HIGH, "vproDumpAfterAckState: station read failed");
             emailAlertSend(ALERT_TYPE_STATION_READ);
             return VPRO_STATE_READ_RECOVER;
         }
@@ -386,7 +386,7 @@ int vproDumpAfterAckState (int state, void *stimulus, void *data)
             radProcessTimerStart (work->ifTimer, VP_RESPONSE_TIMEOUT(work->stationIsWLIP));
 #if 0
             radMsgLog (PRI_STATUS, "downloading %d pages from Vantage Pro...",
-                       vpData->archivePages);
+                       ((VP_IF_DATA *)(work->stationData))->archivePages);
 #endif
             ((VP_IF_DATA *)(work->stationData))->archiveCurrentPage = 0;
             return VPRO_STATE_RECV_ARCH;
@@ -527,7 +527,8 @@ int vproReceiveArchiveState (int state, void *stimulus, void *data)
         else
         {
 #if 0
-            radMsgLog (PRI_STATUS, "... %d pages done", vpData->archivePages);
+            radMsgLog (PRI_STATUS, "... %d pages done",
+                       ((VP_IF_DATA *)(work->stationData))->archivePages);
 #endif
 
             radUtilsSleep (250);        // let him send any pending data
@@ -600,6 +601,10 @@ int vproLoopState (int state, void *stimulus, void *data)
 
     switch (stim->type)
     {
+    case VP_STIM_ARCHIVE:
+        ((VP_IF_DATA *)(work->stationData))->doArchiveFlag = TRUE;
+        break;
+
     case STIM_TIMER:
         // serial IF timer expiry
         // wakeup the console
@@ -644,6 +649,26 @@ int vproLoopState (int state, void *stimulus, void *data)
             vpifIndicateLoopDone ();
         }
 
+        // Check if we got an archive stimulus while doing the LOOP data:
+        if (((VP_IF_DATA *)(work->stationData))->doArchiveFlag)
+        {
+            ((VP_IF_DATA *)(work->stationData))->doArchiveFlag = FALSE;
+            if (vpifWakeupConsole (work) == ERROR)
+            {
+                radMsgLog (PRI_HIGH, "vproLoopState: WAKEUP failed");
+                return VPRO_STATE_RUN;
+            }
+
+            if (vpifSendDumpAfterRqst (work) == ERROR)
+            {
+                radMsgLog (PRI_HIGH, "vproLoopState: DMPAFT_RQST failed");
+                emailAlertSend(ALERT_TYPE_STATION_ARCHIVE);
+                return VPRO_STATE_ERROR;
+            }
+            radProcessTimerStart (work->ifTimer, VP_RESPONSE_TIMEOUT(work->stationIsWLIP));
+            return VPRO_STATE_DMPAFT_RQST;
+        }
+
         // check to see if we have a pending time sync
         if (((VP_IF_DATA *)(work->stationData))->timeSyncFlag)
         {
@@ -658,7 +683,6 @@ int vproLoopState (int state, void *stimulus, void *data)
 
     return state;
 }
-
 
 int vproReadRecoverState (int state, void *stimulus, void *data)
 {

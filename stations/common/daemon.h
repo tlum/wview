@@ -120,8 +120,10 @@ typedef struct _wview_medium
 // time to wait before attempting read recovery
 #define WVD_READ_RECOVER_INTERVAL       2500L
 
-#define WVD_READ_RECOVER_MAX_RETRIES    5
+#define WVD_READ_RECOVER_MAX_RETRIES    1000
 
+// Number of archive intervals in 4 hours (flat line base values will trigger an alert):
+#define WVD_FLATLINE_THRESHOLD(archiveInterval) (240/archiveInterval)
 
 // the wview daemon work area
 typedef struct
@@ -163,7 +165,8 @@ typedef struct
     uint32_t        cdataInterval;
     uint32_t        pushInterval;
     SENSOR_STORE    sensors;
-    LOOP_PKT        loopPkt;                    // for IPM pkts
+    LOOP_PKT        loopPkt;
+    LOOP_PKT        lastLoopPkt;
     int             numReadRetries;
     int             archiveRqstPending;
 

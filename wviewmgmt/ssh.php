@@ -169,7 +169,7 @@
     <td width="200" valign="center" bgcolor="#FFFFFF"></td>
     <td width="480" valign="center" bgcolor="#FFFFFF"></td>
     <td width="10" valign="center" bgcolor="#FFFFFF"></td>
-    <td width="130" rowspan="7" valign="top" bgcolor="#6666CC" align="center"> 
+    <td width="130" rowspan="8" valign="top" bgcolor="#6666CC" align="center">
       <br>
       <br>
       <div align="center"><font face="Arial" style="font-size: 8pt" color="#FFFFFF"> 
@@ -279,12 +279,12 @@
   </tr>
 
   <!-- Text: -->
-  <tr> 
+  <tr>
     <td height="30" align="right" valign="center" bgcolor="#E7E7E7"></td>
     <td valign="center" bgcolor="#E7E7E7"></td>
     <td valign="center" bgcolor="#FFFFFF"></td>
 
-    <td valign="center" bgcolor="#FFFFFF"> 
+    <td valign="center" bgcolor="#FFFFFF">
       <label class="formFieldQuestion">Destination Directory:&nbsp;
         <a class=info href=#><img src=imgs/tip_small.png border=0>
           <span class=infobox>Remote destination path, relative to the ssh login directory (no leading /)</span>
@@ -298,6 +298,26 @@
     <td></td>
   </tr>
 
+  <!-- Text: -->
+  <tr>
+    <td height="30" align="right" valign="center" bgcolor="#E7E7E7"></td>
+    <td valign="center" bgcolor="#E7E7E7"></td>
+    <td valign="center" bgcolor="#FFFFFF"></td>
+
+    <td valign="center" bgcolor="#FFFFFF">
+      <label class="formFieldQuestion">Timeout (secs):&nbsp;
+        <a class=info href=#><img src=imgs/tip_small.png border=0>
+          <span class=infobox>SSH session timeout value</span>
+        </a>
+      </label>
+    </td>
+    <td valign="center" bgcolor="#FFFFFF">
+      <input class=mainForm type=text name=field_SSH_Timeout_1 id=field_SSH_Timeout_1 size='12' value=
+        '<?php echo $field_SSH_Timeout_1 ?>'>
+    </td>
+    <td></td>
+  </tr>
+
   <!-- Section Heading: -->
   <tr> 
     <td width="124" height="12" valign="center" align="right" bgcolor="#E7E7E7">
@@ -307,7 +327,7 @@
     <td width="200" valign="center" bgcolor="#FFFFFF"></td>
     <td width="480" valign="center" bgcolor="#FFFFFF"></td>
     <td width="10" valign="center" bgcolor="#FFFFFF"></td>
-    <td width="130" rowspan="7" valign="top" bgcolor="#6666CC" align="center"> 
+    <td width="130" rowspan="8" valign="top" bgcolor="#6666CC" align="center">
       <br>
       <br>
       <div align="center"><font face="Arial" style="font-size: 8pt" color="#FFFFFF"> 
@@ -436,6 +456,26 @@
     <td></td>
   </tr>
 
+  <!-- Text: -->
+  <tr>
+    <td height="30" align="right" valign="center" bgcolor="#E7E7E7"></td>
+    <td valign="center" bgcolor="#E7E7E7"></td>
+    <td valign="center" bgcolor="#FFFFFF"></td>
+
+    <td valign="center" bgcolor="#FFFFFF">
+      <label class="formFieldQuestion">Timeout (secs):&nbsp;
+        <a class=info href=#><img src=imgs/tip_small.png border=0>
+          <span class=infobox>SSH session timeout value</span>
+        </a>
+      </label>
+    </td>
+    <td valign="center" bgcolor="#FFFFFF">
+      <input class=mainForm type=text name=field_SSH_Timeout_2 id=field_SSH_Timeout_2 size='12' value=
+        '<?php echo $field_SSH_Timeout_2 ?>'>
+    </td>
+    <td></td>
+  </tr>
+
   <!-- Section Heading: -->
   <tr> 
     <td width="124" height="12" valign="center" align="right" bgcolor="#E7E7E7">
@@ -445,7 +485,7 @@
     <td width="200" valign="center" bgcolor="#FFFFFF"></td>
     <td width="480" valign="center" bgcolor="#FFFFFF"></td>
     <td width="10" valign="center" bgcolor="#FFFFFF"></td>
-    <td width="130" rowspan="7" valign="top" bgcolor="#6666CC" align="center"> 
+    <td width="130" rowspan="8" valign="top" bgcolor="#6666CC" align="center">
       <br>
       <br>
       <div align="center"><font face="Arial" style="font-size: 8pt" color="#FFFFFF"> 
@@ -574,6 +614,26 @@
     <td></td>
   </tr>
 
+  <!-- Text: -->
+  <tr>
+    <td height="30" align="right" valign="center" bgcolor="#E7E7E7"></td>
+    <td valign="center" bgcolor="#E7E7E7"></td>
+    <td valign="center" bgcolor="#FFFFFF"></td>
+
+    <td valign="center" bgcolor="#FFFFFF">
+      <label class="formFieldQuestion">Timeout (secs):&nbsp;
+        <a class=info href=#><img src=imgs/tip_small.png border=0>
+          <span class=infobox>SSH session timeout value</span>
+        </a>
+      </label>
+    </td>
+    <td valign="center" bgcolor="#FFFFFF">
+      <input class=mainForm type=text name=field_SSH_Timeout_3 id=field_SSH_Timeout_3 size='12' value=
+        '<?php echo $field_SSH_Timeout_3 ?>'>
+    </td>
+    <td></td>
+  </tr>
+
   <!-- Section Heading: -->
   <tr> 
     <td width="124" height="12" valign="center" align="right" bgcolor="#E7E7E7">
@@ -583,7 +643,7 @@
     <td width="200" valign="center" bgcolor="#FFFFFF"></td>
     <td width="480" valign="center" bgcolor="#FFFFFF"></td>
     <td width="10" valign="center" bgcolor="#FFFFFF"></td>
-    <td width="130" rowspan="7" valign="top" bgcolor="#6666CC" align="center"> 
+    <td width="130" rowspan="8" valign="top" bgcolor="#6666CC" align="center">
       <br>
       <br>
       <div align="center"><font face="Arial" style="font-size: 8pt" color="#FFFFFF"> 
@@ -708,6 +768,26 @@
     <td valign="center" bgcolor="#FFFFFF">
       <input class=mainForm type=text name=field_SSH_Destination_4 id=field_SSH_Destination_4 size='60' value=
         '<?php echo $field_SSH_Destination_4 ?>'>
+    </td>
+    <td></td>
+  </tr>
+
+  <!-- Text: -->
+  <tr>
+    <td height="30" align="right" valign="center" bgcolor="#E7E7E7"></td>
+    <td valign="center" bgcolor="#E7E7E7"></td>
+    <td valign="center" bgcolor="#FFFFFF"></td>
+
+    <td valign="center" bgcolor="#FFFFFF">
+      <label class="formFieldQuestion">Timeout (secs):&nbsp;
+        <a class=info href=#><img src=imgs/tip_small.png border=0>
+          <span class=infobox>SSH session timeout value</span>
+        </a>
+      </label>
+    </td>
+    <td valign="center" bgcolor="#FFFFFF">
+      <input class=mainForm type=text name=field_SSH_Timeout_4 id=field_SSH_Timeout_4 size='12' value=
+        '<?php echo $field_SSH_Timeout_4 ?>'>
     </td>
     <td></td>
   </tr>
@@ -846,6 +926,26 @@
     <td valign="center" bgcolor="#FFFFFF">
       <input class=mainForm type=text name=field_SSH_Destination_5 id=field_SSH_Destination_5 size='60' value=
         '<?php echo $field_SSH_Destination_5 ?>'>
+    </td>
+    <td></td>
+  </tr>
+
+  <!-- Text: -->
+  <tr>
+    <td height="30" align="right" valign="center" bgcolor="#E7E7E7"></td>
+    <td valign="center" bgcolor="#E7E7E7"></td>
+    <td valign="center" bgcolor="#FFFFFF"></td>
+
+    <td valign="center" bgcolor="#FFFFFF">
+      <label class="formFieldQuestion">Timeout (secs):&nbsp;
+        <a class=info href=#><img src=imgs/tip_small.png border=0>
+          <span class=infobox>SSH session timeout value</span>
+        </a>
+      </label>
+    </td>
+    <td valign="center" bgcolor="#FFFFFF">
+      <input class=mainForm type=text name=field_SSH_Timeout_5 id=field_SSH_Timeout_5 size='12' value=
+        '<?php echo $field_SSH_Timeout_5 ?>'>
     </td>
     <td></td>
   </tr>

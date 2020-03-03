@@ -102,9 +102,25 @@ kill_running_processes() {
 	fi
 }
 
+cleanup_pid_files() {
+    for pidfile in `ls -1 $RUN_DIRECTORY/*.pid 2>/dev/null`; do
+        testpid=`cat $pidfile`;
+        if [ -n "$testpid" ]; then
+            result=`ps --no-headers -o pid $testpid`;
+        else
+            result=""
+        fi;
+        if [ -z "$result" ]; then
+            echo "Removing stale PID file $pidfile";
+            rm -f $pidfile;
+        fi;
+    done;
+}
+
 case "$1" in
   start)
-	kill_running_processes
+    kill_running_processes
+    cleanup_pid_files
 
 	wait_for_time_set
 

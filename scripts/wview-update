@@ -15,7 +15,7 @@
 #
 ###############################################################################
 INSTALL_PREFIX=/usr/local
-RADLIB_VERSION=2.11.3
+RADLIB_VERSION=2.12.0
 
 BUILD_LOC=$INSTALL_PREFIX/src
 START_DIR=`pwd`

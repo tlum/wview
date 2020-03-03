@@ -35,10 +35,11 @@ static ALERT_INFO       alertInfo[ALERT_TYPE_MAX] =
     { "wview Test Email", "If you received this, wview email alerts are working." },
     { "wview File System IO Alert!", "Failed to read/write file(s) - system disk full or corrupt!" },
     { "wview Station Interface Alert!", "Vantage Pro wakeup failed - check cabling, device or interface!" },
-    { "wview Station Interface Alert!", "Loop data retrieval failed - current conditions may not be updating!" },
-    { "wview Station Interface Alert!", "Archive data retrieval failed - arcive table and graphs may not be updating!" },
-    { "wview Station Interface Alert!", "Station device interface failed - check driver, device or interface!" },
-    { "wview Station Interface Alert!", "Bogus or corrupt station data received - check station or cabling" }
+    { "wview Station Interface Alert: Loop Error", "Loop data retrieval failed - current conditions may not be updating!" },
+    { "wview Station Interface Alert: Archive Error", "Archive data retrieval failed - arcive table and graphs may not be updating!" },
+    { "wview Station Interface Alert:Interface Failure", "Station device interface failed - check driver, device or interface!" },
+    { "wview Station Interface Alert: Corrupt Data", "Bogus or corrupt station data received - check station or cabling" },
+    { "wview Station Interface Alert: Flatline Values", "Station data not changing - check station or interface" }
 };
 
 static time_t           lastAlertTime[ALERT_TYPE_MAX] =

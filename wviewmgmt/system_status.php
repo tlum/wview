@@ -101,12 +101,29 @@
 <body link="#B5B5E6" vlink="#B5B5E6" alink="#B5B5E6">
 
 <?php require("preload_system_status.php") ?>
+<?php require("preload_file_generation.php")?>
 
 <DIV align=center>
 <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse" bordercolor="#111111" id="AutoNumber11" width="960" height="104">
   <tr>
-    <td colspan="3" align="center" valign="center" width="960" height="100" bgcolor="#6666CC"> 
+    <td align="center" valign="center" width="960" height="100" bgcolor="#6666CC">
+	  <H1><font color="#FFFFFF" face="Arial">
+        <?php
+          echo $field_Generate_Station_Name;
+		?>
+	  </font></H1>
+    </td>
+    <td align="center" valign="center" width="960" height="100" bgcolor="#6666CC"> 
       <img border="0" src="wview-100x100.png">
+    </td>
+    <td align="center" valign="center" width="960" height="100" bgcolor="#6666CC">
+	  <H1><font color="#FFFFFF" face="Arial">
+        <?php
+          echo $field_Generate_Station_City;
+          echo ", ";
+          echo $field_Generate_Station_State;
+	    ?>
+	  </font></H1>
     </td>
   </tr>
 
@@ -126,7 +143,7 @@
     <!-- Station Name: -->
     <td width=700 height=33 align="center" vAlign=middle bordercolor="#000000" bgColor=#6666CC style="font-style: normal; font-variant: normal; font-weight: normal; font-size: 10pt; color: black"> 
       <p align="center"><b><font color="#FFFFFF"><span lang="en-us">
-        <?php 
+        <?php
           if ($field_Station_Type == "Davis Vantage Pro") 
               echo "Davis Vantage Pro"; 
           else if ($field_Station_Type == "La Crosse WS-23XX")

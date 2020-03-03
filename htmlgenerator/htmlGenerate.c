@@ -583,6 +583,7 @@ static char *dataTags[] =
         "<!--genExtraUVBatteryStatus-->",
         "<!--genExtraSolarBatteryStatus-->",
         "<!--genExtraRainBatteryStatus-->",
+        "<!--WetBulbTemp-->",
 
         NULL
     };
@@ -3306,6 +3307,22 @@ static void computeTag (HTML_MGR_ID id, char *tag, int len, char *store)
     case 373:
         // "<!--genExtraRainBatteryStatus-->",
         sprintf (store, "%s", getBattStatus(id->loopStore.rainBatteryStatus));
+        break;
+    case 374:
+        // "<!--WetBulbTemp-->",
+        if (id->isMetricUnits)
+        {
+            sprintf (store, "%.1f",
+                     wvutilsConvertFToC(wvutilsCalculateWetBulbTemp(id->loopStore.outTemp,
+                                                                    id->loopStore.outHumidity,
+                                                                    id->loopStore.barometer)));
+        }
+         else
+        {
+            sprintf (store, "%.1f",
+                     wvutilsCalculateWetBulbTemp(id->loopStore.outTemp, id->loopStore.outHumidity,
+                                                 id->loopStore.barometer));
+        }
         break;
     default:
         store[0] = 0;

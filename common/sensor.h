@@ -89,6 +89,19 @@ extern void sensorInit (WV_SENSOR *sensor);
 extern void sensorUpdate (WV_SENSOR *sensor, float value);
 extern void sensorUpdateWhen (WV_SENSOR *sensor, float value, float whenVal);
 
+// Initialize sensor with given values:
+extern void sensorSetValues
+(
+    WV_SENSOR           *sensor,
+    float               low,
+    time_t              time_low,
+    float               high,
+    time_t              time_high,
+    float               when_high,
+    float               cumulative,
+    int                 samples
+);
+
 // these just modify high/low/cumulative values
 extern void sensorUpdateLowValue (WV_SENSOR *sensor, float value);
 extern void sensorUpdateHighValue (WV_SENSOR *sensor, float value);
@@ -97,7 +110,7 @@ extern void sensorUpdateCumulative (WV_SENSOR *sensor, float value);
 extern void sensorAddCumulative (WV_SENSOR *sensor, float value);
 
 // add a sensor interval to a specific sensor
-extern void sensorAddSample (WV_SENSOR *sensor, WV_SENSOR *sample);
+extern void sensorAddSample (WV_SENSOR *sensor, WV_SENSOR *sample, int doDebug);
 
 // -- operations on sets of sensors --
 // propogate a new data sample to the current interval
@@ -139,6 +152,7 @@ extern float sensorGetDailyCumulative (WV_SENSOR set[STF_MAX][SENSOR_MAX], SENSO
 
 // -- special purpose utilities --
 extern float sensorGetWindRun (SENSOR_TIMEFRAMES frame, WV_SENSOR *sensor);
+extern char* sensorGetString (WV_SENSOR *sensor);
 
 #endif
 

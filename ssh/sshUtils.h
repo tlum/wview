@@ -76,6 +76,7 @@ typedef struct
     char        dest[_MAX_PATH];
     int         interval;
     int         currentCount;
+    int         timeout;
 } *SSH_RULE_ID;
 
 

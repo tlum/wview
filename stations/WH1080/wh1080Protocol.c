@@ -114,9 +114,13 @@ static int decodeSensor(char* raw, enum ws_types ws_type, float scale, float* va
     case ub:
         if ((unsigned char)raw[0] == 0xFF)
         {
-            return ERROR;
+            // Deal with humidity < 10% problem by hard-coding to 9:
+            fresult = 9;
         }
-        fresult = (unsigned char)raw[0] * scale;
+        else
+        {
+            fresult = (unsigned char)raw[0] * scale;
+        }
         break;
     case us:
         usTemp = getUSHORT(raw);
@@ -163,7 +167,7 @@ static int decodeSensor(char* raw, enum ws_types ws_type, float scale, float* va
         fresult *= 22.5;
         break;
     default:
-        fresult = -10000;
+        fresult = ARCHIVE_VALUE_NULL;
         break;
     }
 

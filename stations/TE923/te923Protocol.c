@@ -314,7 +314,10 @@ static int readStationData (WVIEWD_WORK *work)
 
     // decode rain counter:
     sensors->rain = (float)(buf[31] * 0x100 + buf[30]);
-    sensors->rain = wvutilsConvertMMToIN(sensors->rain);
+    // TE923 manual says resolution == 0.03 inches, not 1 millimeter (0.039").
+    // But console is not divisible by 0.03 after a few tips. Each
+    // bucket tip is actually about 1/36" or 0.27777777" (0.705556 mm).
+    sensors->rain /= 36;
 
     // Add our outside temp to the 12-hour accumulator:
     if ((sensors->outtemp[0] != ARCHIVE_VALUE_NULL) &&
@@ -541,8 +544,8 @@ static void storeLoopPkt (WVIEWD_WORK *work, LOOP_PKT *dest, TE923_DATA *src)
     {
         dest->sampleRain = 0;
         sensorAccumAddSample (ifWorkData->rainRateAccumulator, nowTime, dest->sampleRain);
-        dest->rainRate                      = sensorAccumGetTotal (ifWorkData->rainRateAccumulator);
-        dest->rainRate                      *= (60/TE923_RAIN_RATE_PERIOD);
+        dest->rainRate    = sensorAccumGetTotal (ifWorkData->rainRateAccumulator);
+        dest->rainRate   *= (60/TE923_RAIN_RATE_PERIOD);
     }
 
     dest->inTemp                        = src->intemp;

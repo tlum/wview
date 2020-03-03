@@ -292,6 +292,8 @@ extern float wvutilsConvertSPToAltimeter (float SPInches, float elevationFT);
 // Calculate the apparent temperature:
 extern float wvutilsCalculateApparentTemp(float temp, float windspeed, float humidity);
 
+// Calculate wet bulb temperature
+extern float wvutilsCalculateWetBulbTemp( float temp, float humidity, float pressure);
 
 // convert packed date/time to time_t
 extern time_t wvutilsPackedTimeToTimeT (uint16_t packedDate, uint16_t packedTime);
@@ -359,6 +361,8 @@ extern char *wvutilsPrintFloat (float value, int decPlaces);
 // Define a NULL-terminating wvstrncpy:
 extern int wvstrncpy(char *d, const char *s, size_t bufsize);
 
+// Right-trim a string:
+extern void wvstrtrim(char *d);
 
 // Respond to PMON poll messages
 extern void wvutilsSendPMONPollResponse (int mask, PMON_PROCESS_TYPES process);

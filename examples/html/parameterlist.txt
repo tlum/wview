@@ -75,6 +75,7 @@
 <!--airDensity-->
 <!--cumulusBase-->
 <!--apparentTemp-->
+<!--WetBulbTemp-->
 
 
 ############################ VP-Specific ############################

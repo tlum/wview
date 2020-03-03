@@ -74,10 +74,22 @@ static int16_t getPasscode (char *callSign)
 
     *p1 = '\0';
 
-    if (! strncmp (rootCall, "CW", 2) || ! strncmp (rootCall, "DW", 2))
+    if (! strncmp (rootCall, "CW", 2) ||
+        ! strncmp (rootCall, "DW", 2) ||
+        ! strncmp (rootCall, "EW", 2) ||
+        ! strncmp (rootCall, "FW", 2))
     {
-        // Not a HAM, return -1:
-        return -1;
+        // Not a HAM, make sure it has been configured:
+        if (! strncmp (&rootCall[2], "XXXX", 4))
+        {
+            // User has not configured a valid callsign:
+            return -2;
+        }
+        else
+        {
+            // Return -1 for passcode:
+            return -1;
+        }
     }
 
     hash = kKey;                                    // Initialize with the key value
@@ -105,9 +117,20 @@ static void processCWOP ()
     int                                 length = 0;
     char                                *serv;
     int                                 port;
+    int                                 passCode;
     volatile WVIEW_MSG_ARCHIVE_NOTIFY   Notify;
 
     memcpy ((void*)&Notify, (void*)&cwopWork.ArchiveMsg, sizeof(WVIEW_MSG_ARCHIVE_NOTIFY));
+
+    // Confirm the callsign is valid:
+    passCode = (int)getPasscode(cwopWork.callSign);
+    if (passCode == -2)
+    {
+        statusUpdateMessage("CWOP-error: callsign is not valid - aborting transfer.");
+        radMsgLog (PRI_HIGH, "CWOP-error: callsign %s is not valid - aborting transfer.",
+                   cwopWork.callSign);
+        return;
+    }
 
     // format the CWOP data
     ntime = time (NULL);
@@ -211,15 +234,13 @@ static void processCWOP ()
         serv = cwopWork.server1;
         port = cwopWork.portNo1;
     }
-    
+
     // wait 1 second ...
     radUtilsSleep (1000);
     
     // transmit the data 
     sprintf (login, "user %6s pass %d vers %s", 
-             cwopWork.callSign, 
-             (int)getPasscode(cwopWork.callSign), 
-             globalWviewVersionStr);
+             cwopWork.callSign, passCode, globalWviewVersionStr);
     length = strlen (login);
     login[length] = 0x0D;           // tack on the CR and LF
     login[length+1] = 0x0A;
@@ -662,6 +683,9 @@ int main (int argc, char *argv[])
     else
     {
         wvstrncpy (cwopWork.callSign, sValue, sizeof(cwopWork.callSign));
+        // Trim trailing blanks:
+        wvstrtrim (cwopWork.callSign);
+
         if (sValue[strlen(sValue)-1] >= '0' && sValue[strlen(sValue)-1] <= '9')
         {
             cwopWork.callSignOffset = atoi(&sValue[strlen(sValue)-1]);

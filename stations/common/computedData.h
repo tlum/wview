@@ -64,20 +64,20 @@ extern int computedDataInit (WVIEWD_WORK *work);
 // save sensors and exit
 extern void computedDataExit (WVIEWD_WORK *work);
 
-// update the computed values based on a new archive record arrival
-extern int computedDataUpdate (WVIEWD_WORK *work, ARCHIVE_PKT *newRecord);
+// update the computed values based on a new archive interval
+extern int computedDataUpdate (WVIEWD_WORK *work);
+
+// update the computed values based on a new archive record
+extern int computedDataNewArchive (WVIEWD_WORK *work, ARCHIVE_PKT *newRecord);
 
 // store a data sample in the current archive interval store
 extern int computedDataStoreSample (WVIEWD_WORK *work);
-
-// check interval HILOWs against the station-generated archive record
-extern int computedDataCheckHiLows (WVIEWD_WORK *work, ARCHIVE_PKT *newRecord);
 
 // create an archive record from our sensor store
 extern ARCHIVE_PKT *computedDataGenerateArchive (WVIEWD_WORK *work);
 
 // clear the archive store
-extern void computedDataClearInterval (WVIEWD_WORK *work, float rainCarry, float etCarry);
+extern void computedDataClearInterval (WVIEWD_WORK *work);
 
 
 #endif

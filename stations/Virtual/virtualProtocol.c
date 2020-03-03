@@ -115,8 +115,9 @@ static int ReadDataFrame(WVIEWD_WORK *work)
 
             if (hostRecord.dateTime != 0)
             {
-                radMsgLog (PRI_STATUS, "VIRTUAL: RX archive from remote station: %s",
-                           ctime((const time_t*)(&hostRecord.dateTime))); 
+                time_t archtime;
+                archtime = hostRecord.dateTime;
+                radMsgLog (PRI_STATUS, "VIRTUAL: RX archive from remote station: %s", ctime(&archtime));
             }
 
             if (virtualWork.IsArchiveNeeded)

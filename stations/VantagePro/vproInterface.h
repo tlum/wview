@@ -79,6 +79,9 @@
 
 #define VP_RESPONSE_TIMEOUT(isIP)       ((isIP) ? 10000L : 5000L)
 
+// time to wait before attempting archive record again:
+#define VPIF_RETRY_ARCHIVE_INTERVAL     10000L
+
 #define VP_PARM_DO_RXCHECK              "DO_RXCHECK"
 
 
@@ -193,6 +196,7 @@ typedef struct
     int             timeSyncFlag;
     int             archiveRetryFlag;
     int             doLoopFlag;
+    int             doArchiveFlag;
     int             sampleRain;             // to track dailyRain changes
     int             sampleET;               // to track dayET changes
 

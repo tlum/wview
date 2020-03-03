@@ -233,13 +233,19 @@ static int usbhidWrite
         {
             if (retVal == -1)
             {
-                radMsgLog (PRI_HIGH, "USBHID: hid_write failed: %d", errno);
+                if (usbhidWork->debug)
+                {
+                    radMsgLog (PRI_HIGH, "USBHID: hid_write failed");
+                }
                 return ERROR;
             }
             else
             {
-                radMsgLog (PRI_HIGH, "USBHID: hid_write is SHORT: %d of %d", 
-                           retVal, length);
+                if (usbhidWork->debug)
+                {
+                    radMsgLog (PRI_HIGH, "USBHID: hid_write is SHORT: %d of %d",
+                               retVal, length);
+                }
                 return retVal;
             }
         }

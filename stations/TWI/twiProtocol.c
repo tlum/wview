@@ -116,10 +116,6 @@ static int readLineFromStation (WVIEWD_WORK *work, char *store, int msTime)
 // returns TRUE if the item is found, otherwise FALSE
 static int processDataItem(PARSER_ID parser, int startIndex)
 {
-    char            type;
-    int             id;
-    float           value;
-    char            units;
     char            *retStr, *tempPtr;
 
     // load up the fields properly
@@ -327,8 +323,6 @@ void twiProtocolExit (WVIEWD_WORK *work)
 
 int twiProtocolGetReadings (WVIEWD_WORK *work, TWI_DATA *store)
 {
-    int             i;
-
     // request a data update with rainrate:
     if (twiProtocolWriteLineToStation (work, "R", FALSE) == ERROR)
     {

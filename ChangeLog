@@ -2,6 +2,52 @@ RELEASE VERSION HISTORY (newest to oldest)
 ------------------------------------------
 
 
+5.21.0    03-05-2014
+--------------------
+
+radlib version required: 2.12.0 or newer
+
+1)  WMRUSB improvements. Further reverse engineering of the undocumented protocol. Reset and
+    heartbeat messages now working. Packet reception more stable. Initial packet acquisition
+    faster resulting in faster startup.
+
+2)  Modify CWOP packet header for new stricter compliance requirements of CWOP servers.
+
+3)  Fix log message time_t bug for 64-bit platforms.
+
+4)  Add timeout parameter for ssh rules. Added rows to config database.
+
+5)  Updated data feed conversion logic to handle ARCHIVE_VALUE_NULL in loop data.
+
+6)  Added flat line sensor value detection for outside temp, wind direction and wind speed.
+    If there are no changes over a 4 hour period an email alert will be sent.
+
+7)  Added Station Name, City and State to the wviewmgmt System Status page header.
+
+8)  Added logic to SSH timer to fixup next timer interval if system time has skewed or
+    if the ssh transfer took longer than 2 minutes.
+
+9)  Fixed TE923 rain calculation to assume each tip is 1/36" instead of 1mm.
+
+10) Fixed a bug for Vantage Pro stations which could cause the last archive interval of
+    the previous day to be included in the current day HILOW data. This occurred if the
+    midnight archive record was provided late by the console.
+
+11) Added wet bulb temperature calculation and html tag --WetBulbTemp--. Added to all
+    "readings.incx" templates.
+
+12) Added email alert notification if no loop data has been received for a given archive
+    interval. This applies to all stations except the Davis stations (alerts already
+    exist for them).
+
+13) Updated start scripts to detect and delete stale pid files.
+
+14) Modified WH1080 data parsing to assume a humidity of 9% if the value from the
+    station is undefined (0xff).
+
+
+
+
 5.20.2    03-21-2012
 --------------------
 

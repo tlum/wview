@@ -55,9 +55,12 @@
 #define WMR_BUFFER_LENGTH           255
 #define WMR_TEMP_SENSOR_COUNT       10
 #define WMR_THREAD_SLEEP            100                 // ms
+#define WMR_REESTABLISH_SLEEP       10000               // 10 secs
 #define WMR_PROCESS_TIME_INTERVAL   1000                // 1 second
-#define WMR_HEARTBEAT_INTERVAL      25                  // seconds
+#define WMR_HEARTBEAT_INTERVAL      10                  // seconds
 
+// Define the rain rate acuumulator period (minutes):
+#define WMR_RAIN_RATE_PERIOD        5
 
 // Define the WMRUSB station data message:
 //  WVIEW_MSG_TYPE_STATION_DATA (WMRUSB version):
@@ -69,9 +72,6 @@ typedef struct
 __attribute__ ((packed)) WMRUSB_MSG_DATA;
 
 
-
-// Define the rain rate accumulator period (minutes):
-#define WMR_RAIN_RATE_PERIOD        5
 
 // Define WMR protocol types:
 typedef enum
@@ -88,7 +88,7 @@ enum _SensorTypes
     WMR_SENSOR_RAIN                 = 0x02,
     WMR_SENSOR_OUT_TEMP             = 0x04,
     WMR_SENSOR_PRESSURE             = 0x08,
-    WMR_SENSOR_ALL                  = 0x0D      // Exclude requiring the rain sensor
+    WMR_SENSOR_ALL                  = 0x0D          // Don't require rain to start
 };
 
 #define WMR_TEMP_SENSOR_OUT         1
@@ -170,6 +170,7 @@ typedef struct
     WMR_DATA        wmrReadings;
     float           totalRain;              // to track cumulative changes
     int             outsideChannel;
+    WV_ACCUM_ID     rainRateAccumulator;    // to compute rain rate
 } WMR_IF_DATA;
 
 

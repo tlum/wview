@@ -62,31 +62,36 @@
     $field_SSH_Port_1                       = SqliteDBGetValue($dbID, 'SSH_1_PORT');
     $field_SSH_UserName_1                   = SqliteDBGetValue($dbID, 'SSH_1_USERNAME');
     $field_SSH_Destination_1                = SqliteDBGetValue($dbID, 'SSH_1_DESTINATION');
+    $field_SSH_Timeout_1                    = SqliteDBGetValue($dbID, 'SSH_1_TIMEOUT');
     $field_SSH_Source_2                     = SqliteDBGetValue($dbID, 'SSH_2_SOURCE');
     $field_SSH_Interval_2                   = SqliteDBGetValue($dbID, 'SSH_2_INTERVAL');
     $field_SSH_Host_2                       = SqliteDBGetValue($dbID, 'SSH_2_HOST');
     $field_SSH_Port_2                       = SqliteDBGetValue($dbID, 'SSH_2_PORT');
     $field_SSH_UserName_2                   = SqliteDBGetValue($dbID, 'SSH_2_USERNAME');
     $field_SSH_Destination_2                = SqliteDBGetValue($dbID, 'SSH_2_DESTINATION');
+    $field_SSH_Timeout_2                    = SqliteDBGetValue($dbID, 'SSH_2_TIMEOUT');
     $field_SSH_Source_3                     = SqliteDBGetValue($dbID, 'SSH_3_SOURCE');
     $field_SSH_Interval_3                   = SqliteDBGetValue($dbID, 'SSH_3_INTERVAL');
     $field_SSH_Host_3                       = SqliteDBGetValue($dbID, 'SSH_3_HOST');
     $field_SSH_Port_3                       = SqliteDBGetValue($dbID, 'SSH_3_PORT');
     $field_SSH_UserName_3                   = SqliteDBGetValue($dbID, 'SSH_3_USERNAME');
     $field_SSH_Destination_3                = SqliteDBGetValue($dbID, 'SSH_3_DESTINATION');
+    $field_SSH_Timeout_3                    = SqliteDBGetValue($dbID, 'SSH_3_TIMEOUT');
     $field_SSH_Source_4                     = SqliteDBGetValue($dbID, 'SSH_4_SOURCE');
     $field_SSH_Interval_4                   = SqliteDBGetValue($dbID, 'SSH_4_INTERVAL');
     $field_SSH_Host_4                       = SqliteDBGetValue($dbID, 'SSH_4_HOST');
     $field_SSH_Port_4                       = SqliteDBGetValue($dbID, 'SSH_4_PORT');
     $field_SSH_UserName_4                   = SqliteDBGetValue($dbID, 'SSH_4_USERNAME');
     $field_SSH_Destination_4                = SqliteDBGetValue($dbID, 'SSH_4_DESTINATION');
+    $field_SSH_Timeout_4                    = SqliteDBGetValue($dbID, 'SSH_4_TIMEOUT');
     $field_SSH_Source_5                     = SqliteDBGetValue($dbID, 'SSH_5_SOURCE');
     $field_SSH_Interval_5                   = SqliteDBGetValue($dbID, 'SSH_5_INTERVAL');
     $field_SSH_Host_5                       = SqliteDBGetValue($dbID, 'SSH_5_HOST');
     $field_SSH_Port_5                       = SqliteDBGetValue($dbID, 'SSH_5_PORT');
     $field_SSH_UserName_5                   = SqliteDBGetValue($dbID, 'SSH_5_USERNAME');
     $field_SSH_Destination_5                = SqliteDBGetValue($dbID, 'SSH_5_DESTINATION');
-    
+    $field_SSH_Timeout_5                    = SqliteDBGetValue($dbID, 'SSH_5_TIMEOUT');
+
     // Close the database connection:
     SqliteDBClose($dbID);
 
