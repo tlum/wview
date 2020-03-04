@@ -1,24 +1,24 @@
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         wvconfig.c
- 
+
   PURPOSE:
         Provide the configuration API methods.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         7/05/2008       M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2008, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 //  ... System header files
@@ -40,62 +40,62 @@ static SEM_ID               wvconfigMutex;
 //  ... Local methods
 
 // Query for a parameter value - it is converted to the proper format later:
-static int queryParmValue (const char* configItem, char* valueStore)
+static int queryParmValue( const char* configItem, char* valueStore )
 {
     char                    query[DB_SQLITE_QUERY_LENGTH_MAX];
     SQLITE_RESULT_SET_ID    result;
     SQLITE_ROW_ID           rowDescr;
     SQLITE_FIELD_ID         field;
 
-    if (sqliteID == NULL)
+    if( sqliteID == NULL )
     {
-        radMsgLog (PRI_HIGH, "queryParmValue: sqliteID is NULL!");
+        radMsgLog( PRI_HIGH, "queryParmValue: sqliteID is NULL!" );
         return ERROR;
     }
 
-    sprintf (query, "SELECT value FROM config WHERE name = '%s'", configItem);
+    sprintf( query, "SELECT value FROM config WHERE name = '%s'", configItem );
 
-    if (radsqliteQuery(sqliteID, query, TRUE) == ERROR)
+    if( radsqliteQuery( sqliteID, query, TRUE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, 
-                   "queryParmValue: radsqliteQuery %s failed!", configItem);
+        radMsgLog( PRI_MEDIUM,
+                   "queryParmValue: radsqliteQuery %s failed!", configItem );
         return ERROR;
     }
 
-    result = radsqliteGetResults (sqliteID);
-    if (result == NULL)
+    result = radsqliteGetResults( sqliteID );
+    if( result == NULL )
     {
-        radMsgLog (PRI_MEDIUM, 
-                   "queryParmValue: radsqliteGetResults failed!");
+        radMsgLog( PRI_MEDIUM,
+                   "queryParmValue: radsqliteGetResults failed!" );
         return ERROR;
     }
 
     // We have a result, return it to the caller:
-    rowDescr = radsqliteResultsGetFirst (result);
-    if (rowDescr == NULL)
+    rowDescr = radsqliteResultsGetFirst( result );
+    if( rowDescr == NULL )
     {
-        radMsgLog (PRI_MEDIUM, 
-                   "queryParmValue: radsqliteResultsGetFirst failed!");
-        radsqliteReleaseResults (sqliteID, result);
+        radMsgLog( PRI_MEDIUM,
+                   "queryParmValue: radsqliteResultsGetFirst failed!" );
+        radsqliteReleaseResults( sqliteID, result );
         return ERROR;
     }
 
-    field = radsqliteFieldGet (rowDescr, configCOLUMN_VALUE);
-    if (field == NULL)
+    field = radsqliteFieldGet( rowDescr, configCOLUMN_VALUE );
+    if( field == NULL )
     {
-        radMsgLog (PRI_MEDIUM, 
-                   "queryParmValue: radsqliteFieldGet failed!");
-        radsqliteReleaseResults (sqliteID, result);
+        radMsgLog( PRI_MEDIUM,
+                   "queryParmValue: radsqliteFieldGet failed!" );
+        radsqliteReleaseResults( sqliteID, result );
         return ERROR;
     }
 
-    memcpy (valueStore, 
-            radsqliteFieldGetCharValue(field), 
-            radsqliteFieldGetCharLength(field));
-    valueStore[radsqliteFieldGetCharLength(field)] = 0;
+    memcpy( valueStore,
+            radsqliteFieldGetCharValue( field ),
+            radsqliteFieldGetCharLength( field ) );
+    valueStore[radsqliteFieldGetCharLength( field )] = 0;
 
     // Clean up:
-    radsqliteReleaseResults (sqliteID, result);
+    radsqliteReleaseResults( sqliteID, result );
 
     return OK;
 }
@@ -104,47 +104,47 @@ static int queryParmValue (const char* configItem, char* valueStore)
 //  ... API (public) methods
 
 //  wvconfigInit: Open the configuration database for this process:
-int wvconfigInit (int firstProcess)
+int wvconfigInit( int firstProcess )
 {
     char            buffer[_MAX_PATH];
     struct stat     fileData;
 
     // Make sure our config db is there:
-    sprintf (buffer, "%s/%s", WVIEW_CONFIG_DIR, WVIEW_CONFIG_DATABASE);
-    if (stat (buffer, &fileData) != 0)
+    sprintf( buffer, "%s/%s", WVIEW_CONFIG_DIR, WVIEW_CONFIG_DATABASE );
+    if( stat( buffer, &fileData ) != 0 )
     {
-        radMsgLog (PRI_CATASTROPHIC,
-                   "Cannot locate config database %s - aborting!", 
-                   buffer);
+        radMsgLog( PRI_CATASTROPHIC,
+                   "Cannot locate config database %s - aborting!",
+                   buffer );
         return ERROR;
     }
 
-    if (firstProcess == TRUE)
+    if( firstProcess == TRUE )
     {
-        wvconfigMutex = radSemCreate(WVIEW_CONFIG_SEM_INDEX, 1);
+        wvconfigMutex = radSemCreate( WVIEW_CONFIG_SEM_INDEX, 1 );
     }
     else
     {
-        wvconfigMutex = radSemCreate(WVIEW_CONFIG_SEM_INDEX, -1);
+        wvconfigMutex = radSemCreate( WVIEW_CONFIG_SEM_INDEX, -1 );
     }
 
-    if (wvconfigMutex == NULL)
+    if( wvconfigMutex == NULL )
     {
-        radMsgLog (PRI_CATASTROPHIC, 
-                   "Cannot create/attach config database semaphore - aborting!");
+        radMsgLog( PRI_CATASTROPHIC,
+                   "Cannot create/attach config database semaphore - aborting!" );
         return ERROR;
     }
 
     // Lock for serial access:
-    radSemTake(wvconfigMutex);
+    radSemTake( wvconfigMutex );
 
-    sqliteID = radsqliteOpen ((const char*)buffer);
-    if (sqliteID == NULL)
+    sqliteID = radsqliteOpen( ( const char* )buffer );
+    if( sqliteID == NULL )
     {
-        radMsgLog (PRI_CATASTROPHIC, "wvconfigInit: radsqliteOpen %s failed!",
-                   buffer);
-        radSemGive(wvconfigMutex);
-        radSemDelete(wvconfigMutex);
+        radMsgLog( PRI_CATASTROPHIC, "wvconfigInit: radsqliteOpen %s failed!",
+                   buffer );
+        radSemGive( wvconfigMutex );
+        radSemDelete( wvconfigMutex );
         return ERROR;
     }
 
@@ -152,53 +152,53 @@ int wvconfigInit (int firstProcess)
 }
 
 //  wvconfigExit: clean up and detach from the wview configuration API
-void wvconfigExit (void)
+void wvconfigExit( void )
 {
-    if (sqliteID != NULL)
+    if( sqliteID != NULL )
     {
-        radsqliteClose (sqliteID);
+        radsqliteClose( sqliteID );
         sqliteID = NULL;
     }
 
-    radSemGive(wvconfigMutex);
-    radSemDelete(wvconfigMutex);
+    radSemGive( wvconfigMutex );
+    radSemDelete( wvconfigMutex );
 }
 
 //  wvconfigGetINTValue: retrieve the integer value for this parameter;
 //  Returns: integer value or 0
-int wvconfigGetINTValue (const char* configItem)
+int wvconfigGetINTValue( const char* configItem )
 {
     char        buffer[_MAX_PATH];
 
-    if (queryParmValue (configItem, buffer) == ERROR)
+    if( queryParmValue( configItem, buffer ) == ERROR )
     {
         return 0;
     }
 
-    return (atoi(buffer));
+    return ( atoi( buffer ) );
 }
 
 //  wvconfigGetDOUBLEValue: retrieve the double value for this parameter;
 //  Returns: double value
-double wvconfigGetDOUBLEValue (const char* configItem)
+double wvconfigGetDOUBLEValue( const char* configItem )
 {
     char        buffer[_MAX_PATH];
 
-    if (queryParmValue (configItem, buffer) == ERROR)
+    if( queryParmValue( configItem, buffer ) == ERROR )
     {
         return 0.0;
     }
 
-    return ((double)atof(buffer));
+    return ( ( double )atof( buffer ) );
 }
 
-//  wvconfigGetStringValue: retrieve the string value for this parameter 
+//  wvconfigGetStringValue: retrieve the string value for this parameter
 //  Returns: const static string reference
-const char* wvconfigGetStringValue (const char* configItem)
+const char* wvconfigGetStringValue( const char* configItem )
 {
     static char     buffer[_MAX_PATH];
 
-    if (queryParmValue (configItem, buffer) == ERROR)
+    if( queryParmValue( configItem, buffer ) == ERROR )
     {
         return NULL;
     }
@@ -206,26 +206,26 @@ const char* wvconfigGetStringValue (const char* configItem)
     return buffer;
 }
 
-//  wvconfigGetBooleanValue: retrieve the bool value for this parameter 
+//  wvconfigGetBooleanValue: retrieve the bool value for this parameter
 //  Returns: TRUE or FALSE
-int wvconfigGetBooleanValue (const char* configItem)
+int wvconfigGetBooleanValue( const char* configItem )
 {
     char        buffer[_MAX_PATH];
 
-    if (queryParmValue (configItem, buffer) == ERROR)
+    if( queryParmValue( configItem, buffer ) == ERROR )
     {
         return ERROR;
     }
 
-    if (!strcmp(buffer, "yes"))
+    if( !strcmp( buffer, "yes" ) )
     {
         return TRUE;
     }
-    else if (!strcmp(buffer, "1"))
+    else if( !strcmp( buffer, "1" ) )
     {
         return TRUE;
     }
-    else if (!strcmp(buffer, "TRUE"))
+    else if( !strcmp( buffer, "TRUE" ) )
     {
         return TRUE;
     }

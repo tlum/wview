@@ -1,27 +1,27 @@
 #ifndef INC_dbfilesh
 #define INC_dbfilesh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         dbfiles.h
- 
+
   PURPOSE:
         Provide the wview daemon database files definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         08/16/03        M.S. Teel       0               Original
         04/12/2008      W. Krenn        1               RainCollectorType
- 
+
   NOTES:
- 
- 
+
+
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
- 
+
         This source code is released for free distribution under the terms
         of the GNU General Public License.
- 
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -97,7 +97,7 @@ typedef struct
     uint8_t               soilMoist3;
     uint8_t               soilMoist4;
 }
-__attribute__ ((packed)) ARCHIVE_RECORD;
+__attribute__( ( packed ) ) ARCHIVE_RECORD;
 
 
 // define the old 'A' format here
@@ -143,7 +143,7 @@ typedef struct
     uint16_t              reedOpen;
     uint8_t               unused1;
 }
-__attribute__ ((packed)) ARCHIVE_RECORD_A;
+__attribute__( ( packed ) ) ARCHIVE_RECORD_A;
 
 
 #define DBFILES_RECORD_SIZE         88
@@ -187,7 +187,7 @@ typedef struct
     int16_t     recordsInDay;       // includes the daily summary record (counts as 2)
     int         startPos;           // The index (starting at 0) of the daily summary record
 }
-__attribute__ ((packed)) DayIndex;
+__attribute__( ( packed ) ) DayIndex;
 
 //  ... Header for each archive file
 typedef struct
@@ -197,7 +197,7 @@ typedef struct
     DayIndex    dayIndex [32];      // index records for each day. Index 0 is not used
     // (i.e. the 1'st is at index 1, not index 0)
 }
-__attribute__ ((packed)) HeaderBlock;
+__attribute__( ( packed ) ) HeaderBlock;
 
 
 //  ... After the Header are a series of 88-byte records with one of the following
@@ -264,7 +264,7 @@ typedef struct
     // tenths of a degree F - Day
     uint8_t   reserved3[11];
 }
-__attribute__ ((packed)) DailySummaryRecord;
+__attribute__( ( packed ) ) DailySummaryRecord;
 
 //  ... standard archive record (88 bytes)
 typedef struct
@@ -306,7 +306,7 @@ typedef struct
     uint8_t   extraTemp[7];           // (whole degrees F) + 90
     uint8_t   extraHum[7];            // whole percent
 }
-__attribute__ ((packed)) ArchiveRecord;
+__attribute__( ( packed ) ) ArchiveRecord;
 
 /*  !!!!!!!!!!!!!!!!!!!!  END HIDDEN SECTION  !!!!!!!!!!!!!!!!!!!!!
 */
@@ -317,7 +317,7 @@ __attribute__ ((packed)) ArchiveRecord;
 
 /*  ... 0 <= dir <= 15
 */
-extern char *dbfBuildWindDirString (int dir);
+extern char* dbfBuildWindDirString( int dir );
 
 
 /*  ... provide a routine to generate an ASCII browser view file
@@ -328,10 +328,10 @@ extern char *dbfBuildWindDirString (int dir);
 */
 extern int dbfExportArchiveFile
 (
-    char            *archivePath,
+    char*            archivePath,
     uint16_t        start,
     uint16_t        stop,
-    char            *outputFilename
+    char*            outputFilename
 );
 
 /*  ... provide a routine to generate an ASCII browser view file
@@ -342,10 +342,10 @@ extern int dbfExportArchiveFile
 */
 extern int dbfExportDailySummaryFile
 (
-    char            *archivePath,
+    char*            archivePath,
     uint16_t        start,
     uint16_t        stop,
-    char            *outputFilename
+    char*            outputFilename
 );
 
 /*  ... calculate averages over a given period of time
@@ -359,8 +359,8 @@ extern int dbfGetAverages
     int             isMetricUnits,
     int             isMetricMM,
     int             arcInterval,
-    char            *archivePath,
-    HISTORY_DATA    *store,
+    char*            archivePath,
+    HISTORY_DATA*    store,
     int             startmin,
     int             starthour,
     int             startday,
@@ -376,8 +376,8 @@ extern int dbfGetAverages
 */
 extern int dbfGetNoaaDay
 (
-    char            *archivePath,
-    NOAA_DAY_REC    *store,
+    char*            archivePath,
+    NOAA_DAY_REC*    store,
     int             year,
     int             month,
     int             day
@@ -385,20 +385,20 @@ extern int dbfGetNoaaDay
 
 extern int dbfWriteDailyArchiveReport
 (
-    char            *archivePath,
-    char            *filename,
+    char*            archivePath,
+    char*            filename,
     time_t          timeval,
     int             isMetric,
     int             isMetricMM,
     int             arcInterval,
-    void            (*writeHeader) (FILE *file)
+    void ( *writeHeader )( FILE* file )
 );
 
 extern int dbfUpdateDailyArchiveReport
 (
-    char            *file,
-    HISTORY_DATA    *data,
-    void            (*writeHeader) (FILE *file),
+    char*            file,
+    HISTORY_DATA*    data,
+    void ( *writeHeader )( FILE* file ),
     int             isMetric
 );
 
@@ -412,8 +412,8 @@ extern int dbfUpdateDailyArchiveReport
 */
 extern int dbfStoreArchiveRecord
 (
-    char            *archivePath,
-    ARCHIVE_RECORD  *record,
+    char*            archivePath,
+    ARCHIVE_RECORD*  record,
     int             archiveInterval,
     uint16_t        RainCollectorType
 );
@@ -423,7 +423,7 @@ extern int dbfStoreArchiveRecord
 */
 int dbfDeleteArchiveRecords
 (
-    char            *archivePath,
+    char*            archivePath,
     int             year,
     int             month,
     int             day
@@ -436,12 +436,12 @@ int dbfDeleteArchiveRecords
 */
 extern int dbfGetNewestArchiveTime
 (
-    char            *archivePath,
+    char*            archivePath,
     uint16_t        curMonth,
     uint16_t        curYear,
-    uint16_t        *date,
-    uint16_t        *time,
-    ArchiveRecord   *newestRecord
+    uint16_t*        date,
+    uint16_t*        time,
+    ArchiveRecord*   newestRecord
 );
 
 /*  ... search the archive path for the next archive record after 'date' and
@@ -452,10 +452,10 @@ extern int dbfGetNewestArchiveTime
 */
 extern int dbfGetNextArchiveRecord
 (
-    char            *archivePath,
-    uint16_t        *date,
-    uint16_t        *time,
-    ArchiveRecord   *recordStore
+    char*            archivePath,
+    uint16_t*        date,
+    uint16_t*        time,
+    ArchiveRecord*   recordStore
 );
 
 /*  ... dbfCopyArchiveRecordToConsoleRecord - copy an archive file record to
@@ -463,8 +463,8 @@ extern int dbfGetNextArchiveRecord
 */
 extern int dbfCopyArchiveRecordToConsoleRecord
 (
-    ArchiveRecord       *src,
-    ARCHIVE_RECORD      *dest,
+    ArchiveRecord*       src,
+    ARCHIVE_RECORD*      dest,
     uint16_t            date,
     uint16_t            time
 );
@@ -474,7 +474,7 @@ extern int dbfCopyArchiveRecordToConsoleRecord
 */
 extern int dbfIncrementConsoleTime
 (
-    ARCHIVE_RECORD      *record,
+    ARCHIVE_RECORD*      record,
     int                 numMinutes
 );
 

@@ -1,25 +1,25 @@
 #ifndef INC_parserh
 #define INC_parserh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         parser.h
- 
+
   PURPOSE:
         Provide ASCII parsing utilities.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         01/15/2006      M.S. Teel       0               Original
- 
+
   NOTES:
- 
+
   LICENSE:
         Copyright (c) 2006, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -54,7 +54,7 @@ typedef struct
 typedef struct
 {
     RADLIST         tokens;
-    PARSE_TOKEN     *current;
+    PARSE_TOKEN*     current;
 
 } PARSE_DATA, *PARSER_ID;
 
@@ -62,19 +62,19 @@ typedef struct
 // function prototypes
 
 // create a parsing object
-extern PARSER_ID parserInit (char *inputString, char *delimiters);
+extern PARSER_ID parserInit( char* inputString, char* delimiters );
 
 // get the first token
-extern char *parserGetFirst (PARSER_ID id);
+extern char* parserGetFirst( PARSER_ID id );
 
 // get the next token
-extern char *parserGetNext (PARSER_ID id);
+extern char* parserGetNext( PARSER_ID id );
 
 // get the n'th token (starts with 1); resets the current pointer
-extern char *parserGetNumber (PARSER_ID id, int n);
+extern char* parserGetNumber( PARSER_ID id, int n );
 
 // destroy a parsing object
-extern void parserExit (PARSER_ID id);
+extern void parserExit( PARSER_ID id );
 
 #endif
 

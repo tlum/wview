@@ -1,26 +1,26 @@
 #ifndef INC_ftph
 #define INC_ftph
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         ftp.h
- 
+
   PURPOSE:
         Provide the wview FTP generator definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         01/10/04        M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files

@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         virtualInterface.c
- 
+
   PURPOSE:
         Provide the virtual station interface API and utilities.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         12/14/2009      M.S. Teel       0               Original
@@ -17,7 +17,7 @@
 
         This source code is released for free distribution under the terms
         of the GNU General Public License.
- 
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -38,10 +38,10 @@
 
 static VIRTUAL_IF_DATA  virtualWorkData;
 
-void                    (*ArchiveIndicator) (ARCHIVE_PKT* newRecord);
+void ( *ArchiveIndicator )( ARCHIVE_PKT* newRecord );
 
-static void             storeLoopPkt (LOOP_PKT *dest, VIRTUAL_IF_DATA *src);
-static int              RestoreConnection(WVIEWD_WORK *work);
+static void             storeLoopPkt( LOOP_PKT* dest, VIRTUAL_IF_DATA* src );
+static int              RestoreConnection( WVIEWD_WORK* work );
 
 
 ////////////****////****  S T A T I O N   A P I  ****////****////////////
@@ -76,17 +76,17 @@ static int              RestoreConnection(WVIEWD_WORK *work);
 //
 int stationInit
 (
-    WVIEWD_WORK     *work,
-    void            (*archiveIndication)(ARCHIVE_PKT* newRecord)
+    WVIEWD_WORK*     work,
+    void ( *archiveIndication )( ARCHIVE_PKT* newRecord )
 )
 {
     int             i;
-    time_t          nowTime = time(NULL) - (WV_SECONDS_IN_HOUR * 12);
+    time_t          nowTime = time( NULL ) - ( WV_SECONDS_IN_HOUR * 12 );
     ARCHIVE_PKT     recordStore;
     ARCHIVE_PKT     newestRecord;
     char            tempStr[WVIEW_MAX_PATH];
 
-    memset (&virtualWorkData, 0, sizeof(virtualWorkData));
+    memset( &virtualWorkData, 0, sizeof( virtualWorkData ) );
 
     // save the archive indication callback (we should never need it)
     ArchiveIndicator = archiveIndication;
@@ -99,83 +99,83 @@ int stationInit
     work->stationGeneratesArchives = TRUE;
 
     // initialize the medium abstraction based on user configuration
-    if (!strcmp (work->stationInterface, "serial"))
+    if( !strcmp( work->stationInterface, "serial" ) )
     {
-        radMsgLog (PRI_HIGH, "stationInit: serial medium not supported for virtual station!");
+        radMsgLog( PRI_HIGH, "stationInit: serial medium not supported for virtual station!" );
         return ERROR;
     }
-    else if (!strcmp (work->stationInterface, "ethernet"))
+    else if( !strcmp( work->stationInterface, "ethernet" ) )
     {
-        if (ethernetMediumInit (&work->medium, work->stationHost, work->stationPort)
-            == ERROR)
+        if( ethernetMediumInit( &work->medium, work->stationHost, work->stationPort )
+                == ERROR )
         {
-            radMsgLog (PRI_HIGH, "stationInit: ethernet MediumInit failed");
+            radMsgLog( PRI_HIGH, "stationInit: ethernet MediumInit failed" );
             return ERROR;
         }
     }
     else
     {
-        radMsgLog (PRI_HIGH, "stationInit: medium %s not supported",
-                   work->stationInterface);
+        radMsgLog( PRI_HIGH, "stationInit: medium %s not supported",
+                   work->stationInterface );
         return ERROR;
     }
 
     // initialize the interface using the media specific routine
-    if ((*(work->medium.init))(&work->medium, work->stationDevice) == ERROR)
+    if( ( *( work->medium.init ) )( &work->medium, work->stationDevice ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: medium setup failed");
+        radMsgLog( PRI_HIGH, "stationInit: medium setup failed" );
         return ERROR;
     }
 
     // Make the socket blocking:
-    radSocketSetBlocking ((*(work->medium.getsocket))(&work->medium), TRUE);
+    radSocketSetBlocking( ( *( work->medium.getsocket ) )( &work->medium ), TRUE );
 
     // Reset the stationType to include the host:port:
-    sprintf(tempStr, "%s:%s:%d", 
-            work->stationType, work->stationHost, work->stationPort);
-    wvstrncpy(work->stationType, tempStr, sizeof(work->stationType));
+    sprintf( tempStr, "%s:%s:%d",
+             work->stationType, work->stationHost, work->stationPort );
+    wvstrncpy( work->stationType, tempStr, sizeof( work->stationType ) );
 
-    if (!strcmp (work->stationInterface, "ethernet"))
+    if( !strcmp( work->stationInterface, "ethernet" ) )
     {
-        radMsgLog (PRI_STATUS, "VIRTUAL on %s:%d opened ...",
-                   work->stationHost, work->stationPort);
+        radMsgLog( PRI_STATUS, "VIRTUAL on %s:%d opened ...",
+                   work->stationHost, work->stationPort );
     }
 
     // grab the station configuration now
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ELEVATION,
-                                  &virtualWorkData.elevation)
-            == ERROR)
+                                  &virtualWorkData.elevation )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LATITUDE,
-                                    &virtualWorkData.latitude)
-            == ERROR)
+                                    &virtualWorkData.latitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LONGITUDE,
-                                    &virtualWorkData.longitude)
-            == ERROR)
+                                    &virtualWorkData.longitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ARC_INTERVAL,
-                                  &virtualWorkData.archiveInterval)
-            == ERROR)
+                                  &virtualWorkData.archiveInterval )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
 
@@ -183,54 +183,54 @@ int stationInit
     work->archiveInterval = virtualWorkData.archiveInterval;
 
     // sanity check the archive interval against the most recent record
-    if (stationVerifyArchiveInterval (work) == ERROR)
+    if( stationVerifyArchiveInterval( work ) == ERROR )
     {
         // bad magic!
-        radMsgLog (PRI_HIGH, "stationInit: stationVerifyArchiveInterval failed!");
-        radMsgLog (PRI_HIGH, "You must either move old archive data out of the way -or-");
-        radMsgLog (PRI_HIGH, "fix the interval setting...");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationVerifyArchiveInterval failed!" );
+        radMsgLog( PRI_HIGH, "You must either move old archive data out of the way -or-" );
+        radMsgLog( PRI_HIGH, "fix the interval setting..." );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
     else
     {
-        radMsgLog (PRI_STATUS, "station archive interval: %d minutes",
-                   work->archiveInterval);
+        radMsgLog( PRI_STATUS, "station archive interval: %d minutes",
+                   work->archiveInterval );
     }
 
-    radMsgLog (PRI_STATUS, "Starting station interface: VIRTUAL"); 
+    radMsgLog( PRI_STATUS, "Starting station interface: VIRTUAL" );
 
     // This must be done here:
-    work->archiveDateTime = dbsqliteArchiveGetNewestTime(&newestRecord);
-    if ((int)work->archiveDateTime == ERROR)
+    work->archiveDateTime = dbsqliteArchiveGetNewestTime( &newestRecord );
+    if( ( int )work->archiveDateTime == ERROR )
     {
         work->archiveDateTime = 0;
-        radMsgLog (PRI_STATUS, "stationInit: no archive records found in database!");
+        radMsgLog( PRI_STATUS, "stationInit: no archive records found in database!" );
     }
 
     // initialize the station interface
-    if (virtualProtocolInit(work) == ERROR)
+    if( virtualProtocolInit( work ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: virtualProtocolInit failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: virtualProtocolInit failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
 
     // do the initial GetReadings now
-    if (virtualProtocolGetReadings(work, &virtualWorkData.virtualReadings) != OK)
+    if( virtualProtocolGetReadings( work, &virtualWorkData.virtualReadings ) != OK )
     {
-        radMsgLog (PRI_HIGH, "stationInit: initial virtualProtocolGetReadings failed!");
-        virtualProtocolExit (work);
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: initial virtualProtocolGetReadings failed!" );
+        virtualProtocolExit( work );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
 
     // populate the LOOP structure
-    storeLoopPkt (&work->loopPkt, &virtualWorkData);
+    storeLoopPkt( &work->loopPkt, &virtualWorkData );
 
     // we must indicate successful completion here -
     // even though we are synchronous, the daemon wants to see this event
-    radProcessEventsSend(NULL, STATION_INIT_COMPLETE_EVENT, 0);
+    radProcessEventsSend( NULL, STATION_INIT_COMPLETE_EVENT, 0 );
 
     return OK;
 }
@@ -239,10 +239,10 @@ int stationInit
 //
 // Returns: N/A
 //
-void stationExit (WVIEWD_WORK *work)
+void stationExit( WVIEWD_WORK* work )
 {
-    virtualProtocolExit (work);
-    (*(work->medium.exit)) (&work->medium);
+    virtualProtocolExit( work );
+    ( *( work->medium.exit ) )( &work->medium );
 
     return;
 }
@@ -257,28 +257,28 @@ void stationExit (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetPosition (WVIEWD_WORK *work)
+int stationGetPosition( WVIEWD_WORK* work )
 {
     // just set the values from our internal store - we retrieved them in
     // stationInit
-    work->elevation     = (int16_t)virtualWorkData.elevation;
-    if (virtualWorkData.latitude >= 0)
-        work->latitude      = (int16_t)((virtualWorkData.latitude*10)+0.5);
+    work->elevation     = ( int16_t )virtualWorkData.elevation;
+    if( virtualWorkData.latitude >= 0 )
+        work->latitude      = ( int16_t )( ( virtualWorkData.latitude * 10 ) + 0.5 );
     else
-        work->latitude      = (int16_t)((virtualWorkData.latitude*10)-0.5);
-    if (virtualWorkData.longitude >= 0)
-        work->longitude     = (int16_t)((virtualWorkData.longitude*10)+0.5);
+        work->latitude      = ( int16_t )( ( virtualWorkData.latitude * 10 ) - 0.5 );
+    if( virtualWorkData.longitude >= 0 )
+        work->longitude     = ( int16_t )( ( virtualWorkData.longitude * 10 ) + 0.5 );
     else
-        work->longitude     = (int16_t)((virtualWorkData.longitude*10)-0.5);
+        work->longitude     = ( int16_t )( ( virtualWorkData.longitude * 10 ) - 0.5 );
 
-    radMsgLog (PRI_STATUS, "station location: elevation: %d feet",
-               work->elevation);
+    radMsgLog( PRI_STATUS, "station location: elevation: %d feet",
+               work->elevation );
 
-    radMsgLog (PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
-               (float)abs(work->latitude)/10.0,
-               ((work->latitude < 0) ? 'S' : 'N'),
-               (float)abs(work->longitude)/10.0,
-               ((work->longitude < 0) ? 'W' : 'E'));
+    radMsgLog( PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
+               ( float )abs( work->latitude ) / 10.0,
+               ( ( work->latitude < 0 ) ? 'S' : 'N' ),
+               ( float )abs( work->longitude ) / 10.0,
+               ( ( work->longitude < 0 ) ? 'W' : 'E' ) );
 
     return OK;
 }
@@ -289,7 +289,7 @@ int stationGetPosition (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationSyncTime (WVIEWD_WORK *work)
+int stationSyncTime( WVIEWD_WORK* work )
 {
     // VIRTUAL does not keep time...
     return OK;
@@ -304,18 +304,18 @@ int stationSyncTime (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetReadings (WVIEWD_WORK *work)
+int stationGetReadings( WVIEWD_WORK* work )
 {
     // we will do this synchronously...
 
     // get readings from station
-    if (virtualProtocolGetReadings(work, &virtualWorkData.virtualReadings) == OK)
+    if( virtualProtocolGetReadings( work, &virtualWorkData.virtualReadings ) == OK )
     {
         // populate the LOOP structure
-        storeLoopPkt(&work->loopPkt, &virtualWorkData);
+        storeLoopPkt( &work->loopPkt, &virtualWorkData );
 
         // indicate we are done
-        radProcessEventsSend(NULL, STATION_LOOP_COMPLETE_EVENT, 0);
+        radProcessEventsSend( NULL, STATION_LOOP_COMPLETE_EVENT, 0 );
     }
 
     return OK;
@@ -333,10 +333,10 @@ int stationGetReadings (WVIEWD_WORK *work)
 // Note: This function will only be invoked by the wview daemon if the
 //       'stationInit' function set the 'stationGeneratesArchives' to TRUE
 //
-int stationGetArchive (WVIEWD_WORK *work)
+int stationGetArchive( WVIEWD_WORK* work )
 {
     // Let the protocol module handle archive requests:
-    virtualProtocolGetArchive(work);
+    virtualProtocolGetArchive( work );
     return OK;
 }
 
@@ -349,36 +349,36 @@ int stationGetArchive (WVIEWD_WORK *work)
 //
 // Returns: N/A
 //
-void stationDataIndicate (WVIEWD_WORK *work)
+void stationDataIndicate( WVIEWD_WORK* work )
 {
     int         retVal, done = FALSE;
 
-    if (virtualProtocolDataIndicate(work) == ERROR_ABORT)
+    if( virtualProtocolDataIndicate( work ) == ERROR_ABORT )
     {
         // We need to try to reconnect:
-        radMsgLog (PRI_HIGH, "VIRTUAL: remote station lost - retrying...");
-        virtualProtocolExit(work);
-        (*(work->medium.exit))(&work->medium);
+        radMsgLog( PRI_HIGH, "VIRTUAL: remote station lost - retrying..." );
+        virtualProtocolExit( work );
+        ( *( work->medium.exit ) )( &work->medium );
 
-        while (! done && ! work->exiting)
+        while( ! done && ! work->exiting )
         {
-            retVal = RestoreConnection(work);
-            if (retVal == ERROR_ABORT)
+            retVal = RestoreConnection( work );
+            if( retVal == ERROR_ABORT )
             {
-                radMsgLog (PRI_HIGH, "VIRTUAL: restore connection failed - exiting");
+                radMsgLog( PRI_HIGH, "VIRTUAL: restore connection failed - exiting" );
                 radProcessSetExitFlag();
                 done = TRUE;
             }
-            else if (retVal == OK)
+            else if( retVal == OK )
             {
-                radMsgLog (PRI_HIGH, "VIRTUAL: restore connection success");
-                virtualProtocolInit(work);
+                radMsgLog( PRI_HIGH, "VIRTUAL: restore connection success" );
+                virtualProtocolInit( work );
                 done = TRUE;
             }
             else
             {
-                radMsgLog (PRI_HIGH, "VIRTUAL: try again in 15 seconds to restore connection.");
-                radUtilsSleep(15000);
+                radMsgLog( PRI_HIGH, "VIRTUAL: try again in 15 seconds to restore connection." );
+                radUtilsSleep( 15000 );
             }
         }
     }
@@ -389,13 +389,13 @@ void stationDataIndicate (WVIEWD_WORK *work)
 // station-supplied function to receive IPM messages - any message received by
 // the generic station message handler which is not recognized will be passed
 // to the station-specific code through this function.
-// It is the responsibility of the station interface to process the message 
+// It is the responsibility of the station interface to process the message
 // appropriately (or ignore it).
 // -- Synchronous --
 //
 // Returns: N/A
 //
-void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
+void stationMessageIndicate( WVIEWD_WORK* work, int msgType, void* msg )
 {
     // N/A
     return;
@@ -411,7 +411,7 @@ void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
 //
 // Returns: N/A
 //
-void stationIFTimerExpiry (WVIEWD_WORK *work)
+void stationIFTimerExpiry( WVIEWD_WORK* work )
 {
     return;
 }
@@ -422,29 +422,29 @@ void stationIFTimerExpiry (WVIEWD_WORK *work)
 
 //  ... ----- static (local) methods ----- ...
 
-static int RestoreConnection(WVIEWD_WORK *work)
+static int RestoreConnection( WVIEWD_WORK* work )
 {
-    if (ethernetMediumInit (&work->medium, work->stationHost, work->stationPort)
-        == ERROR)
+    if( ethernetMediumInit( &work->medium, work->stationHost, work->stationPort )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "RestoreConnection: ethernet MediumInit failed");
+        radMsgLog( PRI_HIGH, "RestoreConnection: ethernet MediumInit failed" );
         return ERROR_ABORT;
     }
 
     // initialize the interface using the media specific routine
-    if ((*(work->medium.init))(&work->medium, work->stationDevice) == ERROR)
+    if( ( *( work->medium.init ) )( &work->medium, work->stationDevice ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "RestoreConnection: medium setup failed");
+        radMsgLog( PRI_HIGH, "RestoreConnection: medium setup failed" );
         return ERROR;
     }
 
     // Make the socket blocking:
-    radSocketSetBlocking ((*(work->medium.getsocket))(&work->medium), TRUE);
+    radSocketSetBlocking( ( *( work->medium.getsocket ) )( &work->medium ), TRUE );
 
     return OK;
 }
 
-static void storeLoopPkt (LOOP_PKT *dest, VIRTUAL_IF_DATA *src)
+static void storeLoopPkt( LOOP_PKT* dest, VIRTUAL_IF_DATA* src )
 {
     *dest = src->virtualReadings;
 

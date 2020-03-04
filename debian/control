@@ -2,7 +2,7 @@ Source: wview
 Section: net
 Priority: extra
 Maintainer: Mark Teel <mteel2005@gmail.com>
-Build-Depends: debhelper (>= 7), autotools-dev, radlib-dev (>= 2.12), libgd2-noxpm-dev, libssl-dev, libcurl4-openssl-dev, sqlite3, libusb-1.0-0-dev
+Build-Depends: debhelper (>= 7), autotools-dev, radlib-dev (>= 2.12), libgd2-noxpm-dev, libssl-dev, libcurl4-openssl-dev, sqlite3, libusb-1.0-0-dev, libudev-dev
 Standards-Version: 3.8.3
 Homepage: http://www.wviewweather.com
 

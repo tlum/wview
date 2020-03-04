@@ -86,28 +86,28 @@ typedef enum
 typedef struct _wview_medium
 {
     WVIEW_MEDIUM_TYPE   type;
-    void                *workData;
+    void*                workData;
 
     // Only some of these are valid for a given medium type:
     // MEDIUM_TYPE_DEVICE
     int                 fd;
-    int                 (*init) (struct _wview_medium *medium, char *deviceName);
-    void                (*exit) (struct _wview_medium *medium);
-    int                 (*restart) (struct _wview_medium *medium);
-    int                 (*read) (struct _wview_medium *medium, void *bfr, int len, int timeout);
-    int                 (*write) (struct _wview_medium *medium, void *buffer, int length);
-    void                (*flush) (struct _wview_medium *medium, int queue);
-    void                (*txdrain) (struct _wview_medium *medium);
-    RADSOCK_ID          (*getsocket) (struct _wview_medium *medium);
+    int ( *init )( struct _wview_medium* medium, char* deviceName );
+    void ( *exit )( struct _wview_medium* medium );
+    int ( *restart )( struct _wview_medium* medium );
+    int ( *read )( struct _wview_medium* medium, void* bfr, int len, int timeout );
+    int ( *write )( struct _wview_medium* medium, void* buffer, int length );
+    void ( *flush )( struct _wview_medium* medium, int queue );
+    void ( *txdrain )( struct _wview_medium* medium );
+    RADSOCK_ID( *getsocket )( struct _wview_medium* medium );
 
     // MEDIUM_TYPE_USBHID
     hid_device*         hidDevice;
-    int                 (*usbhidInit)(struct _wview_medium *medium);
-    void                (*usbhidExit)(struct _wview_medium *medium);
-    int                 (*usbhidRead) (struct _wview_medium *medium, void *bfr, int len, int timeout);
-    int                 (*usbhidReadSpecial) (struct _wview_medium *medium, void *bfr, int len, int timeout);
-    int                 (*usbhidWrite) (struct _wview_medium *medium, void *buffer, int length);
-    
+    int ( *usbhidInit )( struct _wview_medium* medium );
+    void ( *usbhidExit )( struct _wview_medium* medium );
+    int ( *usbhidRead )( struct _wview_medium* medium, void* bfr, int len, int timeout );
+    int ( *usbhidReadSpecial )( struct _wview_medium* medium, void* bfr, int len, int timeout );
+    int ( *usbhidWrite )( struct _wview_medium* medium, void* buffer, int length );
+
 } WVIEW_MEDIUM;
 
 
@@ -130,7 +130,7 @@ typedef struct
 {
     pid_t           myPid;
     WVIEW_MEDIUM    medium;
-    void            *stationData;               // station-specific data store
+    void*            stationData;               // station-specific data store
     int             runningFlag;
     RAD_THREAD_ID   threadId;                   // Non-NULL if station uses threads
 
@@ -202,6 +202,19 @@ typedef struct
 
     int             showStationIF;
 
+    // Debug:
+    int             DebugStationInput;
+    int             DebugStationOutput;
+    int             DebugStationByteCount;
+
+    int             UsbRawBytes;
+    int             StreamBytes;
+    int             PacketBytes;
+    int             ChecksumBytes;
+    int             BadLengthBytes;
+    int             StatCount;
+    int             UnknownPacketType;
+
     int             exiting;
 
 } WVIEWD_WORK;
@@ -211,7 +224,7 @@ typedef struct
 */
 
 // Retrieve exit status:
-extern int wviewdIsExiting(void);
+extern int wviewdIsExiting( void );
 
 
 #endif

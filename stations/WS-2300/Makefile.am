@@ -56,7 +56,7 @@ wviewd_ws2300_SOURCES     = \
 wviewd_ws2300_LDADD       =
 
 # define library directories
-wviewd_ws2300_LDFLAGS     = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+wviewd_ws2300_LDFLAGS     = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 wviewd_ws2300_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

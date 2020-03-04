@@ -1,23 +1,23 @@
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         wmrusbinterface.c
- 
+
   PURPOSE:
         Provide the Oregon Scientific WMR station interface API and utilities.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         03/10/2011      M.S. Teel       1               Original
- 
+
   NOTES:
-        The WMR station provides a USB HID interface for I/O        
- 
+        The WMR station provides a USB HID interface for I/O
+
   LICENSE:
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -37,9 +37,9 @@
 */
 
 static WMR_IF_DATA      wmrWorkData;
-static void             (*ArchiveIndicator) (ARCHIVE_PKT* newRecord);
+static void ( *ArchiveIndicator )( ARCHIVE_PKT* newRecord );
 
-static void serialPortConfig (int fd);
+static void serialPortConfig( int fd );
 
 ////////////****////****  S T A T I O N   A P I  ****////****////////////
 /////  Must be provided by each supported wview station interface  //////
@@ -73,14 +73,14 @@ static void serialPortConfig (int fd);
 //
 int stationInit
 (
-    WVIEWD_WORK     *work,
-    void            (*archiveIndication)(ARCHIVE_PKT* newRecord)
+    WVIEWD_WORK*     work,
+    void ( *archiveIndication )( ARCHIVE_PKT* newRecord )
 )
 {
     int             i;
     STIM            stim;
 
-    memset (&wmrWorkData, 0, sizeof(wmrWorkData));
+    memset( &wmrWorkData, 0, sizeof( wmrWorkData ) );
 
     // save the archive indication callback (we should never need it)
     ArchiveIndicator = archiveIndication;
@@ -93,44 +93,44 @@ int stationInit
     work->stationGeneratesArchives = FALSE;
 
     // grab the station configuration now
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ELEVATION,
-                                  &wmrWorkData.elevation)
-            == ERROR)
+                                  &wmrWorkData.elevation )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!");
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!" );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LATITUDE,
-                                    &wmrWorkData.latitude)
-            == ERROR)
+                                    &wmrWorkData.latitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!");
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!" );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LONGITUDE,
-                                    &wmrWorkData.longitude)
-            == ERROR)
+                                    &wmrWorkData.longitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!");
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!" );
         return ERROR;
     }
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ARC_INTERVAL,
-                                  &wmrWorkData.archiveInterval)
-            == ERROR)
+                                  &wmrWorkData.archiveInterval )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!");
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!" );
         return ERROR;
     }
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_OUTSIDE_CHANNEL,
-                                  &wmrWorkData.outsideChannel)
-            == ERROR)
+                                  &wmrWorkData.outsideChannel )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt outside channel failed!");
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt outside channel failed!" );
         return ERROR;
     }
 
@@ -138,30 +138,30 @@ int stationInit
     work->archiveInterval = wmrWorkData.archiveInterval;
 
     // sanity check the archive interval against the most recent record
-    if (stationVerifyArchiveInterval (work) == ERROR)
+    if( stationVerifyArchiveInterval( work ) == ERROR )
     {
         // bad magic!
-        radMsgLog (PRI_HIGH, "stationInit: stationVerifyArchiveInterval failed!");
-        radMsgLog (PRI_HIGH, "You must either move old archive data out of the way -or-");
-        radMsgLog (PRI_HIGH, "fix the interval setting...");
+        radMsgLog( PRI_HIGH, "stationInit: stationVerifyArchiveInterval failed!" );
+        radMsgLog( PRI_HIGH, "You must either move old archive data out of the way -or-" );
+        radMsgLog( PRI_HIGH, "fix the interval setting..." );
         return ERROR;
     }
     else
     {
-        radMsgLog (PRI_STATUS, "station archive interval: %d minutes",
-                   work->archiveInterval);
+        radMsgLog( PRI_STATUS, "station archive interval: %d minutes",
+                   work->archiveInterval );
     }
 
-    radMsgLog (PRI_STATUS, "Starting station interface: WMR"); 
+    radMsgLog( PRI_STATUS, "Starting station interface: WMR" );
 
-    if (wmrInit (work) == ERROR)
+    if( wmrInit( work ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: wmrInit failed!");
+        radMsgLog( PRI_HIGH, "stationInit: wmrInit failed!" );
         return ERROR;
     }
 
-    radMsgLog (PRI_STATUS, "WMR on USB %4.4X:%4.4X opened ...",
-               WMR_VENDOR_ID, WMR_PRODUCT_ID);
+    radMsgLog( PRI_STATUS, "WMR on USB %4.4X:%4.4X opened ...",
+               WMR_VENDOR_ID, WMR_PRODUCT_ID );
 
     return OK;
 }
@@ -170,9 +170,9 @@ int stationInit
 //
 // Returns: N/A
 //
-void stationExit (WVIEWD_WORK *work)
+void stationExit( WVIEWD_WORK* work )
 {
-    wmrExit (work);
+    wmrExit( work );
     return;
 }
 
@@ -186,28 +186,28 @@ void stationExit (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetPosition (WVIEWD_WORK *work)
+int stationGetPosition( WVIEWD_WORK* work )
 {
     // just set the values from our internal store - we retrieved them in
     // stationInit
-    work->elevation     = (int16_t)wmrWorkData.elevation;
-    if (wmrWorkData.latitude >= 0)
-        work->latitude      = (int16_t)((wmrWorkData.latitude*10)+0.5);
+    work->elevation     = ( int16_t )wmrWorkData.elevation;
+    if( wmrWorkData.latitude >= 0 )
+        work->latitude      = ( int16_t )( ( wmrWorkData.latitude * 10 ) + 0.5 );
     else
-        work->latitude      = (int16_t)((wmrWorkData.latitude*10)-0.5);
-    if (wmrWorkData.longitude >= 0)
-        work->longitude     = (int16_t)((wmrWorkData.longitude*10)+0.5);
+        work->latitude      = ( int16_t )( ( wmrWorkData.latitude * 10 ) - 0.5 );
+    if( wmrWorkData.longitude >= 0 )
+        work->longitude     = ( int16_t )( ( wmrWorkData.longitude * 10 ) + 0.5 );
     else
-        work->longitude     = (int16_t)((wmrWorkData.longitude*10)-0.5);
+        work->longitude     = ( int16_t )( ( wmrWorkData.longitude * 10 ) - 0.5 );
 
-    radMsgLog (PRI_STATUS, "station location: elevation: %d feet",
-               work->elevation);
+    radMsgLog( PRI_STATUS, "station location: elevation: %d feet",
+               work->elevation );
 
-    radMsgLog (PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
-               (float)abs(work->latitude)/10.0,
-               ((work->latitude < 0) ? 'S' : 'N'),
-               (float)abs(work->longitude)/10.0,
-               ((work->longitude < 0) ? 'W' : 'E'));
+    radMsgLog( PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
+               ( float )abs( work->latitude ) / 10.0,
+               ( ( work->latitude < 0 ) ? 'S' : 'N' ),
+               ( float )abs( work->longitude ) / 10.0,
+               ( ( work->longitude < 0 ) ? 'W' : 'E' ) );
 
     return OK;
 }
@@ -218,7 +218,7 @@ int stationGetPosition (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationSyncTime (WVIEWD_WORK *work)
+int stationSyncTime( WVIEWD_WORK* work )
 {
     // We don't use the WMR time...
     return OK;
@@ -233,9 +233,9 @@ int stationSyncTime (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetReadings (WVIEWD_WORK *work)
+int stationGetReadings( WVIEWD_WORK* work )
 {
-    wmrGetReadings (work);
+    wmrGetReadings( work );
 
     return OK;
 }
@@ -252,11 +252,11 @@ int stationGetReadings (WVIEWD_WORK *work)
 // Note: This function will only be invoked by the wview daemon if the
 //       'stationInit' function set the 'stationGeneratesArchives' to TRUE
 //
-int stationGetArchive (WVIEWD_WORK *work)
+int stationGetArchive( WVIEWD_WORK* work )
 {
     // just indicate a NULL record, WMR918 does not generate them (and this
     // function should never be called!)
-    (*ArchiveIndicator) (NULL);
+    ( *ArchiveIndicator )( NULL );
     return OK;
 }
 
@@ -269,7 +269,7 @@ int stationGetArchive (WVIEWD_WORK *work)
 //
 // Returns: N/A
 //
-void stationDataIndicate (WVIEWD_WORK *work)
+void stationDataIndicate( WVIEWD_WORK* work )
 {
     return;
 }
@@ -277,18 +277,18 @@ void stationDataIndicate (WVIEWD_WORK *work)
 // station-supplied function to receive IPM messages - any message received by
 // the generic station message handler which is not recognized will be passed
 // to the station-specific code through this function.
-// It is the responsibility of the station interface to process the message 
+// It is the responsibility of the station interface to process the message
 // appropriately (or ignore it).
 // -- Synchronous --
 //
 // Returns: N/A
 //
-void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
+void stationMessageIndicate( WVIEWD_WORK* work, int msgType, void* msg )
 {
-    if (msgType == WVIEW_MSG_TYPE_STATION_DATA)
+    if( msgType == WVIEW_MSG_TYPE_STATION_DATA )
     {
         // Receive data from our reader thread:
-        wmrReadData(work, (WMRUSB_MSG_DATA*)msg);
+        wmrReadData( work, ( WMRUSB_MSG_DATA* )msg );
     }
 
     return;
@@ -304,26 +304,27 @@ void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
 //
 // Returns: N/A
 //
-void stationIFTimerExpiry (WVIEWD_WORK *work)
+void stationIFTimerExpiry( WVIEWD_WORK* work )
 {
     // restart our IF timer:
-    radProcessTimerStart (work->ifTimer, WMR_PROCESS_TIME_INTERVAL);
+    radProcessTimerStart( work->ifTimer, WMR_PROCESS_TIME_INTERVAL );
 
     // Process data:
-    while (wmrProcessData (work));
+    while( wmrProcessData( work ) );
 
-#ifdef WMR_COUNT_BYTES
-    if (++StatCount >= 60)
+    if( work->DebugStationByteCount )
     {
-        radMsgLog(PRI_MEDIUM, "STATS: raw:%d stream:%d pkt:%d cksum:%d unk:%d",
-                  UsbRawBytes,
-                  StreamBytes,
-                  PacketBytes,
-                  ChecksumBytes,
-                  UnknownPacketType);
-        StatCount = 0;
+        if( ++work->StatCount >= 60 )
+        {
+            radMsgLog( PRI_MEDIUM, "STATS: raw:%d stream:%d pkt:%d cksum:%d unk:%d",
+                       work->UsbRawBytes,
+                       work->StreamBytes,
+                       work->PacketBytes,
+                       work->ChecksumBytes,
+                       work->UnknownPacketType );
+            work->StatCount = 0;
+        }
     }
-#endif
 
     return;
 }

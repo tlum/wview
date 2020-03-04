@@ -1,28 +1,28 @@
 #ifndef INC_nmea0183h
 #define INC_nmea0183h
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         nmea0183.h
- 
+
   PURPOSE:
         Provide protocol utilities for NMEA 0183 station communication.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         01/14/2006      M.S. Teel       0               Original
         03/23/2008 W. Krenn     1               add hail/rain duration
- 
- 
+
+
   NOTES:
- 
- 
+
+
   LICENSE:
         Copyright (c) 2006, Mark S. Teel (mark@teel.ws)
- 
+
         This source code is released for free distribution under the terms
         of the GNU General Public License.
- 
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -125,29 +125,29 @@ NMEA0183_WORK;
 // function prototypes
 
 // call once during initialization
-extern int nmea0183Init (WVIEWD_WORK *work);
+extern int nmea0183Init( WVIEWD_WORK* work );
 
 // call once during initialization after first sensor readings
-extern int nmea0183PostInit (WVIEWD_WORK *work);
+extern int nmea0183PostInit( WVIEWD_WORK* work );
 
 // do cleanup
-extern void nmea0183Exit (WVIEWD_WORK *work);
+extern void nmea0183Exit( WVIEWD_WORK* work );
 
 // initiate a synchronous sensor collection
-extern int nmea0183GetReadings (WVIEWD_WORK *work, NMEA0183_DATA *store);
+extern int nmea0183GetReadings( WVIEWD_WORK* work, NMEA0183_DATA* store );
 
 // send a properly formatted line to the station, optionally checking
 // the response
 extern int nmea0183WriteLineToStation
-    (
-        WVIEWD_WORK     *work,
-        char            *strToSend,
-        char            *expectedResp,
-        int             generateCS,
-        int             flushRXBuffer
-    );
+(
+    WVIEWD_WORK*     work,
+    char*            strToSend,
+    char*            expectedResp,
+    int             generateCS,
+    int             flushRXBuffer
+);
 
 // reset the rain/hail accumulators to zero
-extern int nmea0183ResetAccumulators (WVIEWD_WORK *work);
+extern int nmea0183ResetAccumulators( WVIEWD_WORK* work );
 
 #endif

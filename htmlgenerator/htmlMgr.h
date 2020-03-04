@@ -1,26 +1,26 @@
 #ifndef INC_htmlmgrh
 #define INC_htmlmgrh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         htmlMgr.h
- 
+
   PURPOSE:
         Provide the wview HTML generator definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         08/30/03        M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -58,11 +58,11 @@
 // to allow for the graph data points required
 
 // Samples per hour:
-#define HOURLY_NUM_VALUES(x)    (60/x->archiveInterval)	
+#define HOURLY_NUM_VALUES(x)    (60/x->archiveInterval)
 
 // Samples per day: (samples/hour * 24 hours) + 1
-#define DAILY_NUM_VALUES(x)     (((60/x->archiveInterval) * 24) + 1)	
-#define MAX_DAILY_NUM_VALUES    ((60 * 24) + 1)	
+#define DAILY_NUM_VALUES(x)     (((60/x->archiveInterval) * 24) + 1)
+#define MAX_DAILY_NUM_VALUES    ((60 * 24) + 1)
 
 // Samples per week: (24 hours * 7 days) + 1
 #define WEEKLY_NUM_VALUES       ((24 * 7) + 1)
@@ -96,8 +96,8 @@ typedef enum
 //  ... define the work area for this beast
 typedef struct
 {
-    char                *imagePath;
-    char                *htmlPath;
+    char*                imagePath;
+    char*                htmlPath;
     char                stationName[64];
     char                stationType[128];
     char                stationCity[64];
@@ -141,8 +141,8 @@ typedef struct
     int                 baromTrendIndex;
     int                 baromTrendIndexMax;
     int                 baromTrendIndicator;                // -1,0,1
-    char                *ForecastRuleText[HTML_MAX_FCAST_RULE+1];
-    char                *ForecastIconFile[VP_FCAST_ICON_MAX+1];
+    char*                ForecastRuleText[HTML_MAX_FCAST_RULE + 1];
+    char*                ForecastIconFile[VP_FCAST_ICON_MAX + 1];
     char                dateFormat[256];
     int                 isDualUnits;
     int                 imagesGenerated;
@@ -159,7 +159,7 @@ typedef struct htmlImageTag
     char                title[32];
     char                units[32];
     int                 decimalPlaces;
-    int                 (*generator) (struct htmlImageTag *);
+    int ( *generator )( struct htmlImageTag* );
 } HTML_IMG;
 
 
@@ -180,31 +180,31 @@ typedef struct htmlTemplateTag
 
 extern HTML_MGR_ID htmlmgrInit
 (
-    char            *installPath,
+    char*            installPath,
     int             isMetricUnits,
-    char            *imagePath,
-    char            *htmlPath,
+    char*            imagePath,
+    char*            htmlPath,
     int             arcInterval,
     int             isExtendedData,
-    char            *name,
-    char            *city,
-    char            *state,
+    char*            name,
+    char*            city,
+    char*            state,
     int16_t         elevation,
     int16_t         latitude,
     int16_t         longitude,
-    char            *mphaseIncrease,
-    char            *mphaseDecrease,
-    char            *mphaseFull,
-    char            *radarURL,
-    char            *forecastURL,
-    char            *dateFormat,
+    char*            mphaseIncrease,
+    char*            mphaseDecrease,
+    char*            mphaseFull,
+    char*            radarURL,
+    char*            forecastURL,
+    char*            dateFormat,
     int             isDualUnits
 );
 
 extern int htmlmgrReReadImageFiles
 (
     HTML_MGR_ID     id,
-    char            *installPath
+    char*            installPath
 );
 
 extern void htmlmgrExit
@@ -223,17 +223,17 @@ extern int htmlmgrGenerate
     HTML_MGR_ID     id
 );
 
-extern int htmlmgrHistoryInit (HTML_MGR_ID id);
-extern int htmlmgrAddSampleValue (HTML_MGR_ID id, HISTORY_DATA *data, int numIntervals);
-extern int htmlmgrAddHourValue (HTML_MGR_ID id, HISTORY_DATA *data);
-extern int htmlmgrAddDayValue (HTML_MGR_ID id, HISTORY_DATA *data);
-extern void htmlmgrSetSampleLabels(HTML_MGR_ID id);
+extern int htmlmgrHistoryInit( HTML_MGR_ID id );
+extern int htmlmgrAddSampleValue( HTML_MGR_ID id, HISTORY_DATA* data, int numIntervals );
+extern int htmlmgrAddHourValue( HTML_MGR_ID id, HISTORY_DATA* data );
+extern int htmlmgrAddDayValue( HTML_MGR_ID id, HISTORY_DATA* data );
+extern void htmlmgrSetSampleLabels( HTML_MGR_ID id );
 
 
 //  Define the htmlUtils API here
 
 // Set dual units based on primary units:
-extern void htmlutilsSetDualUnits (int isMetric, const char *units, char *dualUnits);
+extern void htmlutilsSetDualUnits( int isMetric, const char* units, char* dualUnits );
 
 
 #endif

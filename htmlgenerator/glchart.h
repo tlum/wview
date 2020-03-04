@@ -1,28 +1,28 @@
 #ifndef INC_glcharth
 #define INC_glcharth
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         glchart.h
- 
+
   PURPOSE:
         Provide the graphics lib chart definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         09/05/03        M.S. Teel       0               Original
         05/15/08        Werner Krenn    1               dualUnits
         05/05/09        D. Pickett      2               Add scatter charts
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 #include "gd.h"
@@ -51,9 +51,9 @@
 
 typedef enum
 {
-   CHART_TYPE_LINE,
-   CHART_TYPE_BAR,
-   CHART_TYPE_SCATTER
+    CHART_TYPE_LINE,
+    CHART_TYPE_BAR,
+    CHART_TYPE_SCATTER
 } CHART_TYPE;
 
 typedef struct
@@ -97,33 +97,33 @@ typedef struct
 //  ... API prototypes
 //  ... NOTE: for the sake of optimization, these routines have been
 //  ...       rendered "one chart at a time". This is how they were being
-//  ...       used anyway, but each chartCreate call uses the same static 
+//  ...       used anyway, but each chartCreate call uses the same static
 //  ...       buffer, thus overwriting the previous contents
 
-extern CHART_ID chartCreate 
+extern CHART_ID chartCreate
 (
-    int         width, 
-    int         height, 
-    char        *title, 
-    char        *units, 
+    int         width,
+    int         height,
+    char*        title,
+    char*        units,
     CHART_TYPE  chartType
 );
-extern void chartSetXScale (CHART_ID id, int decPlaces);
-extern void chartSetXHashes (CHART_ID id, int numHashes);
-extern void chartSetYScale (CHART_ID id, double min, double max, double step, int decPlaces);
-extern void chartAddPoint (CHART_ID id, double value, char *name);
-extern void chartSetDateTime (CHART_ID id, char *datetime);
-extern void chartSetBGColor (CHART_ID id, int color);
-extern void chartSetChartColor (CHART_ID id, int color);
-extern void chartSetGridColor (CHART_ID id, int color);
-extern void chartSetLineColor (CHART_ID id, int color);
-extern void chartSetTitleColors (CHART_ID id, int fg, int bg);
-extern void chartSetTextColor (CHART_ID id, int color);
-extern void chartSetTransparency (CHART_ID id, int isTransparent);
-extern void chartSetDualUnits (CHART_ID id);
-extern int chartRender (CHART_ID id);
-extern int chartSave (CHART_ID id, char *filename);
-extern void chartDestroy (CHART_ID id);
+extern void chartSetXScale( CHART_ID id, int decPlaces );
+extern void chartSetXHashes( CHART_ID id, int numHashes );
+extern void chartSetYScale( CHART_ID id, double min, double max, double step, int decPlaces );
+extern void chartAddPoint( CHART_ID id, double value, char* name );
+extern void chartSetDateTime( CHART_ID id, char* datetime );
+extern void chartSetBGColor( CHART_ID id, int color );
+extern void chartSetChartColor( CHART_ID id, int color );
+extern void chartSetGridColor( CHART_ID id, int color );
+extern void chartSetLineColor( CHART_ID id, int color );
+extern void chartSetTitleColors( CHART_ID id, int fg, int bg );
+extern void chartSetTextColor( CHART_ID id, int color );
+extern void chartSetTransparency( CHART_ID id, int isTransparent );
+extern void chartSetDualUnits( CHART_ID id );
+extern int chartRender( CHART_ID id );
+extern int chartSave( CHART_ID id, char* filename );
+extern void chartDestroy( CHART_ID id );
 
 
 #endif

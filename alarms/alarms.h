@@ -1,26 +1,26 @@
 #ifndef INC_alarmsh
 #define INC_alarmsh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         alarms.h
- 
+
   PURPOSE:
         Provide the wview alarm process definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         05/22/2005      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -131,7 +131,7 @@ typedef struct
     NODE            node;
     int             type;               // see above (ALARM_TYPE)
     int             isMax;              // if != 0, value is an upper bound
-                                        // else it is a lower bound
+    // else it is a lower bound
     float           bound;
     int             abateSecs;          // alarm abatement after trigger
     uint32_t        abateStart;

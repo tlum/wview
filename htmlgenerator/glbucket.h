@@ -1,26 +1,26 @@
 #ifndef INC_glbucketh
 #define INC_glbucketh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         glbucket.h
- 
+
   PURPOSE:
         Provide the graphics lib bucket definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         09/05/03        M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 #include "gd.h"
@@ -83,22 +83,23 @@ typedef struct
 
 //  ... API prototypes
 
-extern BUCKET_ID bucketCreate (int width, int height, int bucketWidth, char *title);
-extern void bucketSetScale (BUCKET_ID id, double min, double max, double step);
-extern void bucketSetValues (BUCKET_ID id, double high, double low, double value);
-extern void bucketSetUnits (BUCKET_ID id, char *units);
-extern void bucketSetDecimalPlaces (BUCKET_ID id, int decimalPlaces);
-extern void bucketSetDateTime (BUCKET_ID id, char *datetime);
-extern void bucketSetBGColor (BUCKET_ID id, int color);
-extern void bucketSetBucketColor (BUCKET_ID id, int color);
-extern void bucketSetContentColor (BUCKET_ID id, int color);
-extern void bucketSetHighLowColors (BUCKET_ID id, int hcolor, int lcolor);
-extern void bucketSetTitleColors (BUCKET_ID id, int fg, int bg);
-extern void bucketSetTextColor (BUCKET_ID id, int color);
-extern void bucketSetTransparency (BUCKET_ID id, int isTransparent);
-extern int bucketRender (BUCKET_ID id);
-extern int bucketSave (BUCKET_ID id, char *filename);
-extern void bucketDestroy (BUCKET_ID id);
+extern BUCKET_ID bucketCreate( int width, int height, int bucketWidth, char* title );
+extern void bucketSetScale( BUCKET_ID id, double min, double max, double step );
+extern void bucketSetValues( BUCKET_ID id, double high, double low, double value );
+extern void bucketSetUnits( BUCKET_ID id, char* units );
+extern void bucketSetDualUnits( BUCKET_ID id, int isDualUnits );
+extern void bucketSetDecimalPlaces( BUCKET_ID id, int decimalPlaces );
+extern void bucketSetDateTime( BUCKET_ID id, char* datetime );
+extern void bucketSetBGColor( BUCKET_ID id, int color );
+extern void bucketSetBucketColor( BUCKET_ID id, int color );
+extern void bucketSetContentColor( BUCKET_ID id, int color );
+extern void bucketSetHighLowColors( BUCKET_ID id, int hcolor, int lcolor );
+extern void bucketSetTitleColors( BUCKET_ID id, int fg, int bg );
+extern void bucketSetTextColor( BUCKET_ID id, int color );
+extern void bucketSetTransparency( BUCKET_ID id, int isTransparent );
+extern int bucketRender( BUCKET_ID id );
+extern int bucketSave( BUCKET_ID id, char* filename );
+extern void bucketDestroy( BUCKET_ID id );
 
 #endif
 

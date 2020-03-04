@@ -28,7 +28,7 @@ hilowcreate_SOURCES  = \
 hilowcreate_LDADD   =
 
 # define library directories
-hilowcreate_LDFLAGS = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+hilowcreate_LDFLAGS = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 hilowcreate_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

@@ -61,7 +61,7 @@
 
 static NMEA0183_WORK        nmeaWork;
 
-static char                 *TransducerTypes[NMEA_XDUCER_MAX_TYPES] =
+static char*                 TransducerTypes[NMEA_XDUCER_MAX_TYPES] =
 {
     "WIND",
     "THP",
@@ -71,22 +71,22 @@ static char                 *TransducerTypes[NMEA_XDUCER_MAX_TYPES] =
 
 
 // compute NMEA checksum and generate the checksum string
-static char *generateChecksum (char *command)
+static char* generateChecksum( char* command )
 {
     static char     returnBuffer[4];
     unsigned char   highnibble, lownibble, sum = 0;
-    int             i, length = strlen(command);
+    int             i, length = strlen( command );
 
-    for (i = 1; i < length; i ++)               // skip the '$' character
+    for( i = 1; i < length; i ++ )              // skip the '$' character
     {
         sum ^= command[i];
     }
 
-    highnibble = (sum >> 4) & 0x0F;
+    highnibble = ( sum >> 4 ) & 0x0F;
     lownibble = sum & 0x0F;
     returnBuffer[0] = '*';
-    returnBuffer[1] = ((highnibble < 0xA) ? ('0' + highnibble) : (('A' - 0xA) + highnibble));
-    returnBuffer[2] = ((lownibble < 0xA) ? ('0' + lownibble) : (('A' - 0xA) + lownibble));
+    returnBuffer[1] = ( ( highnibble < 0xA ) ? ( '0' + highnibble ) : ( ( 'A' - 0xA ) + highnibble ) );
+    returnBuffer[2] = ( ( lownibble < 0xA ) ? ( '0' + lownibble ) : ( ( 'A' - 0xA ) + lownibble ) );
     returnBuffer[3] = 0;
 
     return returnBuffer;
@@ -94,21 +94,21 @@ static char *generateChecksum (char *command)
 
 // verify the checksum of a received line -
 // (will truncate the checksum string from the input string)
-static int verifyChecksum (char *inLine)
+static int verifyChecksum( char* inLine )
 {
-    int         length = strlen(inLine);
+    int         length = strlen( inLine );
     char        inCS[8];
 
-    if (length < 4)
+    if( length < 4 )
     {
         // short string!
         return FALSE;
     }
 
     // the incoming line MUST be terminated with the checksum string
-    strncpy (inCS, &inLine[length-3], sizeof(inCS));
-    inLine[length-3] = 0;
-    if (!strcmp(inCS, generateChecksum(inLine)))
+    strncpy( inCS, &inLine[length - 3], sizeof( inCS ) );
+    inLine[length - 3] = 0;
+    if( !strcmp( inCS, generateChecksum( inLine ) ) )
     {
         return TRUE;
     }
@@ -120,29 +120,29 @@ static int verifyChecksum (char *inLine)
 
 // read a line from the station
 // returns TRUE if a line was read, FALSE otherwise
-static int readLineFromStation (WVIEWD_WORK *work, char *store, int msTime)
+static int readLineFromStation( WVIEWD_WORK* work, char* store, int msTime )
 {
     char        buffer[NMEA_BYTE_LENGTH_MAX];
-    uint64_t   readTime = radTimeGetMSSinceEpoch() + (uint64_t)msTime;
+    uint64_t   readTime = radTimeGetMSSinceEpoch() + ( uint64_t )msTime;
     int         retVal, timeToRead, done = FALSE, byteCount = 0;
 
     // we read until we see a <CR><LF> as a line terminator
-    while ((timeToRead = (uint32_t)(readTime - radTimeGetMSSinceEpoch())) > 0)
+    while( ( timeToRead = ( uint32_t )( readTime - radTimeGetMSSinceEpoch() ) ) > 0 )
     {
-        retVal = (*work->medium.read) (&work->medium, &buffer[byteCount], 1, timeToRead);
-        if (retVal != 1)
+        retVal = ( *work->medium.read )( &work->medium, &buffer[byteCount], 1, timeToRead );
+        if( retVal != 1 )
         {
-            radMsgLog (PRI_MEDIUM, "NMEA: readLineFromStation: read failed!");
-            (*work->medium.flush) (&work->medium, WV_QUEUE_INPUT);
-            emailAlertSend(ALERT_TYPE_STATION_READ);
+            radMsgLog( PRI_MEDIUM, "NMEA: readLineFromStation: read failed!" );
+            ( *work->medium.flush )( &work->medium, WV_QUEUE_INPUT );
+            emailAlertSend( ALERT_TYPE_STATION_READ );
             return FALSE;
         }
         byteCount ++;
 
         // are we done?
-        if ((byteCount >= 2) &&
-            (buffer[byteCount-2] == NMEA_CR) &&
-            (buffer[byteCount-1] == NMEA_LF))
+        if( ( byteCount >= 2 ) &&
+                ( buffer[byteCount - 2] == NMEA_CR ) &&
+                ( buffer[byteCount - 1] == NMEA_LF ) )
         {
             // we are!
             done = TRUE;
@@ -150,148 +150,148 @@ static int readLineFromStation (WVIEWD_WORK *work, char *store, int msTime)
         }
     }
 
-    if (!done || byteCount <= 2)
+    if( !done || byteCount <= 2 )
     {
         // ran out of time or empty line
-        radMsgLog (PRI_MEDIUM, "NMEA: readLineFromStation: timeout or empty line!");
-        (*work->medium.flush) (&work->medium, WV_QUEUE_INPUT);
-        emailAlertSend(ALERT_TYPE_STATION_READ);
+        radMsgLog( PRI_MEDIUM, "NMEA: readLineFromStation: timeout or empty line!" );
+        ( *work->medium.flush )( &work->medium, WV_QUEUE_INPUT );
+        emailAlertSend( ALERT_TYPE_STATION_READ );
         return FALSE;
     }
 
     // now lose the <CR> and <LF>
     byteCount -= 2;
     buffer[byteCount] = 0;
-    wvstrncpy (store, buffer, NMEA_BYTE_LENGTH_MAX);
+    wvstrncpy( store, buffer, NMEA_BYTE_LENGTH_MAX );
     return TRUE;
 }
 
 // processes a transducer field set
 // returns TRUE if the XDUCER is found, otherwise FALSE
-static int processTransducer (PARSER_ID parser, int startIndex)
+static int processTransducer( PARSER_ID parser, int startIndex )
 {
     char            type;
     int             id;
     float           value;
     char            units;
-    char            *retStr;
+    char*            retStr;
 
     // load up the fields properly
-    retStr = parserGetNumber (parser, startIndex);
-    if (retStr == NULL)
+    retStr = parserGetNumber( parser, startIndex );
+    if( retStr == NULL )
     {
         return FALSE;
     }
     type = retStr[0];
-    retStr = parserGetNumber (parser, startIndex+1);
-    if (retStr == NULL)
+    retStr = parserGetNumber( parser, startIndex + 1 );
+    if( retStr == NULL )
     {
         return FALSE;
     }
-    value = (float)atof (retStr);
-    retStr = parserGetNumber (parser, startIndex+2);
-    if (retStr == NULL)
+    value = ( float )atof( retStr );
+    retStr = parserGetNumber( parser, startIndex + 2 );
+    if( retStr == NULL )
     {
         return FALSE;
     }
     units = retStr[0];
-    retStr = parserGetNumber (parser, startIndex+3);
-    if (retStr == NULL)
+    retStr = parserGetNumber( parser, startIndex + 3 );
+    if( retStr == NULL )
     {
         return FALSE;
     }
-    id = atoi (retStr);
+    id = atoi( retStr );
 
     // now we switch on the type field
-    switch (type)
+    switch( type )
     {
-        case 'C':
+    case 'C':
         {
-            switch (id)
+            switch( id )
             {
-                case 0:
-                    // TEMP - air
-                    if (units != 'F')
-                    {
-                        break;
-                    }
-                    nmeaWork.sensorData.temperature = value;
-                    nmeaWork.sensorStatus |= NMEA_DONE_TEMP;
+            case 0:
+                // TEMP - air
+                if( units != 'F' )
+                {
                     break;
-                case 1:
-                    // TEMP - internal
-                    break;
-                case 2:
-                    // TEMP - heating
-                    nmeaWork.sensorData.heatingTemp = value;
-                    nmeaWork.sensorStatus |= NMEA_DONE_HEAT_TEMP;
-                    break;
+                }
+                nmeaWork.sensorData.temperature = value;
+                nmeaWork.sensorStatus |= NMEA_DONE_TEMP;
+                break;
+            case 1:
+                // TEMP - internal
+                break;
+            case 2:
+                // TEMP - heating
+                nmeaWork.sensorData.heatingTemp = value;
+                nmeaWork.sensorStatus |= NMEA_DONE_HEAT_TEMP;
+                break;
             }
 
             break;
         }
-        case 'A':
+    case 'A':
         {
-            switch (id)
+            switch( id )
             {
-                case 0:
-                    // DIRECTION - min
+            case 0:
+                // DIRECTION - min
+                break;
+            case 1:
+                // DIRECTION - avg
+                if( units != 'D' )
+                {
                     break;
-                case 1:
-                    // DIRECTION - avg
-                    if (units != 'D')
-                    {
-                        break;
-                    }
-                    nmeaWork.sensorData.windDir = value;
-                    nmeaWork.sensorStatus |= NMEA_DONE_WINDDIR;
+                }
+                nmeaWork.sensorData.windDir = value;
+                nmeaWork.sensorStatus |= NMEA_DONE_WINDDIR;
+                break;
+            case 2:
+                // DIRECTION - max
+                if( units != 'D' )
+                {
                     break;
-                case 2:
-                    // DIRECTION - max
-                    if (units != 'D')
-                    {
-                        break;
-                    }
-                    nmeaWork.sensorData.maxWindDir = value;
-                    nmeaWork.sensorStatus |= NMEA_DONE_MAXWINDDIR;
-                    break;
+                }
+                nmeaWork.sensorData.maxWindDir = value;
+                nmeaWork.sensorStatus |= NMEA_DONE_MAXWINDDIR;
+                break;
             }
 
             break;
         }
-        case 'S':
+    case 'S':
         {
-            switch (id)
+            switch( id )
             {
-                case 0:
-                    // SPEED - min
+            case 0:
+                // SPEED - min
+                break;
+            case 1:
+                // SPEED - avg
+                if( units != 'S' )
+                {
                     break;
-                case 1:
-                    // SPEED - avg
-                    if (units != 'S')
-                    {
-                        break;
-                    }
-                    nmeaWork.sensorData.windSpeed = value;
-                    nmeaWork.sensorStatus |= NMEA_DONE_WINDSPD;
+                }
+                nmeaWork.sensorData.windSpeed = value;
+                nmeaWork.sensorStatus |= NMEA_DONE_WINDSPD;
+                break;
+            case 2:
+                // SPEED - max
+                if( units != 'S' )
+                {
                     break;
-                case 2:
-                    // SPEED - max
-                    if (units != 'S')
-                    {
-                        break;
-                    }
-                    nmeaWork.sensorData.maxWindSpeed = value;
-                    nmeaWork.sensorStatus |= NMEA_DONE_MAXWINDSPD;
-                    break;
+                }
+                nmeaWork.sensorData.maxWindSpeed = value;
+                nmeaWork.sensorStatus |= NMEA_DONE_MAXWINDSPD;
+                break;
             }
 
             break;
         }
-        case 'P':
+    case 'P':
         {
             // pressure is always ID 0
-            if (units != 'I')
+            if( units != 'I' )
             {
                 break;
             }
@@ -299,10 +299,10 @@ static int processTransducer (PARSER_ID parser, int startIndex)
             nmeaWork.sensorStatus |= NMEA_DONE_PRESSURE;
             break;
         }
-        case 'H':
+    case 'H':
         {
             // humidity is always ID 0
-            if (units != 'P')
+            if( units != 'P' )
             {
                 break;
             }
@@ -310,102 +310,102 @@ static int processTransducer (PARSER_ID parser, int startIndex)
             nmeaWork.sensorStatus |= NMEA_DONE_HUMIDITY;
             break;
         }
-        case 'V':
+    case 'V':
         {
-            switch (id)
+            switch( id )
             {
-                case 0:
-                    // RAIN
-                    if (units != 'I')
-                    {
-                        break;
-                    }
-                    nmeaWork.sensorData.rain = value;
-                    nmeaWork.sensorStatus |= NMEA_DONE_RAIN;
+            case 0:
+                // RAIN
+                if( units != 'I' )
+                {
                     break;
-                case 1:
-                    // HAIL
-                    nmeaWork.sensorData.hail = value;
-                    nmeaWork.sensorStatus |= NMEA_DONE_HAIL;
-                    break;
+                }
+                nmeaWork.sensorData.rain = value;
+                nmeaWork.sensorStatus |= NMEA_DONE_RAIN;
+                break;
+            case 1:
+                // HAIL
+                nmeaWork.sensorData.hail = value;
+                nmeaWork.sensorStatus |= NMEA_DONE_HAIL;
+                break;
             }
 
             break;
         }
-        case 'Z':
+    case 'Z':
         {
-            switch (id)
+            switch( id )
             {
-                case 0:
-                    // DURATION - rain
-                    nmeaWork.sensorData.rainduration = value;
-                    // nmeaWork.sensorStatus |= NMEA_DONE_RAIN;
-                    break;
-                case 1:
-                    nmeaWork.sensorData.hailduration = value;
-                    // nmeaWork.sensorStatus |= NMEA_DONE_RAIN;
-                    // DURATION - hail
-                    break;
+            case 0:
+                // DURATION - rain
+                nmeaWork.sensorData.rainduration = value;
+                // nmeaWork.sensorStatus |= NMEA_DONE_RAIN;
+                break;
+            case 1:
+                nmeaWork.sensorData.hailduration = value;
+                // nmeaWork.sensorStatus |= NMEA_DONE_RAIN;
+                // DURATION - hail
+                break;
             }
 
             break;
         }
-        case 'R':
+    case 'R':
         {
-            switch (id)
+            switch( id )
             {
-                case 0:
-                    // RATE - rain
-                    if (units != 'I')
-                    {
-                        break;
-                    }
-                    nmeaWork.sensorData.rainrate = value;
-                    nmeaWork.sensorStatus |= NMEA_DONE_RAINRATE;
+            case 0:
+                // RATE - rain
+                if( units != 'I' )
+                {
                     break;
-                case 1:
-                    // RATE - hail
-                    nmeaWork.sensorData.hailrate = value;
-                    nmeaWork.sensorStatus |= NMEA_DONE_HAILRATE;
-                    break;
-                case 2:
-                    // Peak RATE - rain
-                    nmeaWork.sensorData.rainpeakrate = value;
-                    // nmeaWork.sensorStatus |= NMEA_DONE_RAINRATE;
-                    break;
-                case 3:
-                    // Peak RATE - hail
-                    nmeaWork.sensorData.hailpeakrate = value;
-                    // nmeaWork.sensorStatus |= NMEA_DONE_HAILRATE;
-                    break;
+                }
+                nmeaWork.sensorData.rainrate = value;
+                nmeaWork.sensorStatus |= NMEA_DONE_RAINRATE;
+                break;
+            case 1:
+                // RATE - hail
+                nmeaWork.sensorData.hailrate = value;
+                nmeaWork.sensorStatus |= NMEA_DONE_HAILRATE;
+                break;
+            case 2:
+                // Peak RATE - rain
+                nmeaWork.sensorData.rainpeakrate = value;
+                // nmeaWork.sensorStatus |= NMEA_DONE_RAINRATE;
+                break;
+            case 3:
+                // Peak RATE - hail
+                nmeaWork.sensorData.hailpeakrate = value;
+                // nmeaWork.sensorStatus |= NMEA_DONE_HAILRATE;
+                break;
             }
 
             break;
         }
-        case 'U':
+    case 'U':
         {
-            switch (id)
+            switch( id )
             {
-                case 0:
-                    // VOLTAGE - supply
-                    nmeaWork.sensorData.supplyVoltage = value;
-                    nmeaWork.sensorStatus |= NMEA_DONE_SUP_VOLT;
-                    break;
-                case 1:
-                    // VOLTAGE - heating
-                    nmeaWork.sensorData.heatingVoltage = value;
-                    nmeaWork.sensorStatus |= NMEA_DONE_HEAT_VOLT;
-                    break;
-                case 2:
-                    // VOLTAGE - reference
-                    nmeaWork.sensorData.referenceVoltage = value;
-                    nmeaWork.sensorStatus |= NMEA_DONE_REF_VOLT;
-                    break;
+            case 0:
+                // VOLTAGE - supply
+                nmeaWork.sensorData.supplyVoltage = value;
+                nmeaWork.sensorStatus |= NMEA_DONE_SUP_VOLT;
+                break;
+            case 1:
+                // VOLTAGE - heating
+                nmeaWork.sensorData.heatingVoltage = value;
+                nmeaWork.sensorStatus |= NMEA_DONE_HEAT_VOLT;
+                break;
+            case 2:
+                // VOLTAGE - reference
+                nmeaWork.sensorData.referenceVoltage = value;
+                nmeaWork.sensorStatus |= NMEA_DONE_REF_VOLT;
+                break;
             }
 
             break;
         }
-        default:
+    default:
         {
             break;
         }
@@ -415,43 +415,43 @@ static int processTransducer (PARSER_ID parser, int startIndex)
 }
 
 // returns the number of transducers processed or ERROR
-static int readSensorLine (WVIEWD_WORK *work)
+static int readSensorLine( WVIEWD_WORK* work )
 {
     char        buffer[NMEA_BYTE_LENGTH_MAX];
     int         retVal, argIndex, done;
     PARSER_ID   parser;
 
     // read a line from the station
-    if (!readLineFromStation (work, buffer, NMEA_RESPONSE_TIMEOUT))
+    if( !readLineFromStation( work, buffer, NMEA_RESPONSE_TIMEOUT ) )
     {
         return ERROR;
     }
 
     // check the checksum integrity, this will truncate it as well
-    if (!verifyChecksum(buffer))
+    if( !verifyChecksum( buffer ) )
     {
         // corruption?
-        radMsgLog (PRI_MEDIUM, "NMEA: readSensorLine: verifyChecksum failed!");
-        emailAlertSend(ALERT_TYPE_STATION_READ);
+        radMsgLog( PRI_MEDIUM, "NMEA: readSensorLine: verifyChecksum failed!" );
+        emailAlertSend( ALERT_TYPE_STATION_READ );
         return ERROR;
     }
 
 //radMsgLog(PRI_STATUS,"DBG: RX: %s", buffer);
 
     // now parse this mother!
-    parser = parserInit (buffer, NMEA_DELIMITERS);
-    if (parser == NULL)
+    parser = parserInit( buffer, NMEA_DELIMITERS );
+    if( parser == NULL )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: readSensorLine: parserInit failed!");
+        radMsgLog( PRI_MEDIUM, "NMEA: readSensorLine: parserInit failed!" );
         return ERROR;
     }
 
     // make sure it is the right kind of monkey...
-    if (strcmp (parserGetFirst(parser), NMEA_WIXDR_ID))
+    if( strcmp( parserGetFirst( parser ), NMEA_WIXDR_ID ) )
     {
         // nope!
-        radMsgLog (PRI_MEDIUM, "NMEA: readSensorLine: NOT a WIXDR response!");
-        parserExit (parser);
+        radMsgLog( PRI_MEDIUM, "NMEA: readSensorLine: NOT a WIXDR response!" );
+        parserExit( parser );
         return ERROR;
     }
 
@@ -459,9 +459,9 @@ static int readSensorLine (WVIEWD_WORK *work)
     done = FALSE;
     retVal = 0;
     argIndex = 2;
-    while (!done)
+    while( !done )
     {
-        if (processTransducer(parser, argIndex) == FALSE)
+        if( processTransducer( parser, argIndex ) == FALSE )
         {
             done = TRUE;
             continue;
@@ -471,7 +471,7 @@ static int readSensorLine (WVIEWD_WORK *work)
         argIndex += 4;                  // there are 4 fields per transducer
     }
 
-    parserExit (parser);
+    parserExit( parser );
     return retVal;
 }
 
@@ -479,30 +479,30 @@ static int readSensorLine (WVIEWD_WORK *work)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////  A P I  ///////////////////////////////////
-int nmea0183Init (WVIEWD_WORK *work)
+int nmea0183Init( WVIEWD_WORK* work )
 {
     char            buffer[64];
 
-    memset (&nmeaWork, 0, sizeof(nmeaWork));
+    memset( &nmeaWork, 0, sizeof( nmeaWork ) );
 
     /////// Wakeup/Clear the WXT-510 ///////
     // send a <CR><LF>
     buffer[0] = 0;
-    if (nmea0183WriteLineToStation (work, buffer, NULL, FALSE, TRUE) == ERROR)
+    if( nmea0183WriteLineToStation( work, buffer, NULL, FALSE, TRUE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: W/C failed!");
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: W/C failed!" );
         return ERROR;
     }
-    radUtilsSleep (50);
+    radUtilsSleep( 50 );
 
     // send a ? command
-    sprintf (buffer, "?");
-    if (nmea0183WriteLineToStation (work, buffer, NULL, FALSE, TRUE) == ERROR)
+    sprintf( buffer, "?" );
+    if( nmea0183WriteLineToStation( work, buffer, NULL, FALSE, TRUE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (50);
+    radUtilsSleep( 50 );
 
 
     /////// Setup the WXT-510 to send sensor data in the format we want ///////
@@ -511,93 +511,93 @@ int nmea0183Init (WVIEWD_WORK *work)
 
     // --- Comm Settings ---
     // set the device address to 0, RS232, NMEA polled, inter-message delay 20ms
-    sprintf (buffer, "0XU,A=0,M=Q,C=2,L=20");
-    if (nmea0183WriteLineToStation (work, buffer, buffer, FALSE, FALSE) == ERROR)
+    sprintf( buffer, "0XU,A=0,M=Q,C=2,L=20" );
+    if( nmea0183WriteLineToStation( work, buffer, buffer, FALSE, FALSE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (500);
+    radUtilsSleep( 500 );
 
     // set error messages OFF
-    sprintf (buffer, "0SU,S=N");
-    if (nmea0183WriteLineToStation (work, buffer, buffer, FALSE, FALSE) == ERROR)
+    sprintf( buffer, "0SU,S=N" );
+    if( nmea0183WriteLineToStation( work, buffer, buffer, FALSE, FALSE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (50);
+    radUtilsSleep( 50 );
 
 
     // send a reset command
-    sprintf (buffer, "0XZ");
-    if (nmea0183WriteLineToStation (work, buffer, NULL, FALSE, TRUE) == ERROR)
+    sprintf( buffer, "0XZ" );
+    if( nmea0183WriteLineToStation( work, buffer, NULL, FALSE, TRUE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
 
     // wait to let the WXT-510 reset
-    radUtilsSleep (500);
+    radUtilsSleep( 500 );
 
     // send a ? command
-    sprintf (buffer, "?");
-    if (nmea0183WriteLineToStation (work, buffer, "0", FALSE, FALSE) == ERROR)
+    sprintf( buffer, "?" );
+    if( nmea0183WriteLineToStation( work, buffer, "0", FALSE, FALSE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (50);
+    radUtilsSleep( 50 );
 
 
     // --- Wind sensors ---
     // turn on average and max direction and speed
-    sprintf (buffer, "0WU,R=0110110001101100");
-    if (nmea0183WriteLineToStation (work, buffer, "0WU,R=01101100&01101100", FALSE, FALSE)
-        == ERROR)
+    sprintf( buffer, "0WU,R=0110110001101100" );
+    if( nmea0183WriteLineToStation( work, buffer, "0WU,R=01101100&01101100", FALSE, FALSE )
+            == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (25);
+    radUtilsSleep( 25 );
 
     // set update and averaging interval to 2 seconds for initial readings
-    sprintf (buffer, "0WU,I=2,A=2");
-    if (nmea0183WriteLineToStation (work, buffer, buffer, FALSE, FALSE) == ERROR)
+    sprintf( buffer, "0WU,I=2,A=2" );
+    if( nmea0183WriteLineToStation( work, buffer, buffer, FALSE, FALSE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (25);
+    radUtilsSleep( 25 );
 
     // set units to MPH, direction correction to 0, response format type T
-    sprintf (buffer, "0WU,U=S,D=0,N=T");
-    if (nmea0183WriteLineToStation (work, buffer, buffer, FALSE, FALSE) == ERROR)
+    sprintf( buffer, "0WU,U=S,D=0,N=T" );
+    if( nmea0183WriteLineToStation( work, buffer, buffer, FALSE, FALSE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (25);
+    radUtilsSleep( 25 );
 
     // --- THP sensors ---
     // turn on air pressure, temperature and humidity
-    sprintf (buffer, "0TU,R=1101000011010000");
-    if (nmea0183WriteLineToStation (work, buffer, "0TU,R=11010000&11010000", FALSE, FALSE)
-        == ERROR)
+    sprintf( buffer, "0TU,R=1101000011010000" );
+    if( nmea0183WriteLineToStation( work, buffer, "0TU,R=11010000&11010000", FALSE, FALSE )
+            == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (25);
+    radUtilsSleep( 25 );
 
     // set pressure units to in/Hg, temperature units to Fahrenheit
-    sprintf (buffer, "0TU,P=I,T=F");
-    if (nmea0183WriteLineToStation (work, buffer, buffer, FALSE, FALSE) == ERROR)
+    sprintf( buffer, "0TU,P=I,T=F" );
+    if( nmea0183WriteLineToStation( work, buffer, buffer, FALSE, FALSE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (25);
+    radUtilsSleep( 25 );
 
     // --- Precip sensors ---
     // turn on rain/hail amount and intensity
@@ -605,84 +605,84 @@ int nmea0183Init (WVIEWD_WORK *work)
     // 0RU,R=11111111&11111111,I=60,U=I,S=I,M=T,Z=M
     // if (nmea0183WriteLineToStation (work, buffer, "0RU,R=10110100&10110100", FALSE, FALSE)
 
-    sprintf (buffer, "0RU,R=1111111111111111");
-    if (nmea0183WriteLineToStation (work, buffer, "0RU,R=11111111&11111111", FALSE, FALSE)
-        == ERROR)
+    sprintf( buffer, "0RU,R=1111111111111111" );
+    if( nmea0183WriteLineToStation( work, buffer, "0RU,R=11111111&11111111", FALSE, FALSE )
+            == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (25);
+    radUtilsSleep( 25 );
 
     // set units to imperial, manual reset of the counters
     // sprintf (buffer, "0RU,U=I,S=I,Z=M");
     // NMEA: nmea0183WriteLineToStation: Expect:0RU,I=60,U=I,M=T,S=I,Z=M, Recv:0RU,I=60,U=I,S=I,M=T,Z=M
-    sprintf (buffer, "0RU,I=60,U=I,S=I,M=T,Z=M");
-    if (nmea0183WriteLineToStation (work, buffer, buffer, FALSE, FALSE) == ERROR)
+    sprintf( buffer, "0RU,I=60,U=I,S=I,M=T,Z=M" );
+    if( nmea0183WriteLineToStation( work, buffer, buffer, FALSE, FALSE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (25);
+    radUtilsSleep( 25 );
 
     // --- Supervisor message ---
     // turn on everything
-    sprintf (buffer, "0SU,R=1111000011110000");
-    if (nmea0183WriteLineToStation (work, buffer, "0SU,R=11110000&11110000", FALSE, FALSE)
-        == ERROR)
+    sprintf( buffer, "0SU,R=1111000011110000" );
+    if( nmea0183WriteLineToStation( work, buffer, "0SU,R=11110000&11110000", FALSE, FALSE )
+            == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (25);
+    radUtilsSleep( 25 );
 
     // set heating control ON
-    sprintf (buffer, "0SU,H=Y");
-    if (nmea0183WriteLineToStation (work, buffer, buffer, FALSE, FALSE) == ERROR)
+    sprintf( buffer, "0SU,H=Y" );
+    if( nmea0183WriteLineToStation( work, buffer, buffer, FALSE, FALSE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183Init: %s failed!", buffer );
         return ERROR;
     }
 
     // wait here for the first wind cycle to finish, etc.
-    radMsgLog (PRI_STATUS, "NMEA: nmea0183Init: waiting 10 seconds to allow the station to settle...");
-    radUtilsSleep (10000);
+    radMsgLog( PRI_STATUS, "NMEA: nmea0183Init: waiting 10 seconds to allow the station to settle..." );
+    radUtilsSleep( 10000 );
 
     return OK;
 }
 
-int nmea0183PostInit (WVIEWD_WORK *work)
+int nmea0183PostInit( WVIEWD_WORK* work )
 {
     char            buffer[64];
 
     // set wind averaging interval to one minute
-    sprintf (buffer, "0WU,I=60,A=60");
-    if (nmea0183WriteLineToStation (work, buffer, buffer, FALSE, FALSE) == ERROR)
+    sprintf( buffer, "0WU,I=60,A=60" );
+    if( nmea0183WriteLineToStation( work, buffer, buffer, FALSE, FALSE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183PostInit: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183PostInit: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (25);
+    radUtilsSleep( 25 );
 
     return OK;
 }
 
-void nmea0183Exit (WVIEWD_WORK *work)
+void nmea0183Exit( WVIEWD_WORK* work )
 {
     // nothing to clean up...
     return;
 }
 
-int nmea0183GetReadings (WVIEWD_WORK *work, NMEA0183_DATA *store)
+int nmea0183GetReadings( WVIEWD_WORK* work, NMEA0183_DATA* store )
 {
     char            buffer[64];
     int             i;
 
     // request a sensor update
-    sprintf (buffer, "$--WIQ,XDR");
-    if (nmea0183WriteLineToStation (work, buffer, NULL, TRUE, FALSE) == ERROR)
+    sprintf( buffer, "$--WIQ,XDR" );
+    if( nmea0183WriteLineToStation( work, buffer, NULL, TRUE, FALSE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183GetReadings: nmea0183WriteLineToStation failed!");
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183GetReadings: nmea0183WriteLineToStation failed!" );
         return ERROR;
     }
 
@@ -691,21 +691,21 @@ int nmea0183GetReadings (WVIEWD_WORK *work, NMEA0183_DATA *store)
 
     // read the 4 sensor output lines:
     // wind, THP, precip, supervisor
-    for (i = 0; i < NMEA_XDUCER_MAX_TYPES; i ++)
+    for( i = 0; i < NMEA_XDUCER_MAX_TYPES; i ++ )
     {
-        if (readSensorLine(work) == ERROR)
+        if( readSensorLine( work ) == ERROR )
         {
-            radMsgLog (PRI_MEDIUM, "NMEA: nmea0183GetReadings: readSensorLine %s failed!",
-                       TransducerTypes[i]);
+            radMsgLog( PRI_MEDIUM, "NMEA: nmea0183GetReadings: readSensorLine %s failed!",
+                       TransducerTypes[i] );
             return ERROR;
         }
     }
 
     // did we get everything?
-    if (nmeaWork.sensorStatus < NMEA_DONE_ALL)
+    if( nmeaWork.sensorStatus < NMEA_DONE_ALL )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183GetReadings: 0x%4.4X: not all sensors updated...",
-                   nmeaWork.sensorStatus);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183GetReadings: 0x%4.4X: not all sensors updated...",
+                   nmeaWork.sensorStatus );
         return ERROR;
     }
 
@@ -718,9 +718,9 @@ int nmea0183GetReadings (WVIEWD_WORK *work, NMEA0183_DATA *store)
 // send a properly formatted line to the station, optionally checking the response
 int nmea0183WriteLineToStation
 (
-    WVIEWD_WORK     *work,
-    char            *strToSend,
-    char            *expectedResp,
+    WVIEWD_WORK*     work,
+    char*            strToSend,
+    char*            expectedResp,
     int             generateCS,
     int             flushRXBuffer
 )
@@ -728,86 +728,86 @@ int nmea0183WriteLineToStation
     char        temp[NMEA_BYTE_LENGTH_MAX];
     int         length;
 
-    if (generateCS)
+    if( generateCS )
     {
-        sprintf (temp, "%s%s%c%c",
+        sprintf( temp, "%s%s%c%c",
                  strToSend,
-                 generateChecksum(strToSend),
+                 generateChecksum( strToSend ),
                  NMEA_CR,
-                 NMEA_LF);
+                 NMEA_LF );
     }
     else
     {
-        sprintf (temp, "%s%c%c",
+        sprintf( temp, "%s%c%c",
                  strToSend,
                  NMEA_CR,
-                 NMEA_LF);
+                 NMEA_LF );
     }
 
-    length = strlen(temp);
-    if ((*work->medium.write) (&work->medium, temp, length) != length)
+    length = strlen( temp );
+    if( ( *work->medium.write )( &work->medium, temp, length ) != length )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183WriteLineToStation: write error!");
-        emailAlertSend(ALERT_TYPE_STATION_DEVICE);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183WriteLineToStation: write error!" );
+        emailAlertSend( ALERT_TYPE_STATION_DEVICE );
         return ERROR;
     }
 
     // need to check the response?
-    if (expectedResp != NULL)
+    if( expectedResp != NULL )
     {
         // read a line from the station
-        if (!readLineFromStation (work, temp, NMEA_RESPONSE_TIMEOUT))
+        if( !readLineFromStation( work, temp, NMEA_RESPONSE_TIMEOUT ) )
         {
             return ERROR;
         }
 
-        if (generateCS)
+        if( generateCS )
         {
             // verify the checksum (and truncate it)
-            if (!verifyChecksum(temp))
+            if( !verifyChecksum( temp ) )
             {
                 // corruption?
-                radMsgLog (PRI_MEDIUM, "NMEA: nmea0183WriteLineToStation: verifyChecksum failed!");
-                emailAlertSend(ALERT_TYPE_STATION_READ);
+                radMsgLog( PRI_MEDIUM, "NMEA: nmea0183WriteLineToStation: verifyChecksum failed!" );
+                emailAlertSend( ALERT_TYPE_STATION_READ );
                 return ERROR;
             }
         }
 
         // do they match?
-        if (!strcmp(expectedResp, temp))
+        if( !strcmp( expectedResp, temp ) )
         {
             return OK;
         }
         else
         {
-            radMsgLog (PRI_MEDIUM, "NMEA: nmea0183WriteLineToStation: expected response mismatch!");
-            radMsgLog (PRI_MEDIUM, "NMEA: nmea0183WriteLineToStation: Expect:%s, Recv:%s",
-                       expectedResp, temp);
-            emailAlertSend(ALERT_TYPE_STATION_READ);
+            radMsgLog( PRI_MEDIUM, "NMEA: nmea0183WriteLineToStation: expected response mismatch!" );
+            radMsgLog( PRI_MEDIUM, "NMEA: nmea0183WriteLineToStation: Expect:%s, Recv:%s",
+                       expectedResp, temp );
+            emailAlertSend( ALERT_TYPE_STATION_READ );
             return ERROR;
         }
     }
-    else if (flushRXBuffer)
+    else if( flushRXBuffer )
     {
-        radUtilsSleep (50);
-        (*work->medium.flush) (&work->medium, WV_QUEUE_INPUT);
+        radUtilsSleep( 50 );
+        ( *work->medium.flush )( &work->medium, WV_QUEUE_INPUT );
     }
 
     return OK;
 }
 
-int nmea0183ResetAccumulators (WVIEWD_WORK *work)
+int nmea0183ResetAccumulators( WVIEWD_WORK* work )
 {
     char            buffer[64];
 
     // reset rain accumulators
-    sprintf (buffer, "0XZRU");
-    if (nmea0183WriteLineToStation (work, buffer, NULL, FALSE, TRUE) == ERROR)
+    sprintf( buffer, "0XZRU" );
+    if( nmea0183WriteLineToStation( work, buffer, NULL, FALSE, TRUE ) == ERROR )
     {
-        radMsgLog (PRI_MEDIUM, "NMEA: nmea0183ResetAccumulators: %s failed!", buffer);
+        radMsgLog( PRI_MEDIUM, "NMEA: nmea0183ResetAccumulators: %s failed!", buffer );
         return ERROR;
     }
-    radUtilsSleep (25);
+    radUtilsSleep( 25 );
 
     return OK;
 }

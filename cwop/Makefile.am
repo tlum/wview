@@ -32,7 +32,7 @@ wvcwopd_SOURCES  = \
 wvcwopd_LDADD   =
 
 # define library directories
-wvcwopd_LDFLAGS = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+wvcwopd_LDFLAGS = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 wvcwopd_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

@@ -60,6 +60,6 @@ wviewd_wmrusb_LDFLAGS	= -L$(prefix)/lib -L/usr/lib -L/usr/local/lib
 if FREEBSD
 wviewd_wmrusb_LDADD		= -lusb
 else
-wviewd_wmrusb_LDADD		= -lusb-1.0
+wviewd_wmrusb_LDADD		= -lusb-1.0 -ludev
 endif
 endif

@@ -33,7 +33,7 @@ wviewsshd_SOURCES  = \
 wviewsshd_LDADD   =
 
 # define library directories
-wviewsshd_LDFLAGS = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+wviewsshd_LDFLAGS = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 wviewsshd_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

@@ -29,7 +29,7 @@ wlk2sqlite_SOURCES  = \
 wlk2sqlite_LDADD   =
 
 # define library directories
-wlk2sqlite_LDFLAGS = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+wlk2sqlite_LDFLAGS = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 wlk2sqlite_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

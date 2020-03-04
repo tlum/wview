@@ -1,26 +1,26 @@
 #ifndef INC_wmr918Interfaceh
 #define INC_wmr918Interfaceh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         wmr918Interface.h
- 
+
   PURPOSE:
         Provide the Oregon Scientific WMR station interface API and utilities.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         04/09/2008      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2008, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files

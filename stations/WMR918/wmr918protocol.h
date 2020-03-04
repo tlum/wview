@@ -1,26 +1,26 @@
 #ifndef INC_wmr918protocolh
 #define INC_wmr918protocolh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         wmr918protocol.h
- 
+
   PURPOSE:
         Provide protocol utilities for WMR918 station communication.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         04/09/2008      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2008, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -138,16 +138,16 @@ typedef struct
 
 
 // call once during initialization
-extern int wmr918Init (WVIEWD_WORK *work);
+extern int wmr918Init( WVIEWD_WORK* work );
 
 // do cleanup
-extern void wmr918Exit (WVIEWD_WORK *work);
+extern void wmr918Exit( WVIEWD_WORK* work );
 
 // read data from station:
-extern void wmr918ReadData (WVIEWD_WORK *work);
+extern void wmr918ReadData( WVIEWD_WORK* work );
 
 // get loop packet data:
-extern void wmr918GetReadings (WVIEWD_WORK *work);
+extern void wmr918GetReadings( WVIEWD_WORK* work );
 
 #endif
 

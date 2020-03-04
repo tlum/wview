@@ -1,26 +1,26 @@
 #ifndef INC_te923protocolh
 #define INC_te923protocolh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         te923Protocol.h
- 
+
   PURPOSE:
         Provide protocol utilities for TE923 station communication.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         02/17/2011      M.S. Teel       0               Original
- 
+
   NOTES:
         Parts of this implementation were inspired by the te923con project
         (C) Sebastian John (http://te923.fukz.org).
- 
+
   LICENSE:
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -103,13 +103,13 @@ typedef struct
 
 
 // call once during initialization
-extern int te923Init (WVIEWD_WORK *work);
+extern int te923Init( WVIEWD_WORK* work );
 
 // do cleanup
-extern void te923Exit (WVIEWD_WORK *work);
+extern void te923Exit( WVIEWD_WORK* work );
 
 // get loop packet data:
-extern void te923GetReadings (WVIEWD_WORK *work);
+extern void te923GetReadings( WVIEWD_WORK* work );
 
 #endif
 

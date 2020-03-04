@@ -1,31 +1,31 @@
 #ifndef INC_stormrainh
 #define INC_stormrainh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         stormRain.h
- 
+
   PURPOSE:
         Provide utilities to compute "storm" rain and start date.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         01/08/2006      M.S. Teel       0               Original
- 
+
   NOTES:
         We define a storm to begin when an effective rain rate of 0.05 in/hr
-        or greater is observed. A storm ends when 12 hours pass with no 
+        or greater is observed. A storm ends when 12 hours pass with no
         recorded rainfall.
- 
+
   LICENSE:
         Copyright (c) 2006, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
-/*  ... System include files 
+/*  ... System include files
 */
 #include <unistd.h>
 #include <stdio.h>
@@ -64,15 +64,15 @@ typedef struct
 // function prototypes
 
 // called once at init
-extern void stormRainInit (float startTrigger, int idleHours);
+extern void stormRainInit( float startTrigger, int idleHours );
 
 // called for each new archive interval
-extern void stormRainUpdate (float rainRate, float rainFall);
+extern void stormRainUpdate( float rainRate, float rainFall );
 
-extern time_t stormRainGetStartTimeT (void);
+extern time_t stormRainGetStartTimeT( void );
 
 // retrieve the storm rain amount
-extern float stormRainGet (void);
+extern float stormRainGet( void );
 
 #endif
 

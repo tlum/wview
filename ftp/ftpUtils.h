@@ -1,26 +1,26 @@
 #ifndef INC_ftputilsh
 #define INC_ftputilsh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         ftpUtils.h
- 
+
   PURPOSE:
         Provide the ftp utility definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         01/08/04        M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -88,7 +88,7 @@ typedef struct
 {
     NODE        node;
     char        src[128];
-}*FTP_RULE_ID;
+}* FTP_RULE_ID;
 
 
 typedef struct
@@ -103,7 +103,7 @@ typedef struct
     int         IsPassive;
     int         interval;
     time_t      expiry;
-}FTP_DATA, *FTP_ID;
+} FTP_DATA, *FTP_ID;
 
 
 /*  !!!!!!!!!!!!!!!!!!!!  END HIDDEN SECTION  !!!!!!!!!!!!!!!!!!!!!
@@ -113,12 +113,12 @@ typedef struct
 
 /* ... API function prototypes
 */
-extern int ftpUtilsInit (FTP_DATA* data);
+extern int ftpUtilsInit( FTP_DATA* data );
 
 //  ... process the rules list; returns number of rules successfully sent
-extern int ftpUtilsSendFiles (FTP_ID id, char *workdir);
+extern int ftpUtilsSendFiles( FTP_ID id, char* workdir );
 
-extern void ftpUtilsExit (FTP_ID);
+extern void ftpUtilsExit( FTP_ID );
 
 
 #endif

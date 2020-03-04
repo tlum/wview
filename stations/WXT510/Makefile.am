@@ -59,7 +59,7 @@ wviewd_wxt510_SOURCES     = \
 wviewd_wxt510_LDADD       =
 
 # define library directories
-wviewd_wxt510_LDFLAGS     = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+wviewd_wxt510_LDFLAGS     = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 wviewd_wxt510_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

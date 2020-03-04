@@ -1,22 +1,22 @@
 #ifndef INC_wh1080interfaceh
 #define INC_wh1080interfaceh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         wh1080Interface.h
- 
+
   PURPOSE:
-        Provide the Fine Offset WH1080 station interface 
+        Provide the Fine Offset WH1080 station interface
         API and utilities.
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files

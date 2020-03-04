@@ -66,7 +66,7 @@ htmlgend_SOURCES   = \
 htmlgend_LDADD   =
 
 # define library directories
-htmlgend_LDFLAGS = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+htmlgend_LDFLAGS = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 htmlgend_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

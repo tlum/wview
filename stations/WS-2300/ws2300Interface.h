@@ -1,26 +1,26 @@
 #ifndef INC_ws2300Interfaceh
 #define INC_ws2300Interfaceh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         ws2300Interface.h
- 
+
   PURPOSE:
         Provide the La Crosse WS-2300 family station interface API and utilities.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         02/27/2008      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2008, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files

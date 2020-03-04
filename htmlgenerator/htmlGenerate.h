@@ -1,29 +1,29 @@
 #ifndef INC_htmlgenerateh
 #define INC_htmlgenerateh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         htmlGenerate.h
- 
+
   PURPOSE:
         Provide the wview HTML generator definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         08/30/03        M.S. Teel       0               Original
         02/16/2008      M.B. Clark      1               Added ability to customize color/size
                                                           of plots using graphics.conf
-        05/16/2008      W. Krenn        2               isDualUnits for Chart	   
- 
+        05/16/2008      W. Krenn        2               isDualUnits for Chart
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -115,7 +115,7 @@ typedef struct
     int dialImageWidth;
     int dialDiameter;
     int dialCtrDiameter;
-    
+
     int multichartFirstLineColor;
     int multichartSecondLineColor;
     int multichartThirdLineColor;
@@ -146,89 +146,89 @@ struct xyCoords
 
 /* ... API function prototypes
 */
-int htmlGenerateInit (void);
-int htmlgenGetChartDefaultLine (void);
-int htmlgenGetChartDefaultSecondLine (void);
-int htmlgenGetChartDefaultThirdLine (void);
+int htmlGenerateInit( void );
+int htmlgenGetChartDefaultLine( void );
+int htmlgenGetChartDefaultSecondLine( void );
+int htmlgenGetChartDefaultThirdLine( void );
 
-int htmlgenGetMultiChartDefaultFirstLine (void);
-int htmlgenGetMultiChartDefaultSecondLine (void);
-int htmlgenGetMultiChartDefaultThirdLine (void);
-int htmlgenGetMultiChartDefaultFourthLine (void);
+int htmlgenGetMultiChartDefaultFirstLine( void );
+int htmlgenGetMultiChartDefaultSecondLine( void );
+int htmlgenGetMultiChartDefaultThirdLine( void );
+int htmlgenGetMultiChartDefaultFourthLine( void );
 
-extern int htmlgenOutputFiles (HTML_MGR_ID id, uint64_t startTime);
+extern int htmlgenOutputFiles( HTML_MGR_ID id, uint64_t startTime );
 
-extern int htmlgenMesonetFile (HTML_MGR_ID id, WVIEW_MSG_ARCHIVE_NOTIFY *armsg);
+extern int htmlgenMesonetFile( HTML_MGR_ID id, WVIEW_MSG_ARCHIVE_NOTIFY* armsg );
 
 extern int htmlGenPngBucket
 (
-    char            *fname,
+    char*            fname,
     int             isMetric,
     float           value,
     float           low,
     float           high,
-    char            *title,
-    char            *units,
+    char*            title,
+    char*            units,
     int             decimalPlaces,
     float           lowScale,
     float           highScale,
-    char            *dateFormat,
+    char*            dateFormat,
     int             isDualUnits
 );
 
 extern int htmlGenPngRainBucket
 (
-    char            *fname,
+    char*            fname,
     int             isMetric,
     float           value,
     float           low,
     float           high,
-    char            *title,
-    char            *units,
+    char*            title,
+    char*            units,
     int             decimalPlaces,
     float           lowScale,
     float           highScale,
-    char            *dateFormat,
+    char*            dateFormat,
     int             isDualUnits
 );
 
 extern int htmlGenPngBaromBucket
 (
-    char            *fname,
+    char*            fname,
     float           value,
     float           low,
     float           high,
-    char            *title,
-    char            *units,
+    char*            title,
+    char*            units,
     int             decimalPlaces,
-    char            *dateFormat,
+    char*            dateFormat,
     int             isDualUnits
 );
 
 extern int htmlGenMetricPngBaromBucket
 (
-    char                *fname,
+    char*                fname,
     float               value,
     float               low,
     float               high,
-    char                *title,
-    char                *units,
+    char*                title,
+    char*                units,
     int                 decimalPlaces,
-    char                *dateFormat,
+    char*                dateFormat,
     int                 isDualUnits
 );
 
 extern int htmlGenPngPercentBucket
 (
-    char            *fname,
+    char*            fname,
     int             isMetric,
     float           value,
     float           low,
     float           high,
-    char            *title,
-    char            *units,
+    char*            title,
+    char*            units,
     int             decimalPlaces,
-    char            *dateFormat,
+    char*            dateFormat,
     int             isDualUnits
 );
 
@@ -236,137 +236,137 @@ extern int htmlGenPngPercentBucket
 #define CHART_MIN_TEMP(x)       (x ? (float)0.0 : (float)40.0)
 extern int htmlGenPngChart
 (
-    char            *fname,
+    char*            fname,
     int             isMetric,
-    float           *values,
+    float*           values,
     int             xHashes,
     float           ymin,
     float           ymax,
     float           ystep,
-    char            *labels[],
+    char*            labels[],
     int             numValues,
     int             totalValues,
-    char            *title,
-    char            *units,
+    char*            title,
+    char*            units,
     int             decimalPlaces,
-    char            *dateFormat,
-    int             isDualUnits    
+    char*            dateFormat,
+    int             isDualUnits
 );
 
 extern int htmlGenPngBarChart
 (
-    char            *fname,
+    char*            fname,
     int             isMetric,
-    float           *values,
+    float*           values,
     int             xHashes,
     float           ymin,
     float           ymax,
     float           ystep,
-    char            *labels[],          // size=numValues+1 for last label
+    char*            labels[],          // size=numValues+1 for last label
     int             numValues,
-    char            *title,
-    char            *units,
+    char*            title,
+    char*            units,
     int             decimalPlaces,
     int             numPointsPerBar,
     int             numBars,
     int             numPointsInFirstBar,
-    char            *dateFormat,
+    char*            dateFormat,
     int             isDualUnits
 );
 
 extern int htmlGenPngPercentChart
 (
-    char            *fname,
+    char*            fname,
     int             isMetric,
-    float           *values,
+    float*           values,
     int             xHashes,
-    char            *labels[],
+    char*            labels[],
     int             numValues,
     int             totalValues,
-    char            *title,
-    char            *dateFormat
+    char*            title,
+    char*            dateFormat
 );
 
 #define CHART_MIN_WSPEED(x)         0
 #define CHART_MAX_WSPEED(x)         ((x) ? 60 : 40)
 extern int htmlGenPngMultiChart
 (
-    char            *fname,
+    char*            fname,
     int             isMetric,
-    MC_DATASET      *datasets,
+    MC_DATASET*      datasets,
     int             numDataSets,
     int             xHashes,
     float           min,
     float           max,
     float           step,
-    char            *labels[],
+    char*            labels[],
     int             numValues,
     int             totalValues,
-    char            *units,
+    char*            units,
     int             decimalPlaces,
-    char            *dateFormat,
+    char*            dateFormat,
     int             isDualUnits
 );
 
 extern int htmlGenPngWDIRChart
 (
-    char            *fname,
+    char*            fname,
     int             isMetric,
-    float           *values,
+    float*           values,
     int             xHashes,
-    char            *labels[],
+    char*            labels[],
     int             numValues,
     int             totalValues,
-    char            *title,
-    char            *units,
+    char*            title,
+    char*            units,
     int             decimalPlaces,
-    char            *dateFormat
+    char*            dateFormat
 );
 
-extern int htmlGenPngDialInit (char *workingDir);
+extern int htmlGenPngDialInit( char* workingDir );
 
 extern int htmlGenPngDialWind
 (
-    char            *fname,
+    char*            fname,
     int             direction,               // 0 - 359 degrees
     int             highDirection,           // 0-359 degrees
     float           speed,
     float           highSpeed,
-    char            *title
+    char*            title
 );
 
 //  ... Use the following to disable the "feelsLike" depiction
 #define DIAL_TEMP_FEELSLIKE_DISABLE    (float)(100000.0)
 extern int htmlGenPngDialTemperature
 (
-    char                *fname,
+    char*                fname,
     int                 isMetricUnits,
     float               temperature,         // -40 to 140 degrees, 180 total
     float               low,
     float               high,
     float               feelsLike,
-    char                *title,
-    char                *units
+    char*                title,
+    char*                units
 );
 
 extern int htmlGenPngDialHumidity
 (
-    char                *fname,
+    char*                fname,
     float               humidity,            // 0 to 100 %, 100 total
     float               low,
     float               high,
-    char                *title
+    char*                title
 );
 
 extern int htmlGenPngDialNetRain
 (
-    char                *fname,
+    char*                fname,
     int                 isExtendedData,
     int                 isMetricUnits,
     float               rain,
-    float               et,               
-    char                *title,
-    char                *units
+    float               et,
+    char*                title,
+    char*                units
 );
 
 // Note: sample width cannot be less than 10 degrees!
@@ -378,10 +378,10 @@ extern int htmlGenPngDialNetRain
 #define WR_WEDGE_SPACE                  4
 extern int htmlGenPngDialWindRose
 (
-    char                *fname,
+    char*                fname,
     float               values[],
     int                 numValues,
-    char                *title,
+    char*                title,
     int                 sampleWidth
 );
 

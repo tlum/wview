@@ -61,6 +61,6 @@ wviewd_wh1080_LDFLAGS	= -L$(prefix)/lib -L/usr/lib -L/usr/local/lib
 if FREEBSD
 wviewd_wh1080_LDADD		= -lusb
 else
-wviewd_wh1080_LDADD		= -lusb-1.0
+wviewd_wh1080_LDADD		= -lusb-1.0 -ludev
 endif
 endif

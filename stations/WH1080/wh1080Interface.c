@@ -1,23 +1,23 @@
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         wh1080Interface.c
- 
+
   PURPOSE:
         Provide the Fine Offset WH1080 station interface API and utilities.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         02/17/2011      M.S. Teel       0               Original
- 
+
   NOTES:
-        The WH1080 station provides a USB HID interface for I/O        
- 
+        The WH1080 station provides a USB HID interface for I/O
+
   LICENSE:
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -37,9 +37,9 @@
 */
 
 static WH1080_IF_DATA   wh1080WorkData;
-static void             (*ArchiveIndicator) (ARCHIVE_PKT* newRecord);
+static void ( *ArchiveIndicator )( ARCHIVE_PKT* newRecord );
 
-static void serialPortConfig (int fd);
+static void serialPortConfig( int fd );
 
 
 
@@ -75,14 +75,14 @@ static void serialPortConfig (int fd);
 //
 int stationInit
 (
-    WVIEWD_WORK     *work,
-    void            (*archiveIndication)(ARCHIVE_PKT* newRecord)
+    WVIEWD_WORK*     work,
+    void ( *archiveIndication )( ARCHIVE_PKT* newRecord )
 )
 {
     int             i;
     STIM            stim;
 
-    memset (&wh1080WorkData, 0, sizeof(wh1080WorkData));
+    memset( &wh1080WorkData, 0, sizeof( wh1080WorkData ) );
 
     // save the archive indication callback (we should never need it)
     ArchiveIndicator = archiveIndication;
@@ -95,47 +95,47 @@ int stationInit
     work->stationGeneratesArchives = FALSE;
 
     // The WH1080 is a USB-only device:
-    if (usbhidMediumInit (&work->medium, WH1080_VENDOR_ID, WH1080_PRODUCT_ID, FALSE, FALSE) == ERROR)
+    if( usbhidMediumInit( &work->medium, WH1080_VENDOR_ID, WH1080_PRODUCT_ID, FALSE, FALSE ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: USB MediumInit failed");
+        radMsgLog( PRI_HIGH, "stationInit: USB MediumInit failed" );
         return ERROR;
     }
 
-    radMsgLog (PRI_STATUS, "WH1080 on USB %4.4X:%4.4X configured ...",
-               WH1080_VENDOR_ID, WH1080_PRODUCT_ID);
+    radMsgLog( PRI_STATUS, "WH1080 on USB %4.4X:%4.4X configured ...",
+               WH1080_VENDOR_ID, WH1080_PRODUCT_ID );
 
 
     // grab the station configuration now
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ELEVATION,
-                                  &wh1080WorkData.elevation)
-            == ERROR)
+                                  &wh1080WorkData.elevation )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!");
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!" );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LATITUDE,
-                                    &wh1080WorkData.latitude)
-            == ERROR)
+                                    &wh1080WorkData.latitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!");
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!" );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LONGITUDE,
-                                    &wh1080WorkData.longitude)
-            == ERROR)
+                                    &wh1080WorkData.longitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!");
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!" );
         return ERROR;
     }
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ARC_INTERVAL,
-                                  &wh1080WorkData.archiveInterval)
-            == ERROR)
+                                  &wh1080WorkData.archiveInterval )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!");
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!" );
         return ERROR;
     }
 
@@ -143,25 +143,25 @@ int stationInit
     work->archiveInterval = wh1080WorkData.archiveInterval;
 
     // sanity check the archive interval against the most recent record
-    if (stationVerifyArchiveInterval (work) == ERROR)
+    if( stationVerifyArchiveInterval( work ) == ERROR )
     {
         // bad magic!
-        radMsgLog (PRI_HIGH, "stationInit: stationVerifyArchiveInterval failed!");
-        radMsgLog (PRI_HIGH, "You must either move old archive data out of the way -or-");
-        radMsgLog (PRI_HIGH, "fix the interval setting...");
+        radMsgLog( PRI_HIGH, "stationInit: stationVerifyArchiveInterval failed!" );
+        radMsgLog( PRI_HIGH, "You must either move old archive data out of the way -or-" );
+        radMsgLog( PRI_HIGH, "fix the interval setting..." );
         return ERROR;
     }
     else
     {
-        radMsgLog (PRI_STATUS, "station archive interval: %d minutes",
-                   work->archiveInterval);
+        radMsgLog( PRI_STATUS, "station archive interval: %d minutes",
+                   work->archiveInterval );
     }
 
-    radMsgLog (PRI_STATUS, "Starting station interface: WH1080"); 
+    radMsgLog( PRI_STATUS, "Starting station interface: WH1080" );
 
-    if (wh1080Init (work) == ERROR)
+    if( wh1080Init( work ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: wh1080Init failed!");
+        radMsgLog( PRI_HIGH, "stationInit: wh1080Init failed!" );
         return ERROR;
     }
 
@@ -172,10 +172,10 @@ int stationInit
 //
 // Returns: N/A
 //
-void stationExit (WVIEWD_WORK *work)
+void stationExit( WVIEWD_WORK* work )
 {
-    wh1080Exit (work);
-    (*(work->medium.usbhidExit)) (&work->medium);
+    wh1080Exit( work );
+    ( *( work->medium.usbhidExit ) )( &work->medium );
 
     return;
 }
@@ -190,28 +190,28 @@ void stationExit (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetPosition (WVIEWD_WORK *work)
+int stationGetPosition( WVIEWD_WORK* work )
 {
     // just set the values from our internal store - we retrieved them in
     // stationInit
-    work->elevation     = (int16_t)wh1080WorkData.elevation;
-    if (wh1080WorkData.latitude >= 0)
-        work->latitude      = (int16_t)((wh1080WorkData.latitude*10)+0.5);
+    work->elevation     = ( int16_t )wh1080WorkData.elevation;
+    if( wh1080WorkData.latitude >= 0 )
+        work->latitude      = ( int16_t )( ( wh1080WorkData.latitude * 10 ) + 0.5 );
     else
-        work->latitude      = (int16_t)((wh1080WorkData.latitude*10)-0.5);
-    if (wh1080WorkData.longitude >= 0)
-        work->longitude     = (int16_t)((wh1080WorkData.longitude*10)+0.5);
+        work->latitude      = ( int16_t )( ( wh1080WorkData.latitude * 10 ) - 0.5 );
+    if( wh1080WorkData.longitude >= 0 )
+        work->longitude     = ( int16_t )( ( wh1080WorkData.longitude * 10 ) + 0.5 );
     else
-        work->longitude     = (int16_t)((wh1080WorkData.longitude*10)-0.5);
+        work->longitude     = ( int16_t )( ( wh1080WorkData.longitude * 10 ) - 0.5 );
 
-    radMsgLog (PRI_STATUS, "station location: elevation: %d feet",
-               work->elevation);
+    radMsgLog( PRI_STATUS, "station location: elevation: %d feet",
+               work->elevation );
 
-    radMsgLog (PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
-               (float)abs(work->latitude)/10.0,
-               ((work->latitude < 0) ? 'S' : 'N'),
-               (float)abs(work->longitude)/10.0,
-               ((work->longitude < 0) ? 'W' : 'E'));
+    radMsgLog( PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
+               ( float )abs( work->latitude ) / 10.0,
+               ( ( work->latitude < 0 ) ? 'S' : 'N' ),
+               ( float )abs( work->longitude ) / 10.0,
+               ( ( work->longitude < 0 ) ? 'W' : 'E' ) );
 
     return OK;
 }
@@ -222,7 +222,7 @@ int stationGetPosition (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationSyncTime (WVIEWD_WORK *work)
+int stationSyncTime( WVIEWD_WORK* work )
 {
     // We don't use the WH1080 time...
     return OK;
@@ -237,9 +237,9 @@ int stationSyncTime (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetReadings (WVIEWD_WORK *work)
+int stationGetReadings( WVIEWD_WORK* work )
 {
-    wh1080GetReadings (work);
+    wh1080GetReadings( work );
 
     return OK;
 }
@@ -256,11 +256,11 @@ int stationGetReadings (WVIEWD_WORK *work)
 // Note: This function will only be invoked by the wview daemon if the
 //       'stationInit' function set the 'stationGeneratesArchives' to TRUE
 //
-int stationGetArchive (WVIEWD_WORK *work)
+int stationGetArchive( WVIEWD_WORK* work )
 {
     // just indicate a NULL record, WMR918 does not generate them (and this
     // function should never be called!)
-    (*ArchiveIndicator) (NULL);
+    ( *ArchiveIndicator )( NULL );
     return OK;
 }
 
@@ -273,7 +273,7 @@ int stationGetArchive (WVIEWD_WORK *work)
 //
 // Returns: N/A
 //
-void stationDataIndicate (WVIEWD_WORK *work)
+void stationDataIndicate( WVIEWD_WORK* work )
 {
     // N/A
     return;
@@ -282,13 +282,13 @@ void stationDataIndicate (WVIEWD_WORK *work)
 // station-supplied function to receive IPM messages - any message received by
 // the generic station message handler which is not recognized will be passed
 // to the station-specific code through this function.
-// It is the responsibility of the station interface to process the message 
+// It is the responsibility of the station interface to process the message
 // appropriately (or ignore it).
 // -- Synchronous --
 //
 // Returns: N/A
 //
-void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
+void stationMessageIndicate( WVIEWD_WORK* work, int msgType, void* msg )
 {
     // N/A
     return;
@@ -304,7 +304,7 @@ void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
 //
 // Returns: N/A
 //
-void stationIFTimerExpiry (WVIEWD_WORK *work)
+void stationIFTimerExpiry( WVIEWD_WORK* work )
 {
     return;
 }

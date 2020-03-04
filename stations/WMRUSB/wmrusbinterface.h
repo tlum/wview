@@ -1,22 +1,22 @@
 #ifndef INC_wmrusbinterfaceh
 #define INC_wmrusbinterfaceh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         wmrusbinterface.h
- 
+
   PURPOSE:
-        Provide the Oregon Scientific WMR USB station interface 
+        Provide the Oregon Scientific WMR USB station interface
         API and utilities.
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files

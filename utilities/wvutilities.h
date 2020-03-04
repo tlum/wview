@@ -1,26 +1,26 @@
 #ifndef INC_wvutilitiesh
 #define INC_wvutilitiesh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         wvutilities.h
- 
+
   PURPOSE:
         Provide the wview utility program common definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         02/26/2006      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2006, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 // System include files
@@ -49,7 +49,7 @@
 // API function prototypes
 
 // Convert the endianness of WLK files as given by 'doLE2BE'
-extern int wvuConvertWLKFiles (char *srcDir, char *destDir, int doLE2BE);
+extern int wvuConvertWLKFiles( char* srcDir, char* destDir, int doLE2BE );
 
 #endif
 

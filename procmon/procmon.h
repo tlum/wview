@@ -1,26 +1,26 @@
 #ifndef INC_procmonh
 #define INC_procmonh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         procmon.h
- 
+
   PURPOSE:
         Provide the wview pmon process definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         11/20/2007      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2007, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 //  System include files
@@ -124,11 +124,11 @@ typedef struct
 
 //  !!!!!!!!!!!!!!!!!!!!  END HIDDEN SECTION  !!!!!!!!!!!!!!!!!!!!!
 
-extern int IdleStateHandler (int state, void* stimulus, void* userData);
-extern int WaitRespStateHandler (int state, void* stimulus, void* userData);
-extern int WaitExitStateHandler (int state, void* stimulus, void* userData);
-extern int WaitStartStateHandler (int state, void* stimulus, void* userData);
-extern int pmonGetProcessPid (char* pidFilePath);
+extern int IdleStateHandler( int state, void* stimulus, void* userData );
+extern int WaitRespStateHandler( int state, void* stimulus, void* userData );
+extern int WaitExitStateHandler( int state, void* stimulus, void* userData );
+extern int WaitStartStateHandler( int state, void* stimulus, void* userData );
+extern int pmonGetProcessPid( char* pidFilePath );
 
 #endif
 

@@ -1,29 +1,29 @@
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         emailAlerts.c
- 
+
   PURPOSE:
         Provide the alert email API methods.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         03/07/2009       M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2009, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 //  ... System header files
 #include <radmsgLog.h>
-
+#include <radmsgRouter.h>
 
 //  ... Local header files
 #include <emailAlerts.h>
@@ -52,33 +52,33 @@ static time_t           lastAlertTime[ALERT_TYPE_MAX] =
 
 //  ... define methods here
 
-int emailAlertSend (EmailAlertTypes type)
+int emailAlertSend( EmailAlertTypes type )
 {
     WVIEW_MSG_ALERT     alert;
 
-    if ((time(NULL) - lastAlertTime[type]) < ALERT_NOTIFY_INTERVAL)
+    if( ( time( NULL ) - lastAlertTime[type] ) < ALERT_NOTIFY_INTERVAL )
     {
         // Abate:
         return OK;
     }
 
     alert.alertType = type;
-    lastAlertTime[type] = time(NULL);
-    radMsgRouterMessageSend (WVIEW_MSG_TYPE_ALERT, &alert, sizeof(alert));
+    lastAlertTime[type] = time( NULL );
+    radMsgRouterMessageSend( WVIEW_MSG_TYPE_ALERT, &alert, sizeof( alert ) );
     return OK;
 }
 
-char* emailAlertGetSubject (EmailAlertTypes type)
+char* emailAlertGetSubject( EmailAlertTypes type )
 {
-    if (type < ALERT_TYPE_MAX)
+    if( type < ALERT_TYPE_MAX )
         return alertInfo[type].subject;
     else
         return NULL;
 }
 
-char* emailAlertGetBody (EmailAlertTypes type)
+char* emailAlertGetBody( EmailAlertTypes type )
 {
-    if (type < ALERT_TYPE_MAX)
+    if( type < ALERT_TYPE_MAX )
         return alertInfo[type].body;
     else
         return NULL;

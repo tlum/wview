@@ -61,6 +61,6 @@ wviewd_te923_LDFLAGS	= -L$(prefix)/lib -L/usr/lib -L/usr/local/lib
 if FREEBSD
 wviewd_te923_LDADD		= -lusb
 else
-wviewd_te923_LDADD		= -lusb-1.0
+wviewd_te923_LDADD		= -lusb-1.0 -ludev
 endif
 endif

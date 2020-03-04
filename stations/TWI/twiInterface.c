@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         twiInterface.c
- 
+
   PURPOSE:
         Provide the TWI station interface API and utilities.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         12/14/2009      M.S. Teel       0               Original
@@ -17,7 +17,7 @@
 
         This source code is released for free distribution under the terms
         of the GNU General Public License.
- 
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -40,42 +40,42 @@ static TWI_IF_DATA      twiWorkData;
 static WV_ACCUM_ID      twi12HourTempAvg;
 static WVIEWD_WORK*     pwviewWork;
 
-static void             (*ArchiveIndicator) (ARCHIVE_PKT* newRecord);
+static void ( *ArchiveIndicator )( ARCHIVE_PKT* newRecord );
 
-static void             serialPortConfig (int fd);
-static void             storeLoopPkt (WVIEWD_WORK* work, LOOP_PKT *dest, TWI_DATA *src);
+static void             serialPortConfig( int fd );
+static void             storeLoopPkt( WVIEWD_WORK* work, LOOP_PKT* dest, TWI_DATA* src );
 
 
 //  Calculate the "e ^ (-mgh/RT)" term for pressure conversions:
-static double calcPressureTerm(float tempF, float elevationFT)
+static double calcPressureTerm( float tempF, float elevationFT )
 {
     double      exponent;
-    double      elevMeters = (double)wvutilsConvertFeetToMeters(elevationFT);
-    double      tempKelvin = (double)wvutilsConvertFToC(tempF) + 273.15;
+    double      elevMeters = ( double )wvutilsConvertFeetToMeters( elevationFT );
+    double      tempKelvin = ( double )wvutilsConvertFToC( tempF ) + 273.15;
 
     // e ^ -elevMeters/(tempK * 29.263)
-    exponent = (-elevMeters);
+    exponent = ( -elevMeters );
 
     // degrees Kelvin (T)
-    exponent /= (tempKelvin * 29.263);
+    exponent /= ( tempKelvin * 29.263 );
 
     // e ^ (-mgh/RT)
-    exponent = exp(exponent);
+    exponent = exp( exponent );
 
     return exponent;
 }
 
 //  calculate station pressure from sea level pressure (using 12-hour temp avg):
-static float twiConvertSLPToSP(float SLP, float tempF, float elevationFT)
+static float twiConvertSLPToSP( float SLP, float tempF, float elevationFT )
 {
     double      SP, PT;
 
     // Formula used: SP = SLP * PressureTerm
     // compute PressureTerm:
-    PT = calcPressureTerm (tempF, elevationFT);
+    PT = calcPressureTerm( tempF, elevationFT );
     SP = SLP * PT;
 
-    return (float)SP;
+    return ( float )SP;
 }
 
 
@@ -111,15 +111,15 @@ static float twiConvertSLPToSP(float SLP, float tempF, float elevationFT)
 //
 int stationInit
 (
-    WVIEWD_WORK     *work,
-    void            (*archiveIndication)(ARCHIVE_PKT* newRecord)
+    WVIEWD_WORK*     work,
+    void ( *archiveIndication )( ARCHIVE_PKT* newRecord )
 )
 {
     int             i;
     ARCHIVE_PKT     recordStore;
     time_t          nowTime;
 
-    memset (&twiWorkData, 0, sizeof(twiWorkData));
+    memset( &twiWorkData, 0, sizeof( twiWorkData ) );
     pwviewWork = work;
     twiWorkData.baudrate = B19200;
 
@@ -134,98 +134,98 @@ int stationInit
     work->stationGeneratesArchives = FALSE;
 
     // initialize the medium abstraction based on user configuration
-    if (!strcmp (work->stationInterface, "serial"))
+    if( !strcmp( work->stationInterface, "serial" ) )
     {
-        if (serialMediumInit (&work->medium, serialPortConfig, O_RDWR | O_NOCTTY | O_NDELAY) == ERROR)
+        if( serialMediumInit( &work->medium, serialPortConfig, O_RDWR | O_NOCTTY | O_NDELAY ) == ERROR )
         {
-            radMsgLog (PRI_HIGH, "stationInit: serial MediumInit failed");
+            radMsgLog( PRI_HIGH, "stationInit: serial MediumInit failed" );
             return ERROR;
         }
     }
-    else if (!strcmp (work->stationInterface, "ethernet"))
+    else if( !strcmp( work->stationInterface, "ethernet" ) )
     {
-        if (ethernetMediumInit (&work->medium, work->stationHost, work->stationPort)
-                == ERROR)
+        if( ethernetMediumInit( &work->medium, work->stationHost, work->stationPort )
+                == ERROR )
         {
-            radMsgLog (PRI_HIGH, "stationInit: ethernet MediumInit failed");
+            radMsgLog( PRI_HIGH, "stationInit: ethernet MediumInit failed" );
             return ERROR;
         }
     }
     else
     {
-        radMsgLog (PRI_HIGH, "stationInit: medium %s not supported",
-                   work->stationInterface);
+        radMsgLog( PRI_HIGH, "stationInit: medium %s not supported",
+                   work->stationInterface );
         return ERROR;
     }
 
     // initialize the interface using the media specific routine
-    if ((*(work->medium.init)) (&work->medium, work->stationDevice) == ERROR)
+    if( ( *( work->medium.init ) )( &work->medium, work->stationDevice ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: medium setup failed");
+        radMsgLog( PRI_HIGH, "stationInit: medium setup failed" );
         return ERROR;
     }
 
     // Autobaud the station now:
-    twiWorkData.baudrate = twiConfig(work);
-    if (twiWorkData.baudrate <= 0)
+    twiWorkData.baudrate = twiConfig( work );
+    if( twiWorkData.baudrate <= 0 )
     {
-        radMsgLog (PRI_HIGH, "TWI: twiProtocolInit: autobaud failed!");
+        radMsgLog( PRI_HIGH, "TWI: twiProtocolInit: autobaud failed!" );
         return ERROR;
     }
 
-    radMsgLog (PRI_STATUS, "TWI: autobaud = %d", twiWorkData.baudrate);
+    radMsgLog( PRI_STATUS, "TWI: autobaud = %d", twiWorkData.baudrate );
 
     // Reconfigure the serial port here to ensure consistency:
-    serialPortConfig(work->medium.fd);
-    tcflush (work->medium.fd, TCIFLUSH);
-    tcflush (work->medium.fd, TCOFLUSH);
+    serialPortConfig( work->medium.fd );
+    tcflush( work->medium.fd, TCIFLUSH );
+    tcflush( work->medium.fd, TCOFLUSH );
 
-    if (!strcmp (work->stationInterface, "serial"))
+    if( !strcmp( work->stationInterface, "serial" ) )
     {
-        radMsgLog (PRI_STATUS, "TWI on %s opened ...",
-                   work->stationDevice);
+        radMsgLog( PRI_STATUS, "TWI on %s opened ...",
+                   work->stationDevice );
     }
-    else if (!strcmp (work->stationInterface, "ethernet"))
+    else if( !strcmp( work->stationInterface, "ethernet" ) )
     {
-        radMsgLog (PRI_STATUS, "TWI on %s:%d opened ...",
-                   work->stationHost, work->stationPort);
+        radMsgLog( PRI_STATUS, "TWI on %s:%d opened ...",
+                   work->stationHost, work->stationPort );
     }
 
     // grab the station configuration now
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ELEVATION,
-                                  &twiWorkData.elevation)
-            == ERROR)
+                                  &twiWorkData.elevation )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LATITUDE,
-                                    &twiWorkData.latitude)
-            == ERROR)
+                                    &twiWorkData.latitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LONGITUDE,
-                                    &twiWorkData.longitude)
-            == ERROR)
+                                    &twiWorkData.longitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ARC_INTERVAL,
-                                  &twiWorkData.archiveInterval)
-            == ERROR)
+                                  &twiWorkData.archiveInterval )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
 
@@ -233,74 +233,74 @@ int stationInit
     work->archiveInterval = twiWorkData.archiveInterval;
 
     // sanity check the archive interval against the most recent record
-    if (stationVerifyArchiveInterval (work) == ERROR)
+    if( stationVerifyArchiveInterval( work ) == ERROR )
     {
         // bad magic!
-        radMsgLog (PRI_HIGH, "stationInit: stationVerifyArchiveInterval failed!");
-        radMsgLog (PRI_HIGH, "You must either move old archive data out of the way -or-");
-        radMsgLog (PRI_HIGH, "fix the interval setting...");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationVerifyArchiveInterval failed!" );
+        radMsgLog( PRI_HIGH, "You must either move old archive data out of the way -or-" );
+        radMsgLog( PRI_HIGH, "fix the interval setting..." );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
     else
     {
-        radMsgLog (PRI_STATUS, "station archive interval: %d minutes",
-                   work->archiveInterval);
+        radMsgLog( PRI_STATUS, "station archive interval: %d minutes",
+                   work->archiveInterval );
     }
 
     twiWorkData.totalRain = 0;
 
-   // Create the rain accumulator (TWI_RAIN_RATE_PERIOD minute age)
+    // Create the rain accumulator (TWI_RAIN_RATE_PERIOD minute age)
     // so we can compute rain rate:
-    twiWorkData.rainRateAccumulator = sensorAccumInit(TWI_RAIN_RATE_PERIOD);
+    twiWorkData.rainRateAccumulator = sensorAccumInit( TWI_RAIN_RATE_PERIOD );
 
     // Populate the accumulator with the last TWI_RAIN_RATE_PERIOD minutes:
-    nowTime = time(NULL) - (WV_SECONDS_IN_HOUR/(60/TWI_RAIN_RATE_PERIOD));
-    while ((nowTime = dbsqliteArchiveGetNextRecord(nowTime, &recordStore)) != ERROR)
+    nowTime = time( NULL ) - ( WV_SECONDS_IN_HOUR / ( 60 / TWI_RAIN_RATE_PERIOD ) );
+    while( ( nowTime = dbsqliteArchiveGetNextRecord( nowTime, &recordStore ) ) != ERROR )
     {
-        sensorAccumAddSample(twiWorkData.rainRateAccumulator,
-                             recordStore.dateTime,
-                             recordStore.value[DATA_INDEX_rain]);
+        sensorAccumAddSample( twiWorkData.rainRateAccumulator,
+                              recordStore.dateTime,
+                              recordStore.value[DATA_INDEX_rain] );
     }
 
-    radMsgLog (PRI_STATUS, "Starting station interface: TWI"); 
+    radMsgLog( PRI_STATUS, "Starting station interface: TWI" );
 
     // initialize the station interface
-    if (twiProtocolInit(work) == ERROR)
+    if( twiProtocolInit( work ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: twiProtocolInit failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: twiProtocolInit failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
 
     // do the initial GetReadings now
-    if (twiProtocolGetReadings(work, &twiWorkData.twiReadings) != OK)
+    if( twiProtocolGetReadings( work, &twiWorkData.twiReadings ) != OK )
     {
-        radMsgLog (PRI_HIGH, "stationInit: initial twiProtocolGetReadings failed!");
-        twiProtocolExit (work);
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: initial twiProtocolGetReadings failed!" );
+        twiProtocolExit( work );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
 
 
     // Initialize the 12-hour temp accumulator:
-    twi12HourTempAvg = sensorAccumInit(60 * 12);
+    twi12HourTempAvg = sensorAccumInit( 60 * 12 );
 
     // Load data for the last 12 hours:
-    nowTime = time(NULL) - (WV_SECONDS_IN_HOUR * 12);
-    while ((nowTime = dbsqliteArchiveGetNextRecord(nowTime, &recordStore)) != ERROR)
+    nowTime = time( NULL ) - ( WV_SECONDS_IN_HOUR * 12 );
+    while( ( nowTime = dbsqliteArchiveGetNextRecord( nowTime, &recordStore ) ) != ERROR )
     {
-        sensorAccumAddSample(twi12HourTempAvg, 
-                             recordStore.dateTime, 
-                             recordStore.value[DATA_INDEX_outTemp]);
+        sensorAccumAddSample( twi12HourTempAvg,
+                              recordStore.dateTime,
+                              recordStore.value[DATA_INDEX_outTemp] );
     }
 
     // populate the LOOP structure
-    storeLoopPkt (work, &work->loopPkt, &twiWorkData.twiReadings);
+    storeLoopPkt( work, &work->loopPkt, &twiWorkData.twiReadings );
 
     // we must indicate successful completion here -
     // even though we are synchronous, the daemon wants to see this event
-    radProcessEventsSend(NULL, STATION_INIT_COMPLETE_EVENT, 0);
+    radProcessEventsSend( NULL, STATION_INIT_COMPLETE_EVENT, 0 );
 
     return OK;
 }
@@ -309,10 +309,10 @@ int stationInit
 //
 // Returns: N/A
 //
-void stationExit (WVIEWD_WORK *work)
+void stationExit( WVIEWD_WORK* work )
 {
-    twiProtocolExit (work);
-    (*(work->medium.exit)) (&work->medium);
+    twiProtocolExit( work );
+    ( *( work->medium.exit ) )( &work->medium );
 
     return;
 }
@@ -327,28 +327,28 @@ void stationExit (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetPosition (WVIEWD_WORK *work)
+int stationGetPosition( WVIEWD_WORK* work )
 {
     // just set the values from our internal store - we retrieved them in
     // stationInit
-    work->elevation     = (int16_t)twiWorkData.elevation;
-    if (twiWorkData.latitude >= 0)
-        work->latitude      = (int16_t)((twiWorkData.latitude*10)+0.5);
+    work->elevation     = ( int16_t )twiWorkData.elevation;
+    if( twiWorkData.latitude >= 0 )
+        work->latitude      = ( int16_t )( ( twiWorkData.latitude * 10 ) + 0.5 );
     else
-        work->latitude      = (int16_t)((twiWorkData.latitude*10)-0.5);
-    if (twiWorkData.longitude >= 0)
-        work->longitude     = (int16_t)((twiWorkData.longitude*10)+0.5);
+        work->latitude      = ( int16_t )( ( twiWorkData.latitude * 10 ) - 0.5 );
+    if( twiWorkData.longitude >= 0 )
+        work->longitude     = ( int16_t )( ( twiWorkData.longitude * 10 ) + 0.5 );
     else
-        work->longitude     = (int16_t)((twiWorkData.longitude*10)-0.5);
+        work->longitude     = ( int16_t )( ( twiWorkData.longitude * 10 ) - 0.5 );
 
-    radMsgLog (PRI_STATUS, "station location: elevation: %d feet",
-               work->elevation);
+    radMsgLog( PRI_STATUS, "station location: elevation: %d feet",
+               work->elevation );
 
-    radMsgLog (PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
-               (float)abs(work->latitude)/10.0,
-               ((work->latitude < 0) ? 'S' : 'N'),
-               (float)abs(work->longitude)/10.0,
-               ((work->longitude < 0) ? 'W' : 'E'));
+    radMsgLog( PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
+               ( float )abs( work->latitude ) / 10.0,
+               ( ( work->latitude < 0 ) ? 'S' : 'N' ),
+               ( float )abs( work->longitude ) / 10.0,
+               ( ( work->longitude < 0 ) ? 'W' : 'E' ) );
 
     return OK;
 }
@@ -359,7 +359,7 @@ int stationGetPosition (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationSyncTime (WVIEWD_WORK *work)
+int stationSyncTime( WVIEWD_WORK* work )
 {
     // TWI does not keep time...
     return OK;
@@ -374,18 +374,18 @@ int stationSyncTime (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetReadings (WVIEWD_WORK *work)
+int stationGetReadings( WVIEWD_WORK* work )
 {
     // we will do this synchronously...
 
     // get readings from station
-    if (twiProtocolGetReadings(work, &twiWorkData.twiReadings) == OK)
+    if( twiProtocolGetReadings( work, &twiWorkData.twiReadings ) == OK )
     {
         // populate the LOOP structure
-        storeLoopPkt(work, &work->loopPkt, &twiWorkData.twiReadings);
+        storeLoopPkt( work, &work->loopPkt, &twiWorkData.twiReadings );
 
         // indicate we are done
-        radProcessEventsSend(NULL, STATION_LOOP_COMPLETE_EVENT, 0);
+        radProcessEventsSend( NULL, STATION_LOOP_COMPLETE_EVENT, 0 );
     }
 
     return OK;
@@ -403,11 +403,11 @@ int stationGetReadings (WVIEWD_WORK *work)
 // Note: This function will only be invoked by the wview daemon if the
 //       'stationInit' function set the 'stationGeneratesArchives' to TRUE
 //
-int stationGetArchive (WVIEWD_WORK *work)
+int stationGetArchive( WVIEWD_WORK* work )
 {
     // just indicate a NULL record, TWI does not generate them (and this
     // function should never be called!)
-    (*ArchiveIndicator)(NULL);
+    ( *ArchiveIndicator )( NULL );
     return OK;
 }
 
@@ -420,7 +420,7 @@ int stationGetArchive (WVIEWD_WORK *work)
 //
 // Returns: N/A
 //
-void stationDataIndicate (WVIEWD_WORK *work)
+void stationDataIndicate( WVIEWD_WORK* work )
 {
     // TWI station is synchronous...
     return;
@@ -429,13 +429,13 @@ void stationDataIndicate (WVIEWD_WORK *work)
 // station-supplied function to receive IPM messages - any message received by
 // the generic station message handler which is not recognized will be passed
 // to the station-specific code through this function.
-// It is the responsibility of the station interface to process the message 
+// It is the responsibility of the station interface to process the message
 // appropriately (or ignore it).
 // -- Synchronous --
 //
 // Returns: N/A
 //
-void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
+void stationMessageIndicate( WVIEWD_WORK* work, int msgType, void* msg )
 {
     // N/A
     return;
@@ -451,7 +451,7 @@ void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
 //
 // Returns: N/A
 //
-void stationIFTimerExpiry (WVIEWD_WORK *work)
+void stationIFTimerExpiry( WVIEWD_WORK* work )
 {
     return;
 }
@@ -462,14 +462,14 @@ void stationIFTimerExpiry (WVIEWD_WORK *work)
 
 //  ... ----- static (local) methods ----- ...
 
-static void serialPortConfig (int fd)
+static void serialPortConfig( int fd )
 {
     struct termios  port, tty, old;
 
-    tcgetattr (fd, &port);
+    tcgetattr( fd, &port );
 
-    cfsetispeed (&port, twiWorkData.baudrate);
-    cfsetospeed (&port, twiWorkData.baudrate);
+    cfsetispeed( &port, twiWorkData.baudrate );
+    cfsetospeed( &port, twiWorkData.baudrate );
 
     // set port to 8N1
     port.c_cflag &= ~PARENB;
@@ -477,52 +477,52 @@ static void serialPortConfig (int fd)
     port.c_cflag &= ~CSIZE;
     port.c_cflag &= ~CRTSCTS;                   // turn OFF H/W flow control
     port.c_cflag |= CS8;
-    port.c_cflag |= (CREAD | CLOCAL);
+    port.c_cflag |= ( CREAD | CLOCAL );
 
-    port.c_iflag &= ~(IXON | IXOFF | IXANY);    // turn off SW flow control
+    port.c_iflag &= ~( IXON | IXOFF | IXANY );  // turn off SW flow control
 
-    port.c_iflag &= ~(INLCR | ICRNL);           // turn off other input magic
+    port.c_iflag &= ~( INLCR | ICRNL );         // turn off other input magic
 
     port.c_oflag = 0;                           // NO output magic wanted
 
-    port.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+    port.c_lflag &= ~( ICANON | ECHO | ECHOE | ISIG );
 
-    tcsetattr (fd, TCSAFLUSH, &port);
+    tcsetattr( fd, TCSAFLUSH, &port );
 
     // bump DTR if enabled:
-    if (pwviewWork->stationToggleDTR)
+    if( pwviewWork->stationToggleDTR )
     {
-        tcgetattr (fd, &tty);
-        tcgetattr (fd, &old);
-        cfsetospeed (&tty, B0);
-        cfsetispeed (&tty, B0);
-        tcsetattr (fd, TCSANOW, &tty);
-        sleep (1);
-        tcsetattr (fd, TCSANOW, &old);
+        tcgetattr( fd, &tty );
+        tcgetattr( fd, &old );
+        cfsetospeed( &tty, B0 );
+        cfsetispeed( &tty, B0 );
+        tcsetattr( fd, TCSANOW, &tty );
+        sleep( 1 );
+        tcsetattr( fd, TCSANOW, &old );
     }
 
     return;
 }
 
-static void storeLoopPkt (WVIEWD_WORK* work, LOOP_PKT *dest, TWI_DATA *src)
+static void storeLoopPkt( WVIEWD_WORK* work, LOOP_PKT* dest, TWI_DATA* src )
 {
     float           tempfloat;
     static time_t   lastTempUpdate;
-    time_t          nowTime = time(NULL);
+    time_t          nowTime = time( NULL );
 
     // Clear optional data:
-    stationClearLoopData(work);
+    stationClearLoopData( work );
 
     // Pressure:
-    if ((10 < src->bp && src->bp < 50) &&
-        (-150 < src->outTemp && src->outTemp < 200))
+    if( ( 10 < src->bp && src->bp < 50 ) &&
+            ( -150 < src->outTemp && src->outTemp < 200 ) )
     {
-        if ((time(NULL) - lastTempUpdate) >= (twiWorkData.archiveInterval * 60))
+        if( ( time( NULL ) - lastTempUpdate ) >= ( twiWorkData.archiveInterval * 60 ) )
         {
             // Add for the 12-hour temp average sample:
             // mimic an archive interval:
-            sensorAccumAddSample(twi12HourTempAvg, time(NULL), src->outTemp);
-            lastTempUpdate = time(NULL);
+            sensorAccumAddSample( twi12HourTempAvg, time( NULL ), src->outTemp );
+            lastTempUpdate = time( NULL );
         }
 
         // TWI produces sea level pressure (SLP):
@@ -533,53 +533,53 @@ static void storeLoopPkt (WVIEWD_WORK* work, LOOP_PKT *dest, TWI_DATA *src)
         dest->barometer += work->calCBarometer;
 
         // calculate station pressure:
-        dest->stationPressure = twiConvertSLPToSP(dest->barometer, 
-                                                 sensorAccumGetAverage(twi12HourTempAvg), 
-                                                 (float)twiWorkData.elevation);
+        dest->stationPressure = twiConvertSLPToSP( dest->barometer,
+                                sensorAccumGetAverage( twi12HourTempAvg ),
+                                ( float )twiWorkData.elevation );
 
         // now calculate altimeter:
-        dest->altimeter = wvutilsConvertSPToAltimeter(dest->stationPressure,
-                                                      (float)twiWorkData.elevation);
+        dest->altimeter = wvutilsConvertSPToAltimeter( dest->stationPressure,
+                          ( float )twiWorkData.elevation );
     }
 
 
-    if (-150 < src->inTemp && src->inTemp < 200)
+    if( -150 < src->inTemp && src->inTemp < 200 )
     {
         dest->inTemp                        = src->inTemp;
     }
 
-    if (-150 < src->outTemp && src->outTemp < 200)
+    if( -150 < src->outTemp && src->outTemp < 200 )
     {
         dest->outTemp                       = src->outTemp;
     }
 
-    if (0 <= src->humidity && src->humidity <= 100)
+    if( 0 <= src->humidity && src->humidity <= 100 )
     {
-        dest->outHumidity                   = (uint16_t)src->humidity;
-        dest->inHumidity                    = (uint16_t)src->humidity;
+        dest->outHumidity                   = ( uint16_t )src->humidity;
+        dest->inHumidity                    = ( uint16_t )src->humidity;
     }
 
-    if (0 <= src->windSpeed && src->windSpeed <= 250)
+    if( 0 <= src->windSpeed && src->windSpeed <= 250 )
     {
         tempfloat = src->windSpeed;
         dest->windSpeedF                    = tempfloat;
         dest->windGustF                     = tempfloat;
     }
 
-    if (0 <= src->windDir && src->windDir < 360)
+    if( 0 <= src->windDir && src->windDir < 360 )
     {
         tempfloat = src->windDir;
         tempfloat += 0.5;
-        dest->windDir                       = (uint16_t)tempfloat;
-        dest->windGustDir                   = (uint16_t)tempfloat;
+        dest->windDir                       = ( uint16_t )tempfloat;
+        dest->windGustDir                   = ( uint16_t )tempfloat;
     }
 
     dest->rainRate                          = src->rainrate;
 
     // process the rain accumulator:
-    if (0 <= src->dayrain)
+    if( 0 <= src->dayrain )
     {
-        if (! work->runningFlag)
+        if( ! work->runningFlag )
         {
             // just starting, so start with whatever the station reports:
             twiWorkData.totalRain = src->dayrain;
@@ -588,7 +588,7 @@ static void storeLoopPkt (WVIEWD_WORK* work, LOOP_PKT *dest, TWI_DATA *src)
         else
         {
             // process the rain accumulator
-            if (src->dayrain - twiWorkData.totalRain >= 0)
+            if( src->dayrain - twiWorkData.totalRain >= 0 )
             {
                 dest->sampleRain = src->dayrain - twiWorkData.totalRain;
                 twiWorkData.totalRain = src->dayrain;
@@ -601,23 +601,23 @@ static void storeLoopPkt (WVIEWD_WORK* work, LOOP_PKT *dest, TWI_DATA *src)
             }
         }
 
-        if (dest->sampleRain > 2)
+        if( dest->sampleRain > 2 )
         {
             // Not possible, filter it out:
             dest->sampleRain = 0;
         }
 
         // Update the rain accumulator:
-        sensorAccumAddSample (twiWorkData.rainRateAccumulator, nowTime, dest->sampleRain);
-        dest->rainRate    = sensorAccumGetTotal (twiWorkData.rainRateAccumulator);
-        dest->rainRate   *= (60/TWI_RAIN_RATE_PERIOD);
+        sensorAccumAddSample( twiWorkData.rainRateAccumulator, nowTime, dest->sampleRain );
+        dest->rainRate    = sensorAccumGetTotal( twiWorkData.rainRateAccumulator );
+        dest->rainRate   *= ( 60 / TWI_RAIN_RATE_PERIOD );
     }
     else
     {
         dest->sampleRain = 0;
-        sensorAccumAddSample (twiWorkData.rainRateAccumulator, nowTime, dest->sampleRain);
-        dest->rainRate   = sensorAccumGetTotal (twiWorkData.rainRateAccumulator);
-        dest->rainRate   *= (60/TWI_RAIN_RATE_PERIOD);
+        sensorAccumAddSample( twiWorkData.rainRateAccumulator, nowTime, dest->sampleRain );
+        dest->rainRate   = sensorAccumGetTotal( twiWorkData.rainRateAccumulator );
+        dest->rainRate   *= ( 60 / TWI_RAIN_RATE_PERIOD );
     }
 
     return;

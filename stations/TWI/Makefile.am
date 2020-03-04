@@ -57,7 +57,7 @@ wviewd_twi_SOURCES     = \
 wviewd_twi_LDADD       =
 
 # define library directories
-wviewd_twi_LDFLAGS     = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+wviewd_twi_LDFLAGS     = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 wviewd_twi_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

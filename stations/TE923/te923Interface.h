@@ -1,21 +1,21 @@
 #ifndef INC_te923interfaceh
 #define INC_te923interfaceh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         te923Interface.h
- 
+
   PURPOSE:
         Provide the Honeywell TE923W station interface API and utilities.
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files

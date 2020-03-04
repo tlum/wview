@@ -1,32 +1,32 @@
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         serial.c
- 
+
   PURPOSE:
         Provide the weather station serial medium utilities.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         06/07/2005      M.S. Teel       0               Original
- 
+
   NOTES:
         wview medium-specific routines to be supplied:
-        
+
         xxxMediumInit    - sets up function pointers and work area
         xxxInit          - opens the interface and configures it
         xxxRead          - blocking read until specified bytes are read
         xxxWrite         - write on medium
         xxxExit          - cleanup and close interface
-        
+
         See daemon.h for details of the WVIEW_MEDIUM structure.
- 
+
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -71,84 +71,84 @@ static MEDIUM_SERIAL    mediumSerial;
 //  ... medium callback functions
 //////////////////////////////////////////////////////////////////////////////
 
-static int serialInit (WVIEW_MEDIUM *med, char *deviceName)
+static int serialInit( WVIEW_MEDIUM* med, char* deviceName )
 {
-    MEDIUM_SERIAL   *serialWork = (MEDIUM_SERIAL *)med->workData;
+    MEDIUM_SERIAL*   serialWork = ( MEDIUM_SERIAL* )med->workData;
 
     //  ... open our serial channel
-    med->fd = open (deviceName, serialWork->openFlags);
-    if (med->fd == -1)
+    med->fd = open( deviceName, serialWork->openFlags );
+    if( med->fd == -1 )
     {
-        radMsgLog (PRI_CATASTROPHIC, "Serial device %s failed to open: %s",
-                   deviceName, strerror(errno));
+        radMsgLog( PRI_CATASTROPHIC, "Serial device %s failed to open: %s",
+                   deviceName, strerror( errno ) );
         return ERROR;
     }
 
-    if (flock (med->fd, LOCK_EX) < 0)
+    if( flock( med->fd, LOCK_EX ) < 0 )
     {
-        if (errno == EOPNOTSUPP)
+        if( errno == EOPNOTSUPP )
         {
-            radMsgLog(PRI_MEDIUM, "serial device locking not supported by OS for %s",
-                      deviceName);
+            radMsgLog( PRI_MEDIUM, "serial device locking not supported by OS for %s",
+                       deviceName );
         }
         else
         {
-            radMsgLog (PRI_CATASTROPHIC, "Serial device %s locked by other program!",
-                       deviceName);
+            radMsgLog( PRI_CATASTROPHIC, "Serial device %s locked by other program!",
+                       deviceName );
             return ERROR;
         }
     }
 
     // configure it
-    serialWork->portInit (med->fd);
+    serialWork->portInit( med->fd );
 
-    tcflush (med->fd, TCIFLUSH);
-    tcflush (med->fd, TCOFLUSH);
+    tcflush( med->fd, TCIFLUSH );
+    tcflush( med->fd, TCOFLUSH );
 
     // Save the device name:
-    strncpy(serialWork->device, deviceName, WVIEW_STRING2_SIZE);
+    strncpy( serialWork->device, deviceName, WVIEW_STRING2_SIZE );
 
-    radUtilsSleep (1);
+    radUtilsSleep( 1 );
     return OK;
 }
 
-static void serialExit (WVIEW_MEDIUM *med)
+static void serialExit( WVIEW_MEDIUM* med )
 {
-    tcflush (med->fd, TCIFLUSH);
-    tcflush (med->fd, TCOFLUSH);
-    close (med->fd);
+    tcflush( med->fd, TCIFLUSH );
+    tcflush( med->fd, TCOFLUSH );
+    close( med->fd );
     return;
 }
 
-static int serialRestart (WVIEW_MEDIUM *med)
+static int serialRestart( WVIEW_MEDIUM* med )
 {
-    MEDIUM_SERIAL   *work = (MEDIUM_SERIAL*)med->workData;
+    MEDIUM_SERIAL*   work = ( MEDIUM_SERIAL* )med->workData;
 
-    serialExit(med);
-    radMsgLog (PRI_HIGH, "serialRestart: attempting restart");
-    while ((!wviewdIsExiting()) && (serialInit(med, work->device) == ERROR))
+    serialExit( med );
+    radMsgLog( PRI_HIGH, "serialRestart: attempting restart" );
+    while( ( !wviewdIsExiting() ) && ( serialInit( med, work->device ) == ERROR ) )
     {
-        radMsgLog (PRI_HIGH, "serialRestart: restart failed");
-        radUtilsSleep(5000);
-        radMsgLog (PRI_HIGH, "serialRestart: retrying restart");
+        radMsgLog( PRI_HIGH, "serialRestart: restart failed" );
+        radUtilsSleep( 5000 );
+        radMsgLog( PRI_HIGH, "serialRestart: retrying restart" );
     }
-    if (!wviewdIsExiting())
+    if( !wviewdIsExiting() )
     {
-        radMsgLog (PRI_HIGH, "serialRestart: recovered");
+        radMsgLog( PRI_HIGH, "serialRestart: recovered" );
     }
     return OK;
 
 }
 
-static int serialWrite (WVIEW_MEDIUM *med, void *buffer, int length)
+static int serialWrite( WVIEW_MEDIUM* med, void* buffer, int length )
 {
     int     retVal;
     int     wrerrno = 0;
 
-    retVal = write (med->fd, buffer, length);
-    if (retVal != length)
+    retVal = write( med->fd, buffer, length );
+    if( retVal != length )
     {
-        if (retVal == -1)
+        if( retVal == -1 )
         {
             wrerrno = errno;
         }
@@ -157,24 +157,24 @@ static int serialWrite (WVIEW_MEDIUM *med, void *buffer, int length)
     }
 
     // ... now wait for the TX buffer to empty out (this blocks)
-    tcdrain (med->fd);
+    tcdrain( med->fd );
 
     return retVal;
 }
 
-static int serialReadExact (WVIEW_MEDIUM *med, void *bfr, int len, int msTimeout)
+static int serialReadExact( WVIEW_MEDIUM* med, void* bfr, int len, int msTimeout )
 {
     int         rval, cumTime = 0, index = 0;
     uint64_t    readTime;
-    uint8_t     *ptr = (uint8_t *)bfr;
+    uint8_t*     ptr = ( uint8_t* )bfr;
 
-    while (index < len && cumTime < msTimeout)
+    while( index < len && cumTime < msTimeout )
     {
-        readTime = radTimeGetMSSinceEpoch ();
-        rval = read (med->fd, &ptr[index], len - index);
-        if (rval < 0)
+        readTime = radTimeGetMSSinceEpoch();
+        rval = read( med->fd, &ptr[index], len - index );
+        if( rval < 0 )
         {
-            if (errno != EINTR && errno != EAGAIN)
+            if( errno != EINTR && errno != EAGAIN )
             {
                 return ERROR;
             }
@@ -184,41 +184,41 @@ static int serialReadExact (WVIEW_MEDIUM *med, void *bfr, int len, int msTimeout
             index += rval;
         }
 
-        readTime = radTimeGetMSSinceEpoch () - readTime;
-        cumTime += (int)readTime;
-        if (index < len && cumTime < msTimeout)
+        readTime = radTimeGetMSSinceEpoch() - readTime;
+        cumTime += ( int )readTime;
+        if( index < len && cumTime < msTimeout )
         {
-            readTime = radTimeGetMSSinceEpoch ();
-            radUtilsSleep (9);
-            readTime = radTimeGetMSSinceEpoch () - readTime;
-            cumTime += (int)readTime;
+            readTime = radTimeGetMSSinceEpoch();
+            radUtilsSleep( 9 );
+            readTime = radTimeGetMSSinceEpoch() - readTime;
+            cumTime += ( int )readTime;
         }
     }
 
-    return ((index == len) ? len : ERROR);
+    return ( ( index == len ) ? len : ERROR );
 }
 
-static void serialFlush (WVIEW_MEDIUM *med, int queue)
+static void serialFlush( WVIEW_MEDIUM* med, int queue )
 {
-    if (queue == WV_QUEUE_INPUT)
+    if( queue == WV_QUEUE_INPUT )
     {
-        tcflush (med->fd, TCIFLUSH);
+        tcflush( med->fd, TCIFLUSH );
     }
-    else if (queue == WV_QUEUE_OUTPUT)
+    else if( queue == WV_QUEUE_OUTPUT )
     {
-        tcflush (med->fd, TCOFLUSH);
+        tcflush( med->fd, TCOFLUSH );
     }
 
     return;
 }
 
-static void serialDrain (WVIEW_MEDIUM *med)
+static void serialDrain( WVIEW_MEDIUM* med )
 {
-    tcdrain (med->fd);
+    tcdrain( med->fd );
     return;
 }
 
-static RADSOCK_ID serialGetSocket(WVIEW_MEDIUM *med)
+static RADSOCK_ID serialGetSocket( WVIEW_MEDIUM* med )
 {
     return NULL;
 }
@@ -226,12 +226,12 @@ static RADSOCK_ID serialGetSocket(WVIEW_MEDIUM *med)
 
 // ... ----- API methods -----
 
-int serialMediumInit (WVIEW_MEDIUM *medium, void (*portInit)(int fd), int openFlags)
+int serialMediumInit( WVIEW_MEDIUM* medium, void ( *portInit )( int fd ), int openFlags )
 {
-    MEDIUM_SERIAL       *work = &mediumSerial;
+    MEDIUM_SERIAL*       work = &mediumSerial;
 
-    memset (medium, 0, sizeof (*medium));
-    memset (work, 0, sizeof (*work));
+    memset( medium, 0, sizeof( *medium ) );
+    memset( work, 0, sizeof( *work ) );
 
     work->portInit  = portInit;
     work->openFlags = openFlags;
@@ -239,7 +239,7 @@ int serialMediumInit (WVIEW_MEDIUM *medium, void (*portInit)(int fd), int openFl
     medium->type = MEDIUM_TYPE_DEVICE;
 
     // set our workData pointer for later use
-    medium->workData = (void *)work;
+    medium->workData = ( void* )work;
 
     medium->init        = serialInit;
     medium->exit        = serialExit;

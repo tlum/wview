@@ -1,27 +1,27 @@
 #ifndef INC_httph
 #define INC_httph
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         http.h
- 
+
   PURPOSE:
         Provide the wview http process definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
-        07/12/2005      M.S. Teel       0               
+        07/12/2005      M.S. Teel       0
         12/09/2007      M.S. Teel       1               Add WeatherForYou.com
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2005, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files

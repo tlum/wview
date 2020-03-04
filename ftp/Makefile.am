@@ -33,7 +33,7 @@ wviewftpd_SOURCES  = \
 wviewftpd_LDADD   = -lssl -lcurl
 
 # define library directories
-wviewftpd_LDFLAGS = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+wviewftpd_LDFLAGS = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 wviewftpd_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

@@ -1,26 +1,26 @@
 #ifndef INC_usbhidh
 #define INC_usbhidh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         usbhid.h
- 
+
   PURPOSE:
         Provide utilities for USB communications.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         02/15/11        M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2011, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -58,9 +58,9 @@ typedef struct
 */
 
 // this is the only globally visible method
-extern int usbhidMediumInit 
+extern int usbhidMediumInit
 (
-    WVIEW_MEDIUM    *medium,
+    WVIEW_MEDIUM*    medium,
     uint16_t        vendor_id,
     uint16_t        product_id,
     int             enableDebug,

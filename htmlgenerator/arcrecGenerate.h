@@ -67,7 +67,7 @@ typedef struct
     char            htmlPath    [_MAX_PATH];
     int             daysToKeep;
     char            header[ARCREC_HEADER_MAX_LENGTH];
-}__attribute__ ((packed)) ARCREC_WORK, *ARCREC_ID;
+} __attribute__( ( packed ) ) ARCREC_WORK, *ARCREC_ID;
 
 
 
@@ -80,13 +80,13 @@ typedef struct
 
 extern int arcrecGenerateInit
 (
-    char        *htmlPath,
+    char*        htmlPath,
     int         daysToKeep,
     int         isMetric,
     int         arcInterval
 );
 
-extern int arcrecGenerate (ARCHIVE_PKT* record, int isMetric);
+extern int arcrecGenerate( ARCHIVE_PKT* record, int isMetric );
 
 
 #endif

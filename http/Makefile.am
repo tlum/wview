@@ -38,7 +38,7 @@ wvhttpd_SOURCES  = \
 wvhttpd_LDADD     = -lssl -lcurl
 
 # define library directories
-wvhttpd_LDFLAGS   = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+wvhttpd_LDFLAGS   = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 wvhttpd_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

@@ -1,25 +1,25 @@
 #ifndef INC_servicesh
 #define INC_servicesh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         services.h
- 
+
   PURPOSE:
         Provide the wview daemon application sevices definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         08/24/03        M.S. Teel       0               Original
- 
+
   NOTES:
- 
+
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
- 
+
         This source code is released for free distribution under the terms
         of the GNU General Public License.
- 
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -90,7 +90,7 @@ typedef struct
     int             enable;                     // enable/disable msg reception
     // for "SVC" requests
 }
-__attribute__ ((packed)) WVIEW_MSG_REQUEST;
+__attribute__( ( packed ) ) WVIEW_MSG_REQUEST;
 
 /*  ... WVIEW_MSG_TYPE_STATION_INFO
     ... returns station info
@@ -105,7 +105,7 @@ typedef struct
     char            stationType[_MAX_PATH];
 
 }
-__attribute__ ((packed)) WVIEW_MSG_STATION_INFO;
+__attribute__( ( packed ) ) WVIEW_MSG_STATION_INFO;
 
 /*  ... WVIEW_MSG_TYPE_HILOW_DATA
     ... returns the most recent HILOW data
@@ -115,7 +115,7 @@ typedef struct
     SENSOR_STORE    hilowData;
 
 }
-__attribute__ ((packed)) WVIEW_MSG_HILOW_DATA;
+__attribute__( ( packed ) ) WVIEW_MSG_HILOW_DATA;
 
 /*  ... WVIEW_MSG_TYPE_LOOP_DATA
     ... returns the most recent loop data
@@ -125,7 +125,7 @@ typedef struct
     LOOP_PKT        loopData;
 
 }
-__attribute__ ((packed)) WVIEW_MSG_LOOP_DATA;
+__attribute__( ( packed ) ) WVIEW_MSG_LOOP_DATA;
 
 /*  ... WVIEW_MSG_TYPE_ARCHIVE_DATA
     ... publishes archive records
@@ -135,7 +135,7 @@ typedef struct
     ARCHIVE_PKT     archiveData;
 
 }
-__attribute__ ((packed)) WVIEW_MSG_ARCHIVE_DATA;
+__attribute__( ( packed ) ) WVIEW_MSG_ARCHIVE_DATA;
 
 /*  ... WVIEW_MSG_TYPE_ARCHIVE_NOTIFY
     ... notification of the reception of an archive record from the VP console
@@ -164,7 +164,7 @@ typedef struct
     int             rxPercent;
 
 }
-__attribute__ ((packed)) WVIEW_MSG_ARCHIVE_NOTIFY;
+__attribute__( ( packed ) ) WVIEW_MSG_ARCHIVE_NOTIFY;
 
 
 //  WVIEW_MSG_TYPE_POLL:
@@ -173,7 +173,7 @@ typedef struct
 {
     int             mask;
 }
-__attribute__ ((packed)) WVIEW_MSG_POLL;
+__attribute__( ( packed ) ) WVIEW_MSG_POLL;
 
 
 //  WVIEW_MSG_TYPE_POLL_RESPONSE:
@@ -182,7 +182,7 @@ typedef struct
 {
     int             pid;
 }
-__attribute__ ((packed)) WVIEW_MSG_POLL_RESPONSE;
+__attribute__( ( packed ) ) WVIEW_MSG_POLL_RESPONSE;
 
 
 //  WVIEW_MSG_TYPE_ALERT:
@@ -191,7 +191,7 @@ typedef struct
 {
     int             alertType;
 }
-__attribute__ ((packed)) WVIEW_MSG_ALERT;
+__attribute__( ( packed ) ) WVIEW_MSG_ALERT;
 
 
 //  WVIEW_MSG_TYPE_SHUTDOWN:
@@ -200,7 +200,7 @@ typedef struct
 {
     int             placeholder;
 }
-__attribute__ ((packed)) WVIEW_MSG_SHUTDOWN;
+__attribute__( ( packed ) ) WVIEW_MSG_SHUTDOWN;
 
 
 #endif

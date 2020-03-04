@@ -1,25 +1,25 @@
 #ifndef INC_wmrusbprotocolh
 #define INC_wmrusbprotocolh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         wmrusbprotocol.h
- 
+
   PURPOSE:
         Provide protocol utilities for WMR station communication.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         03/10/2011      M.S. Teel       0               Original.
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -51,20 +51,8 @@
 // Uncomment this to enable debug messages (lots of logs).
 //#define WMR_DEBUG           1
 
-// Uncomment this to enable byte counts (USB raw, stream, packet).
-//#define WMR_COUNT_BYTES     1
-
 // Uncomment this to dump raw USB RX bytes (lots of logs).
 //#define WMR_DUMP_RAW_USB    1
-
-#ifdef WMR_COUNT_BYTES
-extern int      UsbRawBytes;
-extern int      StreamBytes;
-extern int      PacketBytes;
-extern int      ChecksumBytes;
-extern int      StatCount;
-extern int      UnknownPacketType;
-#endif
 
 
 /* WMR-200  <vendorid, productid> */
@@ -77,7 +65,7 @@ extern int      UnknownPacketType;
 #define WMR_TEMP_SENSOR_COUNT       10
 #define WMR_REESTABLISH_SLEEP       10000               // 10 secs
 #define WMR_PROCESS_TIME_INTERVAL   1000                // 1 second
-#define WMR_HEARTBEAT_INTERVAL      10                  // seconds
+#define WMR_HEARTBEAT_INTERVAL      120                 // seconds
 
 // Define the rain rate acuumulator period (minutes):
 #define WMR_RAIN_RATE_PERIOD        5
@@ -89,7 +77,7 @@ typedef struct
     uint8_t         data[WMR_BUFFER_LENGTH];
     int             length;
 }
-__attribute__ ((packed)) WMRUSB_MSG_DATA;
+__attribute__( ( packed ) ) WMRUSB_MSG_DATA;
 
 
 
@@ -162,6 +150,7 @@ typedef struct
     float   rain24h;
     float   rainAccum;
     float   rainRate;
+    time_t  lastReset;
     uint8_t tendency;
 } WMR_DATA;
 
@@ -177,6 +166,7 @@ typedef struct
     uint32_t            heartBeatCounter;
     uint32_t            lastDataRX;
     uint8_t             dataRXMask;
+    WVIEWD_WORK*        wviewWork;
 } WMR_WORK;
 
 
@@ -187,27 +177,27 @@ typedef struct
     float           latitude;
     float           longitude;
     int             archiveInterval;
-    WMR_DATA        wmrReadings;
     float           totalRain;              // to track cumulative changes
+    time_t          LastRainReset;
     int             outsideChannel;
     WV_ACCUM_ID     rainRateAccumulator;    // to compute rain rate
 } WMR_IF_DATA;
 
 
 // call once during initialization
-extern int wmrInit (WVIEWD_WORK *work);
+extern int wmrInit( WVIEWD_WORK* work );
 
 // do cleanup
-extern void wmrExit (WVIEWD_WORK *work);
+extern void wmrExit( WVIEWD_WORK* work );
 
 // read data from station:
-extern void wmrReadData (WVIEWD_WORK *work, WMRUSB_MSG_DATA* msg);
+extern void wmrReadData( WVIEWD_WORK* work, WMRUSB_MSG_DATA* msg );
 
 // Enforce packet framing and pass to parse engine if a packet frame is complete:
-extern int wmrProcessData (WVIEWD_WORK *work);
+extern int wmrProcessData( WVIEWD_WORK* work );
 
 // get loop packet data:
-extern void wmrGetReadings (WVIEWD_WORK *work);
+extern void wmrGetReadings( WVIEWD_WORK* work );
 
 #endif
 

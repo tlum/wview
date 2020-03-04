@@ -1,27 +1,27 @@
 #ifndef INC_etherneth
 #define INC_etherneth
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         ethernet.h
- 
+
   PURPOSE:
-        Provide utilities for station communication over ethernet via a 
+        Provide utilities for station communication over ethernet via a
         transparent port capable terminal server.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         06/09/2005      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2005, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -62,7 +62,7 @@ typedef struct
 */
 
 // this is the only globally visible method
-extern int ethernetMediumInit (WVIEW_MEDIUM *medium, char *hostname, int port);
+extern int ethernetMediumInit( WVIEW_MEDIUM* medium, char* hostname, int port );
 
 #endif
 

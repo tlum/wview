@@ -1,26 +1,26 @@
 #ifndef INC_noaagenerateh
 #define INC_noaagenerateh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         noaaGenerate.h
- 
+
   PURPOSE:
         Provide the wview NOAA generator definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         01/25/04        M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -68,7 +68,7 @@ typedef struct
     char            stationCity[32];
     char            stationState[32];
     time_t          lastDay;
-}__attribute__ ((packed)) NOAA_WORK, *NOAA_ID;
+} __attribute__( ( packed ) ) NOAA_WORK, *NOAA_ID;
 
 
 
@@ -81,18 +81,18 @@ typedef struct
 
 extern NOAA_ID noaaGenerateInit
 (
-    char    *htmlPath,
+    char*    htmlPath,
     int     isMetricUnits,
     int16_t latitude,
     int16_t longitude,
     int16_t elevation,
-    char    *name,
-    char    *city,
-    char    *state,
+    char*    name,
+    char*    city,
+    char*    state,
     time_t  arcTime
 );
 
-extern int noaaGenerate (NOAA_ID id, time_t day);
+extern int noaaGenerate( NOAA_ID id, time_t day );
 
 
 #endif

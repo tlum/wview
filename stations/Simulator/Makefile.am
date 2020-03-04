@@ -52,7 +52,7 @@ wviewd_sim_SOURCES     = \
 wviewd_sim_LDADD       =
 
 # define library directories
-wviewd_sim_LDFLAGS     = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+wviewd_sim_LDFLAGS     = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 wviewd_sim_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

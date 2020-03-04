@@ -1,24 +1,24 @@
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         ws2300Interface.c
- 
+
   PURPOSE:
         Provide the La Crosse WS-2300 family station interface API and utilities.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         02/27/2008      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2008, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -38,9 +38,9 @@
 */
 
 static WS2300_IF_DATA   ws2300WorkData;
-static void             (*ArchiveIndicator) (ARCHIVE_PKT *newRecord);
+static void ( *ArchiveIndicator )( ARCHIVE_PKT* newRecord );
 
-static void serialPortConfig (int fd);
+static void serialPortConfig( int fd );
 
 
 ////////////****////****  S T A T I O N   A P I  ****////****////////////
@@ -75,14 +75,14 @@ static void serialPortConfig (int fd);
 //
 int stationInit
 (
-    WVIEWD_WORK     *work,
-    void            (*archiveIndication)(ARCHIVE_PKT* newRecord)
+    WVIEWD_WORK*     work,
+    void ( *archiveIndication )( ARCHIVE_PKT* newRecord )
 )
 {
     int             i;
     STIM            stim;
 
-    memset (&ws2300WorkData, 0, sizeof(ws2300WorkData));
+    memset( &ws2300WorkData, 0, sizeof( ws2300WorkData ) );
 
     // save the archive indication callback (we should never need it)
     ArchiveIndicator = archiveIndication;
@@ -95,183 +95,183 @@ int stationInit
     work->stationGeneratesArchives = FALSE;
 
     // initialize the medium abstraction based on user configuration
-    if (!strcmp (work->stationInterface, "serial"))
+    if( !strcmp( work->stationInterface, "serial" ) )
     {
-        if (serialMediumInit (&work->medium, serialPortConfig, O_RDWR | O_NOCTTY | O_NDELAY) == ERROR)
+        if( serialMediumInit( &work->medium, serialPortConfig, O_RDWR | O_NOCTTY | O_NDELAY ) == ERROR )
         {
-            radMsgLog (PRI_HIGH, "stationInit: serial MediumInit failed");
+            radMsgLog( PRI_HIGH, "stationInit: serial MediumInit failed" );
             return ERROR;
         }
     }
-    else if (!strcmp (work->stationInterface, "ethernet"))
+    else if( !strcmp( work->stationInterface, "ethernet" ) )
     {
-        if (ethernetMediumInit (&work->medium, work->stationHost, work->stationPort)
-                == ERROR)
+        if( ethernetMediumInit( &work->medium, work->stationHost, work->stationPort )
+                == ERROR )
         {
-            radMsgLog (PRI_HIGH, "stationInit: ethernet MediumInit failed");
+            radMsgLog( PRI_HIGH, "stationInit: ethernet MediumInit failed" );
             return ERROR;
         }
     }
     else
     {
-        radMsgLog (PRI_HIGH, "stationInit: medium %s not supported",
-                   work->stationInterface);
+        radMsgLog( PRI_HIGH, "stationInit: medium %s not supported",
+                   work->stationInterface );
         return ERROR;
     }
 
     // initialize the interface using the media specific routine
-    if ((*(work->medium.init)) (&work->medium, work->stationDevice) == ERROR)
+    if( ( *( work->medium.init ) )( &work->medium, work->stationDevice ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: medium setup failed");
+        radMsgLog( PRI_HIGH, "stationInit: medium setup failed" );
         return ERROR;
     }
 
-    if (!strcmp (work->stationInterface, "serial"))
+    if( !strcmp( work->stationInterface, "serial" ) )
     {
-        radMsgLog (PRI_STATUS, "WS-2300 on %s opened ...",
-                   work->stationDevice);
+        radMsgLog( PRI_STATUS, "WS-2300 on %s opened ...",
+                   work->stationDevice );
     }
-    else if (!strcmp (work->stationInterface, "ethernet"))
+    else if( !strcmp( work->stationInterface, "ethernet" ) )
     {
-        radMsgLog (PRI_STATUS, "WS-2300 on %s:%d opened ...",
-                   work->stationHost, work->stationPort);
+        radMsgLog( PRI_STATUS, "WS-2300 on %s:%d opened ...",
+                   work->stationHost, work->stationPort );
     }
 
     // grab the station configuration now
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ELEVATION,
-                                  &ws2300WorkData.elevation)
-            == ERROR)
+                                  &ws2300WorkData.elevation )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LATITUDE,
-                                    &ws2300WorkData.latitude)
-            == ERROR)
+                                    &ws2300WorkData.latitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LONGITUDE,
-                                    &ws2300WorkData.longitude)
-            == ERROR)
+                                    &ws2300WorkData.longitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ARC_INTERVAL,
-                                  &ws2300WorkData.archiveInterval)
-            == ERROR)
+                                  &ws2300WorkData.archiveInterval )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
 
     // now initialize the state machine
-    ws2300WorkData.stateMachine = radStatesInit (work);
-    if (ws2300WorkData.stateMachine == NULL)
+    ws2300WorkData.stateMachine = radStatesInit( work );
+    if( ws2300WorkData.stateMachine == NULL )
     {
-        radMsgLog (PRI_HIGH, "stationInit: radStatesInit failed");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: radStatesInit failed" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
 
-    if (radStatesAddHandler (ws2300WorkData.stateMachine, 
+    if( radStatesAddHandler( ws2300WorkData.stateMachine,
                              WS_STATE_STARTPROC,
-                             wsStartProcState)
-        == ERROR)
+                             wsStartProcState )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: radStatesAddHandler failed");
-        radStatesExit (ws2300WorkData.stateMachine);
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: radStatesAddHandler failed" );
+        radStatesExit( ws2300WorkData.stateMachine );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (radStatesAddHandler (ws2300WorkData.stateMachine, 
+    if( radStatesAddHandler( ws2300WorkData.stateMachine,
                              WS_STATE_RUN,
-                             wsRunState)
-        == ERROR)
+                             wsRunState )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: radStatesAddHandler failed");
-        radStatesExit (ws2300WorkData.stateMachine);
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: radStatesAddHandler failed" );
+        radStatesExit( ws2300WorkData.stateMachine );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (radStatesAddHandler (ws2300WorkData.stateMachine, 
+    if( radStatesAddHandler( ws2300WorkData.stateMachine,
                              WS_STATE_ADRS0_ACK,
-                             wsAdrs0State)
-        == ERROR)
+                             wsAdrs0State )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: radStatesAddHandler failed");
-        radStatesExit (ws2300WorkData.stateMachine);
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: radStatesAddHandler failed" );
+        radStatesExit( ws2300WorkData.stateMachine );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (radStatesAddHandler (ws2300WorkData.stateMachine, 
+    if( radStatesAddHandler( ws2300WorkData.stateMachine,
                              WS_STATE_ADRS1_ACK,
-                             wsAdrs1State)
-        == ERROR)
+                             wsAdrs1State )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: radStatesAddHandler failed");
-        radStatesExit (ws2300WorkData.stateMachine);
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: radStatesAddHandler failed" );
+        radStatesExit( ws2300WorkData.stateMachine );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (radStatesAddHandler (ws2300WorkData.stateMachine, 
+    if( radStatesAddHandler( ws2300WorkData.stateMachine,
                              WS_STATE_ADRS2_ACK,
-                             wsAdrs2State)
-        == ERROR)
+                             wsAdrs2State )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: radStatesAddHandler failed");
-        radStatesExit (ws2300WorkData.stateMachine);
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: radStatesAddHandler failed" );
+        radStatesExit( ws2300WorkData.stateMachine );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (radStatesAddHandler (ws2300WorkData.stateMachine, 
+    if( radStatesAddHandler( ws2300WorkData.stateMachine,
                              WS_STATE_ADRS3_ACK,
-                             wsAdrs3State)
-        == ERROR)
+                             wsAdrs3State )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: radStatesAddHandler failed");
-        radStatesExit (ws2300WorkData.stateMachine);
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: radStatesAddHandler failed" );
+        radStatesExit( ws2300WorkData.stateMachine );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (radStatesAddHandler (ws2300WorkData.stateMachine, 
+    if( radStatesAddHandler( ws2300WorkData.stateMachine,
                              WS_STATE_NUMBYTES_ACK,
-                             wsNumBytesState)
-        == ERROR)
+                             wsNumBytesState )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: radStatesAddHandler failed");
-        radStatesExit (ws2300WorkData.stateMachine);
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: radStatesAddHandler failed" );
+        radStatesExit( ws2300WorkData.stateMachine );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (radStatesAddHandler (ws2300WorkData.stateMachine, 
+    if( radStatesAddHandler( ws2300WorkData.stateMachine,
                              WS_STATE_ERROR,
-                             wsErrorState)
-        == ERROR)
+                             wsErrorState )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: radStatesAddHandler failed");
-        radStatesExit (ws2300WorkData.stateMachine);
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: radStatesAddHandler failed" );
+        radStatesExit( ws2300WorkData.stateMachine );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
 
-    radStatesSetState (ws2300WorkData.stateMachine, WS_STATE_STARTPROC);
+    radStatesSetState( ws2300WorkData.stateMachine, WS_STATE_STARTPROC );
 
-    radMsgLog (PRI_STATUS, "Starting station interface: WS2300"); 
+    radMsgLog( PRI_STATUS, "Starting station interface: WS2300" );
 
     // dummy up a stimulus to get the state machine running
     stim.type = STIM_DUMMY;
-    radStatesProcess (ws2300WorkData.stateMachine, &stim);
+    radStatesProcess( ws2300WorkData.stateMachine, &stim );
 
     return OK;
 }
@@ -280,10 +280,10 @@ int stationInit
 //
 // Returns: N/A
 //
-void stationExit (WVIEWD_WORK *work)
+void stationExit( WVIEWD_WORK* work )
 {
-    ws2300Exit (work);
-    (*(work->medium.exit)) (&work->medium);
+    ws2300Exit( work );
+    ( *( work->medium.exit ) )( &work->medium );
 
     return;
 }
@@ -298,28 +298,28 @@ void stationExit (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetPosition (WVIEWD_WORK *work)
+int stationGetPosition( WVIEWD_WORK* work )
 {
     // just set the values from our internal store - we retrieved them in
     // stationInit
-    work->elevation     = (int16_t)ws2300WorkData.elevation;
-    if (ws2300WorkData.latitude >= 0)
-        work->latitude      = (int16_t)((ws2300WorkData.latitude*10)+0.5);
+    work->elevation     = ( int16_t )ws2300WorkData.elevation;
+    if( ws2300WorkData.latitude >= 0 )
+        work->latitude      = ( int16_t )( ( ws2300WorkData.latitude * 10 ) + 0.5 );
     else
-        work->latitude      = (int16_t)((ws2300WorkData.latitude*10)-0.5);
-    if (ws2300WorkData.longitude >= 0)
-        work->longitude     = (int16_t)((ws2300WorkData.longitude*10)+0.5);
+        work->latitude      = ( int16_t )( ( ws2300WorkData.latitude * 10 ) - 0.5 );
+    if( ws2300WorkData.longitude >= 0 )
+        work->longitude     = ( int16_t )( ( ws2300WorkData.longitude * 10 ) + 0.5 );
     else
-        work->longitude     = (int16_t)((ws2300WorkData.longitude*10)-0.5);
+        work->longitude     = ( int16_t )( ( ws2300WorkData.longitude * 10 ) - 0.5 );
 
-    radMsgLog (PRI_STATUS, "station location: elevation: %d feet",
-               work->elevation);
+    radMsgLog( PRI_STATUS, "station location: elevation: %d feet",
+               work->elevation );
 
-    radMsgLog (PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
-               (float)abs(work->latitude)/10.0,
-               ((work->latitude < 0) ? 'S' : 'N'),
-               (float)abs(work->longitude)/10.0,
-               ((work->longitude < 0) ? 'W' : 'E'));
+    radMsgLog( PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
+               ( float )abs( work->latitude ) / 10.0,
+               ( ( work->latitude < 0 ) ? 'S' : 'N' ),
+               ( float )abs( work->longitude ) / 10.0,
+               ( ( work->longitude < 0 ) ? 'W' : 'E' ) );
 
     return OK;
 }
@@ -330,7 +330,7 @@ int stationGetPosition (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationSyncTime (WVIEWD_WORK *work)
+int stationSyncTime( WVIEWD_WORK* work )
 {
     // We don't use the WS-2300 time...
     return OK;
@@ -345,14 +345,14 @@ int stationSyncTime (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetReadings (WVIEWD_WORK *work)
+int stationGetReadings( WVIEWD_WORK* work )
 {
     STIM        stim;
 
     stim.type = WS_STIM_READINGS;
 
     // use the VP_STIM_READINGS stim to kick off the state machine
-    radStatesProcess (ws2300WorkData.stateMachine, &stim);
+    radStatesProcess( ws2300WorkData.stateMachine, &stim );
 
     return OK;
 }
@@ -369,11 +369,11 @@ int stationGetReadings (WVIEWD_WORK *work)
 // Note: This function will only be invoked by the wview daemon if the
 //       'stationInit' function set the 'stationGeneratesArchives' to TRUE
 //
-int stationGetArchive (WVIEWD_WORK *work)
+int stationGetArchive( WVIEWD_WORK* work )
 {
     // just indicate a NULL record, WS-2300 does not generate them (and this
     // function should never be called!)
-    (*ArchiveIndicator) (NULL);
+    ( *ArchiveIndicator )( NULL );
     return OK;
 }
 
@@ -386,26 +386,26 @@ int stationGetArchive (WVIEWD_WORK *work)
 //
 // Returns: N/A
 //
-void stationDataIndicate (WVIEWD_WORK *work)
+void stationDataIndicate( WVIEWD_WORK* work )
 {
     STIM            stim;
-    
+
     stim.type = STIM_IO;
 
-    radStatesProcess (ws2300WorkData.stateMachine, &stim);
+    radStatesProcess( ws2300WorkData.stateMachine, &stim );
     return;
 }
 
 // station-supplied function to receive IPM messages - any message received by
 // the generic station message handler which is not recognized will be passed
 // to the station-specific code through this function.
-// It is the responsibility of the station interface to process the message 
+// It is the responsibility of the station interface to process the message
 // appropriately (or ignore it).
 // -- Synchronous --
 //
 // Returns: N/A
 //
-void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
+void stationMessageIndicate( WVIEWD_WORK* work, int msgType, void* msg )
 {
     // N/A
     return;
@@ -421,13 +421,13 @@ void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
 //
 // Returns: N/A
 //
-void stationIFTimerExpiry (WVIEWD_WORK *work)
+void stationIFTimerExpiry( WVIEWD_WORK* work )
 {
     STIM            stim;
-    
+
     stim.type = STIM_TIMER;
 
-    radStatesProcess (ws2300WorkData.stateMachine, &stim);
+    radStatesProcess( ws2300WorkData.stateMachine, &stim );
     return;
 }
 
@@ -436,13 +436,13 @@ void stationIFTimerExpiry (WVIEWD_WORK *work)
 
 //  ... ----- static (local) methods ----- ...
 
-static void serialPortConfig (int fd)
+static void serialPortConfig( int fd )
 {
     struct termios  port;
     int             portstatus;
 
     // We want full control of what is set and simply reset the entire port struct
-    memset (&port, 0, sizeof(port));
+    memset( &port, 0, sizeof( port ) );
 
     // Serial control options:
     port.c_cflag &= ~PARENB;            // No parity
@@ -455,8 +455,8 @@ static void serialPortConfig (int fd)
     port.c_cflag |= CLOCAL;             // Ignore modem control lines
 
     // Baudrate, for newer systems
-    cfsetispeed (&port, B2400);
-    cfsetospeed (&port, B2400);
+    cfsetispeed( &port, B2400 );
+    cfsetospeed( &port, B2400 );
 
     // Serial local options:
     // Raw input = clear ICANON, ECHO, ECHOE, and ISIG
@@ -471,7 +471,7 @@ static void serialPortConfig (int fd)
     // Ignore break condition on input = set IGNBRK
     // Ignore parity errors just in case = set IGNPAR;
     // So we can clear all flags except IGNBRK and IGNPAR
-    port.c_iflag = IGNBRK|IGNPAR;
+    port.c_iflag = IGNBRK | IGNPAR;
 
     // Serial output options:
     // Raw output should disable all other output options
@@ -480,14 +480,14 @@ static void serialPortConfig (int fd)
     port.c_cc[VTIME] = 10;              // timer 1s
     port.c_cc[VMIN] = 0;                // blocking read until 1 char
 
-    tcsetattr (fd, TCSANOW, &port);
-    tcflush (fd, TCIOFLUSH);
+    tcsetattr( fd, TCSANOW, &port );
+    tcflush( fd, TCIOFLUSH );
 
     // Set DTR low and RTS high and leave other ctrl lines untouched
-    ioctl (fd, TIOCMGET, &portstatus);  // get current port status
+    ioctl( fd, TIOCMGET, &portstatus ); // get current port status
     portstatus &= ~TIOCM_DTR;
     portstatus |= TIOCM_RTS;
-    ioctl (fd, TIOCMSET, &portstatus);  // set current port status
+    ioctl( fd, TIOCMSET, &portstatus ); // set current port status
 
     return;
 }

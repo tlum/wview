@@ -82,7 +82,7 @@ typedef struct
 
 // Autobaud the TWI station:
 // Returns the baudrate or ERROR:
-extern int twiConfig(WVIEWD_WORK *work);
+extern int twiConfig( WVIEWD_WORK* work );
 
 
 #endif

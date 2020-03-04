@@ -9,7 +9,7 @@
 //  REVISION HISTORY:
 //        Date            Engineer        Revision        Remarks
 //        08/16/03        M.S. Teel       0               Original
-//        04/12/2008      W. Krenn        1               RainCollectorType, 
+//        04/12/2008      W. Krenn        1               RainCollectorType,
 //                                                        metric ARC
 //
 //  NOTES:
@@ -50,46 +50,46 @@
 static HeaderBlock          fileHdr;
 static DailySummaryRecord   sumRecord;
 static ArchiveRecord        arcRecord;
-static char                 idCode[16] = {'W','D','A','T','5','.','0',0,0,0,0,0,0,0,5,0};
+static char                 idCode[16] = {'W', 'D', 'A', 'T', '5', '.', '0', 0, 0, 0, 0, 0, 0, 0, 5, 0};
 static char                 winddir[16][4] =
-    {
-        "N",
-        "NNE",
-        "NE",
-        "ENE",
-        "E",
-        "ESE",
-        "SE",
-        "SSE",
-        "S",
-        "SSW",
-        "SW",
-        "WSW",
-        "W",
-        "WNW",
-        "NW",
-        "NNW"
-    };
+{
+    "N",
+    "NNE",
+    "NE",
+    "ENE",
+    "E",
+    "ESE",
+    "SE",
+    "SSE",
+    "S",
+    "SSW",
+    "SW",
+    "WSW",
+    "W",
+    "WNW",
+    "NW",
+    "NNW"
+};
 
 
 //  ... ----- static (local) methods -----
 
-static int extractTimeValue (uint8_t *valarray, int index)
+static int extractTimeValue( uint8_t* valarray, int index )
 {
     int     fIndex;
     int     value;
 
-    fIndex = (index/2) * 3;
-    if ((index % 2) == 0)
+    fIndex = ( index / 2 ) * 3;
+    if( ( index % 2 ) == 0 )
     {
-        value = valarray[fIndex] + ((valarray[fIndex+2] & 0x0F) << 8);
+        value = valarray[fIndex] + ( ( valarray[fIndex + 2] & 0x0F ) << 8 );
     }
     else
     {
-        value = valarray[fIndex+1] + ((valarray[fIndex+2] & 0xF0) << 4);
+        value = valarray[fIndex + 1] + ( ( valarray[fIndex + 2] & 0xF0 ) << 4 );
     }
 
-    if (value == 0xFFF || value == 0x7FF)
+    if( value == 0xFFF || value == 0x7FF )
     {
         return -1;
     }
@@ -99,118 +99,118 @@ static int extractTimeValue (uint8_t *valarray, int index)
     }
 }
 
-static int insertTimeValue (uint8_t *valarray, int index, uint16_t value)
+static int insertTimeValue( uint8_t* valarray, int index, uint16_t value )
 {
     int     fIndex;
 
-    fIndex = (index/2) * 3;
-    if ((index % 2) == 0)
+    fIndex = ( index / 2 ) * 3;
+    if( ( index % 2 ) == 0 )
     {
         valarray[fIndex] = value & 0xFF;
-        valarray[fIndex+2] = (valarray[fIndex+2] & 0xF0) | ((value >> 8) & 0x0F);
+        valarray[fIndex + 2] = ( valarray[fIndex + 2] & 0xF0 ) | ( ( value >> 8 ) & 0x0F );
     }
     else
     {
-        valarray[fIndex+1] = value & 0xFF;
-        valarray[fIndex+2] = (valarray[fIndex+2] & 0x0F) | ((value >> 4) & 0xF0);
+        valarray[fIndex + 1] = value & 0xFF;
+        valarray[fIndex + 2] = ( valarray[fIndex + 2] & 0x0F ) | ( ( value >> 4 ) & 0xF0 );
     }
 
     return value;
 }
 
-static char *findDominantDirection (uint8_t *dirarray)
+static char* findDominantDirection( uint8_t* dirarray )
 {
     int         i;
     int         max = -1, index = -1, value;
 
-    for (i = 0; i < 16; i ++)
+    for( i = 0; i < 16; i ++ )
     {
-        value = extractTimeValue (dirarray, i);
-        if (value == -1)
+        value = extractTimeValue( dirarray, i );
+        if( value == -1 )
             continue;
 
-        if (value > max)
+        if( value > max )
         {
             max = value;
             index = i;
         }
     }
 
-    if (index == -1)
+    if( index == -1 )
         return "---";
     else
         return winddir[index];
 }
 
-static char *buildDayTimeFromIndex (uint8_t *valarray, int index, char *store)
+static char* buildDayTimeFromIndex( uint8_t* valarray, int index, char* store )
 {
     int         minutes;
 
-    minutes = extractTimeValue (valarray, index);
+    minutes = extractTimeValue( valarray, index );
 
-    if (minutes == -1)
+    if( minutes == -1 )
     {
-        strcpy (store, "?????");
+        strcpy( store, "?????" );
     }
     else
     {
-        sprintf (store, "%2.2d:%2.2d", minutes/60, minutes%60);
+        sprintf( store, "%2.2d:%2.2d", minutes / 60, minutes % 60 );
     }
 
     return store;
 }
 
-static char *buildArchiveFileName
+static char* buildArchiveFileName
 (
-    char        *path,
+    char*        path,
     uint16_t    date,
-    char        *store,
-    int         *yr,
-    int         *mo
+    char*        store,
+    int*         yr,
+    int*         mo
 )
 {
-    *yr = (date/100) + 2000;
-    *mo = date%100;
+    *yr = ( date / 100 ) + 2000;
+    *mo = date % 100;
 
-    sprintf (store, "%s/%4.4d-%2.2d.wlk", path, *yr, *mo);
+    sprintf( store, "%s/%4.4d-%2.2d.wlk", path, *yr, *mo );
     return store;
 }
 
-static char *incrementArchiveFileName
+static char* incrementArchiveFileName
 (
-    char    *oldName,
-    char    *store,
-    int     *yr,
-    int     *mo
+    char*    oldName,
+    char*    store,
+    int*     yr,
+    int*     mo
 )
 {
     uint16_t    year, month;
     char        temp[32], path[256];
     int         i;
 
-    wvstrncpy (path, oldName, 256);
-    for (i = strlen (oldName) - 1; i >= 0; i --)
+    wvstrncpy( path, oldName, 256 );
+    for( i = strlen( oldName ) - 1; i >= 0; i -- )
     {
-        if (path[i] == '/')
+        if( path[i] == '/' )
         {
             path[i] = 0;
             break;
         }
     }
-    if (i < 0)
+    if( i < 0 )
     {
         path[0] = '.';
     }
 
-    memset (temp, 0, sizeof(temp));
-    strncpy (temp, &oldName[strlen(path)+1], 4);
-    year = atoi (temp);
+    memset( temp, 0, sizeof( temp ) );
+    strncpy( temp, &oldName[strlen( path ) + 1], 4 );
+    year = atoi( temp );
 
-    memset (temp, 0, sizeof(temp));
-    strncpy (temp, &oldName[strlen(path)+6], 2);
-    month = atoi (temp);
+    memset( temp, 0, sizeof( temp ) );
+    strncpy( temp, &oldName[strlen( path ) + 6], 2 );
+    month = atoi( temp );
 
-    if (month >= 12)
+    if( month >= 12 )
     {
         month = 1;
         year ++;
@@ -220,19 +220,19 @@ static char *incrementArchiveFileName
         month ++;
     }
 
-    sprintf (store, "%s/%4.4d-%2.2d.wlk", path, year, month);
+    sprintf( store, "%s/%4.4d-%2.2d.wlk", path, year, month );
     *yr = year;
     *mo = month;
     return store;
 }
 
-static void incrementDayHourMin (int *day, int *hour, int *min, int numMins)
+static void incrementDayHourMin( int* day, int* hour, int* min, int numMins )
 {
     int     newDay, newHour, newMin;
 
     // figure out how much numMins "is"
-    newDay = numMins/WV_MINUTES_IN_DAY;
-    newHour = numMins%WV_MINUTES_IN_DAY;
+    newDay = numMins / WV_MINUTES_IN_DAY;
+    newHour = numMins % WV_MINUTES_IN_DAY;
     newMin = newHour % 60;
     newHour /= 60;
 
@@ -255,47 +255,47 @@ static int getRecordTimeDeltaInMinutes
 {
     int     oldTotal, newTotal;
 
-    oldTotal = oldDay*WV_MINUTES_IN_DAY + oldHour*60 + oldMin;
-    newTotal = newDay*WV_MINUTES_IN_DAY + newHour*60 + newMin;
+    oldTotal = oldDay * WV_MINUTES_IN_DAY + oldHour * 60 + oldMin;
+    newTotal = newDay * WV_MINUTES_IN_DAY + newHour * 60 + newMin;
 
-    return (newTotal - oldTotal);
+    return ( newTotal - oldTotal );
 }
 
-static char *decrementArchiveFileName
+static char* decrementArchiveFileName
 (
-    char    *oldName,
-    char    *store,
-    int     *yr,
-    int     *mo
+    char*    oldName,
+    char*    store,
+    int*     yr,
+    int*     mo
 )
 {
     uint16_t    year, month;
     char        temp[32], path[256];
     int         i;
 
-    wvstrncpy (path, oldName, 256);
-    for (i = strlen (oldName) - 1; i >= 0; i --)
+    wvstrncpy( path, oldName, 256 );
+    for( i = strlen( oldName ) - 1; i >= 0; i -- )
     {
-        if (path[i] == '/')
+        if( path[i] == '/' )
         {
             path[i] = 0;
             break;
         }
     }
-    if (i < 0)
+    if( i < 0 )
     {
         path[0] = '.';
     }
 
-    memset (temp, 0, sizeof(temp));
-    strncpy (temp, &oldName[strlen(path)+1], 4);
-    year = atoi (temp);
+    memset( temp, 0, sizeof( temp ) );
+    strncpy( temp, &oldName[strlen( path ) + 1], 4 );
+    year = atoi( temp );
 
-    memset (temp, 0, sizeof(temp));
-    strncpy (temp, &oldName[strlen(path)+6], 2);
-    month = atoi (temp);
+    memset( temp, 0, sizeof( temp ) );
+    strncpy( temp, &oldName[strlen( path ) + 6], 2 );
+    month = atoi( temp );
 
-    if (month <= 1)
+    if( month <= 1 )
     {
         month = 12;
         year --;
@@ -305,17 +305,17 @@ static char *decrementArchiveFileName
         month --;
     }
 
-    sprintf (store, "%s/%4.4d-%2.2d.wlk", path, year, month);
+    sprintf( store, "%s/%4.4d-%2.2d.wlk", path, year, month );
     *yr = year;
     *mo = month;
     return store;
 }
 
-static void convertArchiveAtoB (ARCHIVE_RECORD *rec)
+static void convertArchiveAtoB( ARCHIVE_RECORD* rec )
 {
     ARCHIVE_RECORD_A    vpArcRecordA;
 
-    memcpy (&vpArcRecordA, rec, sizeof (*rec));
+    memcpy( &vpArcRecordA, rec, sizeof( *rec ) );
 
     rec->highRadiation      = rec->radiation;
     rec->highUV             = rec->UV;
@@ -342,154 +342,154 @@ static void convertArchiveAtoB (ARCHIVE_RECORD *rec)
     return;
 }
 
-static int convertFileToAscii (char *startName, int outfilefd, int yr, int mo)
+static int convertFileToAscii( char* startName, int outfilefd, int yr, int mo )
 {
     int         i, j;
-    FILE        *infile;
+    FILE*        infile;
     char        temp[512];
     float       click;
 
-    infile = fopen (startName, "r");
-    if (infile == NULL)
+    infile = fopen( startName, "r" );
+    if( infile == NULL )
     {
         return ERROR;
     }
 
-    if (fread (&fileHdr, sizeof(fileHdr), 1, infile) != 1)
+    if( fread( &fileHdr, sizeof( fileHdr ), 1, infile ) != 1 )
     {
-        fclose (infile);
+        fclose( infile );
         return ERROR;
     }
 
-    for (i = 1; i < 32; i ++)
+    for( i = 1; i < 32; i ++ )
     {
-        if (fileHdr.dayIndex[i].recordsInDay == 0)
+        if( fileHdr.dayIndex[i].recordsInDay == 0 )
         {
             // we're done with this day
             continue;
         }
 
         //  ... goto the beginning of the archive recs for this day
-        if (fseek (infile,
-                   sizeof(fileHdr) +
-                   DBFILES_RECORD_SIZE*(fileHdr.dayIndex[i].startPos + 2),
-                   SEEK_SET)
-                == -1)
+        if( fseek( infile,
+                   sizeof( fileHdr ) +
+                   DBFILES_RECORD_SIZE * ( fileHdr.dayIndex[i].startPos + 2 ),
+                   SEEK_SET )
+                == -1 )
         {
-            fclose (infile);
+            fclose( infile );
             return ERROR;
         }
 
-        for (j = 0; j < fileHdr.dayIndex[i].recordsInDay - 2; j ++)
+        for( j = 0; j < fileHdr.dayIndex[i].recordsInDay - 2; j ++ )
         {
             // read the archive record
-            if (fread (&arcRecord, sizeof(arcRecord), 1, infile) != 1)
+            if( fread( &arcRecord, sizeof( arcRecord ), 1, infile ) != 1 )
             {
-                fclose (infile);
+                fclose( infile );
                 return ERROR;
             }
 
-            if (arcRecord.windSpeed/10 > 200)
+            if( arcRecord.windSpeed / 10 > 200 )
                 arcRecord.windSpeed = 0;
 
-            if ((arcRecord.rain & 0xF000) == 0x0000)
+            if( ( arcRecord.rain & 0xF000 ) == 0x0000 )
                 click = 10;
-            else if ((arcRecord.rain & 0xF000) == 0x2000)   //0.2 mm 0x2000
+            else if( ( arcRecord.rain & 0xF000 ) == 0x2000 ) //0.2 mm 0x2000
                 click = 127;
-            else if ((arcRecord.rain & 0xF000) == 0x3000)   //1.0 mm 0x3000
+            else if( ( arcRecord.rain & 0xF000 ) == 0x3000 ) //1.0 mm 0x3000
                 click = 25.4;
-            else if ((arcRecord.rain & 0xF000) == 0x6000)   //0.1 mm 0x6000 (not fully supported)
+            else if( ( arcRecord.rain & 0xF000 ) == 0x6000 ) //0.1 mm 0x6000 (not fully supported)
                 click = 254;
             else                                            //0.01 in
                 click = 100;
 
-            sprintf (temp,
+            sprintf( temp,
                      "%2.2d/%2.2d/%4.4d\t%2.2d:%2.2d\t%.1f\t%.1f\t%.1f\t%.1f\t%.1f\t%d\t%2.1f\t%.1f\t%.1f\t%s\t%.2f\t%.3f\t%.1f\t%d\t%d\n",
                      mo,
                      i,
                      yr,
-                     arcRecord.packedTime/60,
-                     arcRecord.packedTime%60,
-                     (float)arcRecord.outsideTemp/10,
-                     wvutilsCalculateHeatIndex ((float)arcRecord.outsideTemp/10,
-                                                (float)arcRecord.outsideHum/10),
-                     wvutilsCalculateWindChill ((float)arcRecord.outsideTemp/10,
-                                                (float)arcRecord.windSpeed/10),
-                     (float)arcRecord.hiOutsideTemp/10,
-                     (float)arcRecord.lowOutsideTemp/10,
-                     arcRecord.outsideHum/10,
-                     wvutilsCalculateDewpoint ((float)arcRecord.outsideTemp/10,
-                                               (float)arcRecord.outsideHum/10),
-                     (float)arcRecord.windSpeed/10,
-                     (float)arcRecord.hiWindSpeed/10,
-                     dbfBuildWindDirString ((int)arcRecord.windDirection),
-                     (float)(arcRecord.rain & 0xFFF)/click,
-                     (float)arcRecord.barometer/1000,
-                     (float)arcRecord.insideTemp/10,
-                     arcRecord.insideHum/10,
-                     arcRecord.archiveInterval);
+                     arcRecord.packedTime / 60,
+                     arcRecord.packedTime % 60,
+                     ( float )arcRecord.outsideTemp / 10,
+                     wvutilsCalculateHeatIndex( ( float )arcRecord.outsideTemp / 10,
+                                                ( float )arcRecord.outsideHum / 10 ),
+                     wvutilsCalculateWindChill( ( float )arcRecord.outsideTemp / 10,
+                                                ( float )arcRecord.windSpeed / 10 ),
+                     ( float )arcRecord.hiOutsideTemp / 10,
+                     ( float )arcRecord.lowOutsideTemp / 10,
+                     arcRecord.outsideHum / 10,
+                     wvutilsCalculateDewpoint( ( float )arcRecord.outsideTemp / 10,
+                                               ( float )arcRecord.outsideHum / 10 ),
+                     ( float )arcRecord.windSpeed / 10,
+                     ( float )arcRecord.hiWindSpeed / 10,
+                     dbfBuildWindDirString( ( int )arcRecord.windDirection ),
+                     ( float )( arcRecord.rain & 0xFFF ) / click,
+                     ( float )arcRecord.barometer / 1000,
+                     ( float )arcRecord.insideTemp / 10,
+                     arcRecord.insideHum / 10,
+                     arcRecord.archiveInterval );
 
-            if (write (outfilefd, temp, strlen(temp)) != strlen(temp))
+            if( write( outfilefd, temp, strlen( temp ) ) != strlen( temp ) )
             {
-                fclose (infile);
+                fclose( infile );
                 return ERROR;
             }
         }
     }
 
-    fclose(infile);
+    fclose( infile );
     return OK;
 }
 
-static int convertSummaryFileToAscii (char *startName, int outfilefd, int yr, int mo)
+static int convertSummaryFileToAscii( char* startName, int outfilefd, int yr, int mo )
 {
     int         i;
-    FILE        *infile;
+    FILE*        infile;
     char        temp[512], temp1[64];
     char        timestr1[8], timestr2[8], timestr3[8], timestr4[8];
     char        timestr5[8], timestr6[8], timestr7[8], rainRateTime[8];
     float       rainRate;
 
-    infile = fopen (startName, "r");
-    if (infile == NULL)
+    infile = fopen( startName, "r" );
+    if( infile == NULL )
     {
         return ERROR;
     }
 
-    if (fread (&fileHdr, sizeof(fileHdr), 1, infile) != 1)
+    if( fread( &fileHdr, sizeof( fileHdr ), 1, infile ) != 1 )
     {
-        fclose (infile);
+        fclose( infile );
         return ERROR;
     }
 
 
-    for (i = 1; i < 32; i ++)
+    for( i = 1; i < 32; i ++ )
     {
-        if (fileHdr.dayIndex[i].recordsInDay == 0)
+        if( fileHdr.dayIndex[i].recordsInDay == 0 )
         {
             // we're done with this day
             continue;
         }
 
         //  ... goto the beginning of the archive recs for this day
-        if (fseek (infile,
-                   sizeof(fileHdr) +
+        if( fseek( infile,
+                   sizeof( fileHdr ) +
                    DBFILES_RECORD_SIZE * fileHdr.dayIndex[i].startPos,
-                   SEEK_SET)
-                == -1)
+                   SEEK_SET )
+                == -1 )
         {
-            fclose (infile);
+            fclose( infile );
             return ERROR;
         }
 
         // read the summary record
-        if (fread (&sumRecord, sizeof(sumRecord), 1, infile) != 1)
+        if( fread( &sumRecord, sizeof( sumRecord ), 1, infile ) != 1 )
         {
-            fclose (infile);
+            fclose( infile );
             return ERROR;
         }
 
-        sprintf (temp,
+        sprintf( temp,
                  "%2.2d/%2.2d/%4.4d\t"
                  "%.1f\t%.1f\t%s\t%.1f\t%s\t%.1f\t%s\t%.1f\t%s\t%d\t%d\t%.1f\t%s\t%.1f\t%s\t"
                  "%.1f\t%.1f\t%s\t%s\t"
@@ -497,39 +497,39 @@ static int convertSummaryFileToAscii (char *startName, int outfilefd, int yr, in
                  mo,
                  i,
                  yr,
-                 (float)sumRecord.avgOutTemp/10,
-                 (float)sumRecord.hiOutTemp/10,
-                 buildDayTimeFromIndex (sumRecord.timeValues1, High_Outside_Temperature, timestr1),
-                 (float)sumRecord.lowOutTemp/10,
-                 buildDayTimeFromIndex (sumRecord.timeValues1, Low_Outside_Temperature, timestr2),
-                 (float)sumRecord.hiHeat/10,
-                 buildDayTimeFromIndex (sumRecord.timeValues2, High_Outside_Heat_Index, timestr3),
-                 (float)sumRecord.lowChill/10,
-                 buildDayTimeFromIndex (sumRecord.timeValues1, Low_Wind_Chill, timestr4),
-                 sumRecord.hiOutHum/10,
-                 sumRecord.lowOutHum/10,
-                 (float)sumRecord.hiDew/10,
-                 buildDayTimeFromIndex (sumRecord.timeValues1, High_Dew_Point, timestr5),
-                 (float)sumRecord.lowDew/10,
-                 buildDayTimeFromIndex (sumRecord.timeValues1, Low_Dew_Point, timestr6),
-                 (float)sumRecord.avgSpeed/10,
-                 (float)sumRecord.hiSpeed/10,
-                 buildDayTimeFromIndex (sumRecord.timeValues1, High_Wind_Speed, timestr7),
-                 findDominantDirection (sumRecord.dirBins),
-                 (float)sumRecord.dailyRainTotal/1000,
-                 (float)sumRecord.hiBar/1000,
-                 (float)sumRecord.lowBar/1000);
+                 ( float )sumRecord.avgOutTemp / 10,
+                 ( float )sumRecord.hiOutTemp / 10,
+                 buildDayTimeFromIndex( sumRecord.timeValues1, High_Outside_Temperature, timestr1 ),
+                 ( float )sumRecord.lowOutTemp / 10,
+                 buildDayTimeFromIndex( sumRecord.timeValues1, Low_Outside_Temperature, timestr2 ),
+                 ( float )sumRecord.hiHeat / 10,
+                 buildDayTimeFromIndex( sumRecord.timeValues2, High_Outside_Heat_Index, timestr3 ),
+                 ( float )sumRecord.lowChill / 10,
+                 buildDayTimeFromIndex( sumRecord.timeValues1, Low_Wind_Chill, timestr4 ),
+                 sumRecord.hiOutHum / 10,
+                 sumRecord.lowOutHum / 10,
+                 ( float )sumRecord.hiDew / 10,
+                 buildDayTimeFromIndex( sumRecord.timeValues1, High_Dew_Point, timestr5 ),
+                 ( float )sumRecord.lowDew / 10,
+                 buildDayTimeFromIndex( sumRecord.timeValues1, Low_Dew_Point, timestr6 ),
+                 ( float )sumRecord.avgSpeed / 10,
+                 ( float )sumRecord.hiSpeed / 10,
+                 buildDayTimeFromIndex( sumRecord.timeValues1, High_Wind_Speed, timestr7 ),
+                 findDominantDirection( sumRecord.dirBins ),
+                 ( float )sumRecord.dailyRainTotal / 1000,
+                 ( float )sumRecord.hiBar / 1000,
+                 ( float )sumRecord.lowBar / 1000 );
 
 
 
-        if (write (outfilefd, temp, strlen(temp)) != strlen(temp))
+        if( write( outfilefd, temp, strlen( temp ) ) != strlen( temp ) )
         {
-            fclose (infile);
+            fclose( infile );
             return ERROR;
         }
     }
 
-    fclose(infile);
+    fclose( infile );
     return OK;
 }
 
@@ -546,139 +546,139 @@ static int rollIntoAverages
     int             isMetricUnits,
     int             isMetricMM,
     WAVG_ID         windId,
-    char            *startName,
+    char*            startName,
     int             day,
     int             hour,
     int             minutes,
-    HISTORY_DATA    *store,
+    HISTORY_DATA*    store,
     int             numMins
 )
 {
     int             skipMins, mins = 0;
     int             i, j, k, minsStarted = FALSE;
     float           sum, click;
-    FILE            *infile;
+    FILE*            infile;
     char            temp[512];
 
-    infile = fopen (startName, "r");
-    if (infile == NULL)
+    infile = fopen( startName, "r" );
+    if( infile == NULL )
     {
         return ERROR;
     }
 
-    if (fread (&fileHdr, sizeof(fileHdr), 1, infile) != 1)
+    if( fread( &fileHdr, sizeof( fileHdr ), 1, infile ) != 1 )
     {
-        fclose (infile);
+        fclose( infile );
         return ERROR;
     }
 
-    for (i = day; i < 32; i ++)
+    for( i = day; i < 32; i ++ )
     {
-        if (mins >= numMins)
+        if( mins >= numMins )
         {
             // we're done
-            fclose (infile);
+            fclose( infile );
             return mins;
         }
 
-        if (fileHdr.dayIndex[i].recordsInDay == 0)
+        if( fileHdr.dayIndex[i].recordsInDay == 0 )
         {
             // no record for this day, we are done
-            fclose (infile);
+            fclose( infile );
 
-            if (mins > 0)
+            if( mins > 0 )
                 return mins;
             else
                 return ERROR;
         }
 
         //  ... goto the beginning of the archive recs for this day
-        if (fseek (infile,
-                   sizeof(fileHdr) +
-                   DBFILES_RECORD_SIZE*(fileHdr.dayIndex[i].startPos + 2),
-                   SEEK_SET)
-                == -1)
+        if( fseek( infile,
+                   sizeof( fileHdr ) +
+                   DBFILES_RECORD_SIZE * ( fileHdr.dayIndex[i].startPos + 2 ),
+                   SEEK_SET )
+                == -1 )
         {
-            fclose (infile);
+            fclose( infile );
             return ERROR;
         }
 
-        for (j = 0; (j < fileHdr.dayIndex[i].recordsInDay - 2) && (mins < numMins); j ++)
+        for( j = 0; ( j < fileHdr.dayIndex[i].recordsInDay - 2 ) && ( mins < numMins ); j ++ )
         {
             // read the archive record
-            if (fread (&arcRecord, sizeof(arcRecord), 1, infile) != 1)
+            if( fread( &arcRecord, sizeof( arcRecord ), 1, infile ) != 1 )
             {
-                fclose (infile);
+                fclose( infile );
                 return ERROR;
             }
 
-            if ((arcRecord.rain & 0xF000) == 0x0000)
+            if( ( arcRecord.rain & 0xF000 ) == 0x0000 )
                 click = 10;
-            else if ((arcRecord.rain & 0xF000) == 0x2000) //0.2 mm 0x2000
+            else if( ( arcRecord.rain & 0xF000 ) == 0x2000 ) //0.2 mm 0x2000
                 click = 127;
-            else if ((arcRecord.rain & 0xF000) == 0x3000) //1.0 mm 0x3000
+            else if( ( arcRecord.rain & 0xF000 ) == 0x3000 ) //1.0 mm 0x3000
                 click = 25.4;
-            else if ((arcRecord.rain & 0xF000) == 0x6000) //0.1 mm 0x6000 (not fully supported)
+            else if( ( arcRecord.rain & 0xF000 ) == 0x6000 ) //0.1 mm 0x6000 (not fully supported)
                 click = 254;
             else
                 click = 100;
 
-            if (!minsStarted)
+            if( !minsStarted )
             {
                 // we haven't started yet
-                if (arcRecord.packedTime/60 < hour)
+                if( arcRecord.packedTime / 60 < hour )
                 {
                     // not our hour yet
                     continue;
                 }
-                else if (arcRecord.packedTime/60 > hour)
+                else if( arcRecord.packedTime / 60 > hour )
                 {
                     // our exact start hour is not there...
                     // increment our minute counter appropriately and see if
                     // there is more work to do - if so we can use this record
-                    mins = (arcRecord.packedTime / 60) - hour;
+                    mins = ( arcRecord.packedTime / 60 ) - hour;
                     mins *= 60;
                     mins += arcRecord.packedTime % 60;
-                    if (mins < numMins)     // allow for one interval for this rec
+                    if( mins < numMins )    // allow for one interval for this rec
                     {
                         // we can jump forward, making note of the jump time
                         minsStarted = TRUE;
                         mins += arcRecord.archiveInterval;      // for this rec
-                        incrementDayHourMin (&day,
+                        incrementDayHourMin( &day,
                                              &hour,
                                              &minutes,
-                                             mins);
+                                             mins );
                     }
                     else
                     {
-                        fclose (infile);
+                        fclose( infile );
                         return ERROR;
                     }
                 }
-                else if (arcRecord.packedTime%60 < minutes)
+                else if( arcRecord.packedTime % 60 < minutes )
                 {
                     // not our mins yet
                     continue;
                 }
-                else if (arcRecord.packedTime%60 > minutes)
+                else if( arcRecord.packedTime % 60 > minutes )
                 {
                     // our exact start time minutes is not there...
                     // increment our minute counter appropriately and see if
                     // there is more work to do - if so we can use this record
-                    mins = (arcRecord.packedTime % 60) - minutes;
-                    if (mins < numMins)     // allow for one interval for this rec
+                    mins = ( arcRecord.packedTime % 60 ) - minutes;
+                    if( mins < numMins )    // allow for one interval for this rec
                     {
                         // we can jump forward, making note of the jump time
                         minsStarted = TRUE;
                         mins += arcRecord.archiveInterval;      // for this rec
-                        incrementDayHourMin (&day,
+                        incrementDayHourMin( &day,
                                              &hour,
                                              &minutes,
-                                             mins);
+                                             mins );
                     }
                     else
                     {
-                        fclose (infile);
+                        fclose( infile );
                         return ERROR;
                     }
                 }
@@ -686,60 +686,60 @@ static int rollIntoAverages
                 {
                     minsStarted = TRUE;
                     mins += arcRecord.archiveInterval;
-                    incrementDayHourMin (&day,
+                    incrementDayHourMin( &day,
                                          &hour,
                                          &minutes,
-                                         arcRecord.archiveInterval);
+                                         arcRecord.archiveInterval );
                 }
             }
             else
             {
                 // we have started
-                if (i != day ||
-                        arcRecord.packedTime/60 != hour ||
-                        arcRecord.packedTime%60 != minutes)
+                if( i != day ||
+                        arcRecord.packedTime / 60 != hour ||
+                        arcRecord.packedTime % 60 != minutes )
                 {
                     // oops, record(s) has been skipped
-                    skipMins = getRecordTimeDeltaInMinutes (day,
+                    skipMins = getRecordTimeDeltaInMinutes( day,
                                                             hour,
                                                             minutes,
                                                             i,
-                                                            arcRecord.packedTime/60,
-                                                            arcRecord.packedTime%60);
+                                                            arcRecord.packedTime / 60,
+                                                            arcRecord.packedTime % 60 );
 
-                    if (mins + skipMins >= numMins)
+                    if( mins + skipMins >= numMins )
                     {
                         // we're done
-                        fclose (infile);
+                        fclose( infile );
                         return mins;
                     }
                     else
                     {
                         skipMins += arcRecord.archiveInterval;  // for this rec
                         mins += skipMins;
-                        incrementDayHourMin (&day,
+                        incrementDayHourMin( &day,
                                              &hour,
                                              &minutes,
-                                             skipMins);
+                                             skipMins );
                     }
                 }
                 else
                 {
                     mins += arcRecord.archiveInterval;
-                    incrementDayHourMin (&day,
+                    incrementDayHourMin( &day,
                                          &hour,
                                          &minutes,
-                                         arcRecord.archiveInterval);
+                                         arcRecord.archiveInterval );
                 }
             }
 
-            if (arcRecord.windSpeed/10 > 200)
+            if( arcRecord.windSpeed / 10 > 200 )
             {
                 arcRecord.windSpeed = 0;
             }
 
-            if ((uint16_t)arcRecord.outsideTemp != 0x8000 &&
-                (uint16_t)arcRecord.outsideTemp != 0x7FFF)
+            if( ( uint16_t )arcRecord.outsideTemp != 0x8000 &&
+                    ( uint16_t )arcRecord.outsideTemp != 0x7FFF )
             {
                 lastGoodTemp = arcRecord.outsideTemp;
             }
@@ -748,9 +748,9 @@ static int rollIntoAverages
                 arcRecord.outsideTemp = lastGoodTemp;
             }
 
-            if ((uint16_t)arcRecord.outsideHum != 0x8000 &&
-                (uint16_t)arcRecord.outsideHum != 0x7FFF &&
-                (uint16_t)arcRecord.outsideHum != 2550)
+            if( ( uint16_t )arcRecord.outsideHum != 0x8000 &&
+                    ( uint16_t )arcRecord.outsideHum != 0x7FFF &&
+                    ( uint16_t )arcRecord.outsideHum != 2550 )
             {
                 lastGoodHumid = arcRecord.outsideHum;
             }
@@ -759,201 +759,201 @@ static int rollIntoAverages
                 arcRecord.outsideHum = lastGoodHumid;
             }
 
-            for (k = 0; k < 3; k ++)
+            for( k = 0; k < 3; k ++ )
             {
-                if (arcRecord.extraTemp[k] == 0xff) 
+                if( arcRecord.extraTemp[k] == 0xff )
                     arcRecord.extraTemp[k] = lastGoodExtraTemp;
                 else
                     lastGoodExtraTemp[k] = arcRecord.extraTemp[k];
             }
 
-            for (k = 0; k < DATA_INDEX_MAX; k ++)
+            for( k = 0; k < DATA_INDEX_MAX; k ++ )
             {
                 store->samples[k] ++;
             }
 
-            if (isMetricUnits)
+            if( isMetricUnits )
             {
                 store->values[DATA_INDEX_outTemp] +=
-                    wvutilsConvertFToC ((float)arcRecord.outsideTemp/10.0);
-                store->values[DATA_INDEX_outHumidity] += (float)arcRecord.outsideHum/10.0;
+                    wvutilsConvertFToC( ( float )arcRecord.outsideTemp / 10.0 );
+                store->values[DATA_INDEX_outHumidity] += ( float )arcRecord.outsideHum / 10.0;
                 store->values[DATA_INDEX_inTemp] +=
-                    wvutilsConvertFToC ((float)arcRecord.insideTemp/10.0);
-                store->values[DATA_INDEX_inHumidity] += (float)arcRecord.insideHum/10.0;
+                    wvutilsConvertFToC( ( float )arcRecord.insideTemp / 10.0 );
+                store->values[DATA_INDEX_inHumidity] += ( float )arcRecord.insideHum / 10.0;
                 store->values[DATA_INDEX_dewpoint] +=
-                    wvutilsConvertFToC (wvutilsCalculateDewpoint ((float)arcRecord.outsideTemp/10.0,
-                                                   (float)arcRecord.outsideHum/10.0));
+                    wvutilsConvertFToC( wvutilsCalculateDewpoint( ( float )arcRecord.outsideTemp / 10.0,
+                                        ( float )arcRecord.outsideHum / 10.0 ) );
                 store->values[DATA_INDEX_windSpeed] +=
-                    wvutilsConvertMPHToKPH ((float)arcRecord.windSpeed/10.0);
-                if (arcRecord.windDirection < 16)
+                    wvutilsConvertMPHToKPH( ( float )arcRecord.windSpeed / 10.0 );
+                if( arcRecord.windDirection < 16 )
                 {
                     lastWDIR = arcRecord.windDirection;
                 }
-                windAverageAddValue (windId, lastWDIR);
+                windAverageAddValue( windId, lastWDIR );
 
                 store->values[DATA_INDEX_windGust] +=
-                    wvutilsConvertMPHToKPH ((float)arcRecord.hiWindSpeed/10.0);
+                    wvutilsConvertMPHToKPH( ( float )arcRecord.hiWindSpeed / 10.0 );
                 store->values[DATA_INDEX_barometer] +=
-                    wvutilsConvertINHGToHPA ((float)arcRecord.barometer/1000.0);
+                    wvutilsConvertINHGToHPA( ( float )arcRecord.barometer / 1000.0 );
 
-                if (isMetricMM)
+                if( isMetricMM )
                     store->values[DATA_INDEX_rain] +=
-                        wvutilsConvertINToMM ((float)(arcRecord.rain & 0xFFF)/click);
+                        wvutilsConvertINToMM( ( float )( arcRecord.rain & 0xFFF ) / click );
                 else
                     store->values[DATA_INDEX_rain] +=
-                        wvutilsConvertINToCM ((float)(arcRecord.rain & 0xFFF)/click);
+                        wvutilsConvertINToCM( ( float )( arcRecord.rain & 0xFFF ) / click );
 
                 store->values[DATA_INDEX_windchill] +=
-                    wvutilsConvertFToC (wvutilsCalculateWindChill ((float)arcRecord.outsideTemp/10.0,
-                                                   (float)arcRecord.windSpeed/10.0));
+                    wvutilsConvertFToC( wvutilsCalculateWindChill( ( float )arcRecord.outsideTemp / 10.0,
+                                        ( float )arcRecord.windSpeed / 10.0 ) );
                 store->values[DATA_INDEX_heatindex] +=
-                    wvutilsConvertFToC (wvutilsCalculateHeatIndex ((float)arcRecord.outsideTemp/10.0,
-                                                   (float)arcRecord.outsideHum/10.0));
+                    wvutilsConvertFToC( wvutilsCalculateHeatIndex( ( float )arcRecord.outsideTemp / 10.0,
+                                        ( float )arcRecord.outsideHum / 10.0 ) );
 
-                if ((uint16_t)arcRecord.solarRad != 0x7FFF && (uint16_t)arcRecord.solarRad != 0xFFFF && (float)arcRecord.solarRad >= 0 && (float)arcRecord.solarRad <= 1800)
-                    store->values[DATA_INDEX_radiation] += (float)arcRecord.solarRad;
-                if (arcRecord.UV != 0xFF)
-                    store->values[DATA_INDEX_UV] += (float)arcRecord.UV/10.0;
+                if( ( uint16_t )arcRecord.solarRad != 0x7FFF && ( uint16_t )arcRecord.solarRad != 0xFFFF && ( float )arcRecord.solarRad >= 0 && ( float )arcRecord.solarRad <= 1800 )
+                    store->values[DATA_INDEX_radiation] += ( float )arcRecord.solarRad;
+                if( arcRecord.UV != 0xFF )
+                    store->values[DATA_INDEX_UV] += ( float )arcRecord.UV / 10.0;
 
-                if (arcRecord.ET != 0xFF)
+                if( arcRecord.ET != 0xFF )
                 {
-                    if (isMetricMM)
+                    if( isMetricMM )
                         store->values[DATA_INDEX_ET] +=
-                            wvutilsConvertINToMM ((float)arcRecord.ET/1000.0);
+                            wvutilsConvertINToMM( ( float )arcRecord.ET / 1000.0 );
                     else
                         store->values[DATA_INDEX_ET] +=
-                            wvutilsConvertINToCM ((float)arcRecord.ET/1000.0);
+                            wvutilsConvertINToCM( ( float )arcRecord.ET / 1000.0 );
                 }
 
-                if (arcRecord.leafTemp[0] != 0xFF)
+                if( arcRecord.leafTemp[0] != 0xFF )
                     store->values[DATA_INDEX_leafTemp1] +=
-                        (int)wvutilsConvertFToC ((float)arcRecord.leafTemp[0] - 90.0);
-                if (arcRecord.leafTemp[1] != 0xFF)
+                        ( int )wvutilsConvertFToC( ( float )arcRecord.leafTemp[0] - 90.0 );
+                if( arcRecord.leafTemp[1] != 0xFF )
                     store->values[DATA_INDEX_leafTemp2] +=
-                        (int)wvutilsConvertFToC ((float)arcRecord.leafTemp[1] - 90.0);
-                if (arcRecord.leafWetness[0] != 0xFF)
-                    store->values[DATA_INDEX_leafWet1] += (float)arcRecord.leafWetness[0];
-                if (arcRecord.leafWetness[1] != 0xFF)
-                    store->values[DATA_INDEX_leafWet2] += (float)arcRecord.leafWetness[1];
-                if (arcRecord.soilTemp[0] != 0xFF)
+                        ( int )wvutilsConvertFToC( ( float )arcRecord.leafTemp[1] - 90.0 );
+                if( arcRecord.leafWetness[0] != 0xFF )
+                    store->values[DATA_INDEX_leafWet1] += ( float )arcRecord.leafWetness[0];
+                if( arcRecord.leafWetness[1] != 0xFF )
+                    store->values[DATA_INDEX_leafWet2] += ( float )arcRecord.leafWetness[1];
+                if( arcRecord.soilTemp[0] != 0xFF )
                     store->values[DATA_INDEX_soilTemp1] +=
-                        (int)wvutilsConvertFToC ((float)arcRecord.soilTemp[0] - 90.0);
-                if (arcRecord.soilTemp[1] != 0xFF)
+                        ( int )wvutilsConvertFToC( ( float )arcRecord.soilTemp[0] - 90.0 );
+                if( arcRecord.soilTemp[1] != 0xFF )
                     store->values[DATA_INDEX_soilTemp2] +=
-                        (int)wvutilsConvertFToC ((float)arcRecord.soilTemp[1] - 90.0);
-                if (arcRecord.soilTemp[2] != 0xFF)
+                        ( int )wvutilsConvertFToC( ( float )arcRecord.soilTemp[1] - 90.0 );
+                if( arcRecord.soilTemp[2] != 0xFF )
                     store->values[DATA_INDEX_soilTemp3] +=
-                        (int)wvutilsConvertFToC ((float)arcRecord.soilTemp[2] - 90.0);
-                if (arcRecord.soilTemp[3] != 0xFF)
+                        ( int )wvutilsConvertFToC( ( float )arcRecord.soilTemp[2] - 90.0 );
+                if( arcRecord.soilTemp[3] != 0xFF )
                     store->values[DATA_INDEX_soilTemp4] +=
-                        (int)wvutilsConvertFToC ((float)arcRecord.soilTemp[3] - 90.0);
-                if (arcRecord.extraHum[0] != 0xFF)
-                    store->values[DATA_INDEX_extraHumid1] += (float)arcRecord.extraHum[0];
-                if (arcRecord.extraHum[1] != 0xFF)
-                    store->values[DATA_INDEX_extraHumid2] += (float)arcRecord.extraHum[1];
-                if (arcRecord.extraTemp[0] != 0xFF)
+                        ( int )wvutilsConvertFToC( ( float )arcRecord.soilTemp[3] - 90.0 );
+                if( arcRecord.extraHum[0] != 0xFF )
+                    store->values[DATA_INDEX_extraHumid1] += ( float )arcRecord.extraHum[0];
+                if( arcRecord.extraHum[1] != 0xFF )
+                    store->values[DATA_INDEX_extraHumid2] += ( float )arcRecord.extraHum[1];
+                if( arcRecord.extraTemp[0] != 0xFF )
                     store->values[DATA_INDEX_extraTemp1] +=
-                        (int)wvutilsConvertFToC ((float)arcRecord.extraTemp[0] - 90);
-                if (arcRecord.extraTemp[1] != 0xFF)
+                        ( int )wvutilsConvertFToC( ( float )arcRecord.extraTemp[0] - 90 );
+                if( arcRecord.extraTemp[1] != 0xFF )
                     store->values[DATA_INDEX_extraTemp2] +=
-                        (int)wvutilsConvertFToC ((float)arcRecord.extraTemp[1] - 90);
-                if (arcRecord.extraTemp[2] != 0xFF)
+                        ( int )wvutilsConvertFToC( ( float )arcRecord.extraTemp[1] - 90 );
+                if( arcRecord.extraTemp[2] != 0xFF )
                     store->values[DATA_INDEX_extraTemp3] +=
-                        (int)wvutilsConvertFToC ((float)arcRecord.extraTemp[2] - 90);
-                if (arcRecord.soilMoisture[0] != 0xFF)
-                    store->values[DATA_INDEX_soilMoist1] += (float)arcRecord.soilMoisture[0];
-                if (arcRecord.soilMoisture[1] != 0xFF)
-                    store->values[DATA_INDEX_soilMoist2] += (float)arcRecord.soilMoisture[1];
-                if (arcRecord.soilMoisture[2] != 0xFF)
-                    store->values[DATA_INDEX_soilMoist3] += (float)arcRecord.soilMoisture[2];
-                if (arcRecord.soilMoisture[3] != 0xFF)
-                    store->values[DATA_INDEX_soilMoist4] += (float)arcRecord.soilMoisture[3];
+                        ( int )wvutilsConvertFToC( ( float )arcRecord.extraTemp[2] - 90 );
+                if( arcRecord.soilMoisture[0] != 0xFF )
+                    store->values[DATA_INDEX_soilMoist1] += ( float )arcRecord.soilMoisture[0];
+                if( arcRecord.soilMoisture[1] != 0xFF )
+                    store->values[DATA_INDEX_soilMoist2] += ( float )arcRecord.soilMoisture[1];
+                if( arcRecord.soilMoisture[2] != 0xFF )
+                    store->values[DATA_INDEX_soilMoist3] += ( float )arcRecord.soilMoisture[2];
+                if( arcRecord.soilMoisture[3] != 0xFF )
+                    store->values[DATA_INDEX_soilMoist4] += ( float )arcRecord.soilMoisture[3];
             }
             else
             {
-                store->values[DATA_INDEX_outTemp] += (float)arcRecord.outsideTemp/10.0;
-                store->values[DATA_INDEX_outHumidity] += (float)arcRecord.outsideHum/10.0;
-                store->values[DATA_INDEX_inTemp] += (float)arcRecord.insideTemp/10.0;
-                store->values[DATA_INDEX_inHumidity] += (float)arcRecord.insideHum/10.0;
+                store->values[DATA_INDEX_outTemp] += ( float )arcRecord.outsideTemp / 10.0;
+                store->values[DATA_INDEX_outHumidity] += ( float )arcRecord.outsideHum / 10.0;
+                store->values[DATA_INDEX_inTemp] += ( float )arcRecord.insideTemp / 10.0;
+                store->values[DATA_INDEX_inHumidity] += ( float )arcRecord.insideHum / 10.0;
                 store->values[DATA_INDEX_dewpoint] +=
-                    wvutilsCalculateDewpoint ((float)arcRecord.outsideTemp/10.0,
-                                              (float)arcRecord.outsideHum/10.0);
-                store->values[DATA_INDEX_windSpeed] += (float)arcRecord.windSpeed/10.0;
-                if (arcRecord.windDirection < 16)
+                    wvutilsCalculateDewpoint( ( float )arcRecord.outsideTemp / 10.0,
+                                              ( float )arcRecord.outsideHum / 10.0 );
+                store->values[DATA_INDEX_windSpeed] += ( float )arcRecord.windSpeed / 10.0;
+                if( arcRecord.windDirection < 16 )
                 {
                     lastWDIR = arcRecord.windDirection;
                 }
-                windAverageAddValue (windId, lastWDIR);
+                windAverageAddValue( windId, lastWDIR );
 
-                store->values[DATA_INDEX_windGust] += (float)arcRecord.hiWindSpeed/10.0;
-                store->values[DATA_INDEX_barometer] += (float)arcRecord.barometer/1000.0;
-                store->values[DATA_INDEX_rain] += (float)(arcRecord.rain & 0xFFF)/click;
+                store->values[DATA_INDEX_windGust] += ( float )arcRecord.hiWindSpeed / 10.0;
+                store->values[DATA_INDEX_barometer] += ( float )arcRecord.barometer / 1000.0;
+                store->values[DATA_INDEX_rain] += ( float )( arcRecord.rain & 0xFFF ) / click;
                 store->values[DATA_INDEX_windchill] +=
-                    wvutilsCalculateWindChill ((float)arcRecord.outsideTemp/10.0,
-                                               (float)arcRecord.windSpeed/10.0);
+                    wvutilsCalculateWindChill( ( float )arcRecord.outsideTemp / 10.0,
+                                               ( float )arcRecord.windSpeed / 10.0 );
                 store->values[DATA_INDEX_heatindex] +=
-                    wvutilsCalculateHeatIndex ((float)arcRecord.outsideTemp/10.0,
-                                               (float)arcRecord.outsideHum/10.0);
+                    wvutilsCalculateHeatIndex( ( float )arcRecord.outsideTemp / 10.0,
+                                               ( float )arcRecord.outsideHum / 10.0 );
 
 
-                if ((uint16_t)arcRecord.solarRad != 0x7FFF && (uint16_t)arcRecord.solarRad != 0xFFFF && (float)arcRecord.solarRad >= 0 && (float)arcRecord.solarRad <= 1800)
-                    store->values[DATA_INDEX_radiation] += (float)arcRecord.solarRad;
-                if (arcRecord.UV != 0xFF)
-                    store->values[DATA_INDEX_UV] += (float)arcRecord.UV/10.0;
-                if (arcRecord.ET != 0xFF)
-                    store->values[DATA_INDEX_ET] += (float)arcRecord.ET/1000.0;
-                if (arcRecord.leafTemp[0] != 0xFF)
-                    store->values[DATA_INDEX_leafTemp1] += (float)arcRecord.leafTemp[0] - 90.0;
-                if (arcRecord.leafTemp[1] != 0xFF)
-                    store->values[DATA_INDEX_leafTemp2] += (float)arcRecord.leafTemp[1] - 90.0;
-                if (arcRecord.leafWetness[0] != 0xFF)
-                    store->values[DATA_INDEX_leafWet1] += (float)arcRecord.leafWetness[0];
-                if (arcRecord.leafWetness[1] != 0xFF)
-                    store->values[DATA_INDEX_leafWet2] += (float)arcRecord.leafWetness[1];
-                if (arcRecord.soilTemp[0] != 0xFF)
-                    store->values[DATA_INDEX_soilTemp1] += (float)arcRecord.soilTemp[0] - 90.0;
-                if (arcRecord.soilTemp[1] != 0xFF)
-                    store->values[DATA_INDEX_soilTemp2] += (float)arcRecord.soilTemp[1] - 90.0;
-                if (arcRecord.soilTemp[2] != 0xFF)
-                    store->values[DATA_INDEX_soilTemp3] += (float)arcRecord.soilTemp[2] - 90.0;
-                if (arcRecord.soilTemp[3] != 0xFF)
-                    store->values[DATA_INDEX_soilTemp4] += (float)arcRecord.soilTemp[3] - 90.0;
-                if (arcRecord.extraHum[0] != 0xFF)
-                    store->values[DATA_INDEX_extraHumid1] += (float)arcRecord.extraHum[0];
-                if (arcRecord.extraHum[1] != 0xFF)
-                    store->values[DATA_INDEX_extraHumid2] += (float)arcRecord.extraHum[1];
-                if (arcRecord.extraTemp[0] != 0xFF)
-                    store->values[DATA_INDEX_extraTemp1] += (float)arcRecord.extraTemp[0] - 90;
-                if (arcRecord.extraTemp[1] != 0xFF)
-                    store->values[DATA_INDEX_extraTemp2] += (float)arcRecord.extraTemp[1] - 90;
-                if (arcRecord.extraTemp[2] != 0xFF)
-                    store->values[DATA_INDEX_extraTemp3] += (float)arcRecord.extraTemp[2] - 90;
-                if (arcRecord.soilMoisture[0] != 0xFF)
-                    store->values[DATA_INDEX_soilMoist1] += (float)arcRecord.soilMoisture[0];
-                if (arcRecord.soilMoisture[1] != 0xFF)
-                    store->values[DATA_INDEX_soilMoist2] += (float)arcRecord.soilMoisture[1];
-                if (arcRecord.soilMoisture[2] != 0xFF)
-                    store->values[DATA_INDEX_soilMoist3] += (float)arcRecord.soilMoisture[2];
-                if (arcRecord.soilMoisture[3] != 0xFF)
-                    store->values[DATA_INDEX_soilMoist4] += (float)arcRecord.soilMoisture[3];
+                if( ( uint16_t )arcRecord.solarRad != 0x7FFF && ( uint16_t )arcRecord.solarRad != 0xFFFF && ( float )arcRecord.solarRad >= 0 && ( float )arcRecord.solarRad <= 1800 )
+                    store->values[DATA_INDEX_radiation] += ( float )arcRecord.solarRad;
+                if( arcRecord.UV != 0xFF )
+                    store->values[DATA_INDEX_UV] += ( float )arcRecord.UV / 10.0;
+                if( arcRecord.ET != 0xFF )
+                    store->values[DATA_INDEX_ET] += ( float )arcRecord.ET / 1000.0;
+                if( arcRecord.leafTemp[0] != 0xFF )
+                    store->values[DATA_INDEX_leafTemp1] += ( float )arcRecord.leafTemp[0] - 90.0;
+                if( arcRecord.leafTemp[1] != 0xFF )
+                    store->values[DATA_INDEX_leafTemp2] += ( float )arcRecord.leafTemp[1] - 90.0;
+                if( arcRecord.leafWetness[0] != 0xFF )
+                    store->values[DATA_INDEX_leafWet1] += ( float )arcRecord.leafWetness[0];
+                if( arcRecord.leafWetness[1] != 0xFF )
+                    store->values[DATA_INDEX_leafWet2] += ( float )arcRecord.leafWetness[1];
+                if( arcRecord.soilTemp[0] != 0xFF )
+                    store->values[DATA_INDEX_soilTemp1] += ( float )arcRecord.soilTemp[0] - 90.0;
+                if( arcRecord.soilTemp[1] != 0xFF )
+                    store->values[DATA_INDEX_soilTemp2] += ( float )arcRecord.soilTemp[1] - 90.0;
+                if( arcRecord.soilTemp[2] != 0xFF )
+                    store->values[DATA_INDEX_soilTemp3] += ( float )arcRecord.soilTemp[2] - 90.0;
+                if( arcRecord.soilTemp[3] != 0xFF )
+                    store->values[DATA_INDEX_soilTemp4] += ( float )arcRecord.soilTemp[3] - 90.0;
+                if( arcRecord.extraHum[0] != 0xFF )
+                    store->values[DATA_INDEX_extraHumid1] += ( float )arcRecord.extraHum[0];
+                if( arcRecord.extraHum[1] != 0xFF )
+                    store->values[DATA_INDEX_extraHumid2] += ( float )arcRecord.extraHum[1];
+                if( arcRecord.extraTemp[0] != 0xFF )
+                    store->values[DATA_INDEX_extraTemp1] += ( float )arcRecord.extraTemp[0] - 90;
+                if( arcRecord.extraTemp[1] != 0xFF )
+                    store->values[DATA_INDEX_extraTemp2] += ( float )arcRecord.extraTemp[1] - 90;
+                if( arcRecord.extraTemp[2] != 0xFF )
+                    store->values[DATA_INDEX_extraTemp3] += ( float )arcRecord.extraTemp[2] - 90;
+                if( arcRecord.soilMoisture[0] != 0xFF )
+                    store->values[DATA_INDEX_soilMoist1] += ( float )arcRecord.soilMoisture[0];
+                if( arcRecord.soilMoisture[1] != 0xFF )
+                    store->values[DATA_INDEX_soilMoist2] += ( float )arcRecord.soilMoisture[1];
+                if( arcRecord.soilMoisture[2] != 0xFF )
+                    store->values[DATA_INDEX_soilMoist3] += ( float )arcRecord.soilMoisture[2];
+                if( arcRecord.soilMoisture[3] != 0xFF )
+                    store->values[DATA_INDEX_soilMoist4] += ( float )arcRecord.soilMoisture[3];
             }
         }
     }
 
-    fclose (infile);
+    fclose( infile );
     return mins;
 }
 
 static int computeNoaaDay
 (
-    char            *startName,
+    char*            startName,
     int             day,
-    NOAA_DAY_REC    *store
+    NOAA_DAY_REC*    store
 )
 {
     int                 j, numrecs = 0;
     float               sum;
-    FILE                *infile;
+    FILE*                infile;
     char                temp[512];
     HeaderBlock         fileHdr;
     DailySummaryRecord  sumRecord;
@@ -961,62 +961,62 @@ static int computeNoaaDay
     WAVG                windAvg;
     float               click;
 
-    infile = fopen (startName, "r");
-    if (infile == NULL)
+    infile = fopen( startName, "r" );
+    if( infile == NULL )
     {
         return ERROR;
     }
 
-    if (fread (&fileHdr, sizeof(fileHdr), 1, infile) != 1)
+    if( fread( &fileHdr, sizeof( fileHdr ), 1, infile ) != 1 )
     {
-        fclose (infile);
+        fclose( infile );
         return ERROR;
     }
 
-    if (fileHdr.dayIndex[day].recordsInDay == 0)
+    if( fileHdr.dayIndex[day].recordsInDay == 0 )
     {
         // no entry for this day
-        fclose (infile);
+        fclose( infile );
         return ERROR;
     }
 
     //  ... goto the beginning of the archive recs for this day
-    if (fseek (infile,
-               sizeof(fileHdr) +
-               DBFILES_RECORD_SIZE*(fileHdr.dayIndex[day].startPos + 2),
-               SEEK_SET)
-            == -1)
+    if( fseek( infile,
+               sizeof( fileHdr ) +
+               DBFILES_RECORD_SIZE * ( fileHdr.dayIndex[day].startPos + 2 ),
+               SEEK_SET )
+            == -1 )
     {
-        fclose (infile);
+        fclose( infile );
         return ERROR;
     }
 
-    windAverageReset (&windAvg);
+    windAverageReset( &windAvg );
 
     //  ... set some values for first time through
     store->highTemp = -10000.0;
     store->lowTemp  = 10000.0;
     store->highWind = -1000.0;
 
-    for (j = 0; j < fileHdr.dayIndex[day].recordsInDay - 2; j ++)
+    for( j = 0; j < fileHdr.dayIndex[day].recordsInDay - 2; j ++ )
     {
         // read the archive record
-        if (fread (&arcRecord, sizeof(arcRecord), 1, infile) != 1)
+        if( fread( &arcRecord, sizeof( arcRecord ), 1, infile ) != 1 )
         {
-            fclose (infile);
+            fclose( infile );
             return ERROR;
         }
 
-        if (arcRecord.windSpeed/10 > 200)
+        if( arcRecord.windSpeed / 10 > 200 )
         {
             continue;
         }
-        if ((uint16_t)arcRecord.outsideTemp == 0x8000 ||
-                (uint16_t)arcRecord.outsideTemp == 0x7FFF ||
-                (uint16_t)arcRecord.hiOutsideTemp == 0x8000 ||
-                (uint16_t)arcRecord.hiOutsideTemp == 0x7FFF ||
-                (uint16_t)arcRecord.lowOutsideTemp == 0x8000 ||
-                (uint16_t)arcRecord.lowOutsideTemp == 0x7FFF)
+        if( ( uint16_t )arcRecord.outsideTemp == 0x8000 ||
+                ( uint16_t )arcRecord.outsideTemp == 0x7FFF ||
+                ( uint16_t )arcRecord.hiOutsideTemp == 0x8000 ||
+                ( uint16_t )arcRecord.hiOutsideTemp == 0x7FFF ||
+                ( uint16_t )arcRecord.lowOutsideTemp == 0x8000 ||
+                ( uint16_t )arcRecord.lowOutsideTemp == 0x7FFF )
         {
             continue;
         }
@@ -1024,217 +1024,217 @@ static int computeNoaaDay
         numrecs ++;
 
 
-        if ((arcRecord.rain & 0xF000) == 0x0000)        // 0.1 in 0x0000
+        if( ( arcRecord.rain & 0xF000 ) == 0x0000 )     // 0.1 in 0x0000
             click = 10;
-        else if ((arcRecord.rain & 0xF000) == 0x2000)   // 0.2 mm 0x2000
+        else if( ( arcRecord.rain & 0xF000 ) == 0x2000 ) // 0.2 mm 0x2000
             click = 127;
-        else if ((arcRecord.rain & 0xF000) == 0x3000)   // 1.0 mm 0x3000
+        else if( ( arcRecord.rain & 0xF000 ) == 0x3000 ) // 1.0 mm 0x3000
             click = 25.4;
-        else if ((arcRecord.rain & 0xF000) == 0x6000)   // 0.1 mm 0x6000 (not fully supported)
+        else if( ( arcRecord.rain & 0xF000 ) == 0x6000 ) // 0.1 mm 0x6000 (not fully supported)
             click = 254;
         else                                            //0.01 in 0x1000
             click = 100;
 
-        store->meanTemp         += (float)arcRecord.outsideTemp;
-        if (store->highTemp < (float)arcRecord.hiOutsideTemp)
+        store->meanTemp         += ( float )arcRecord.outsideTemp;
+        if( store->highTemp < ( float )arcRecord.hiOutsideTemp )
         {
-            store->highTemp     = (float)arcRecord.hiOutsideTemp;
-            sprintf (store->highTempTime, "%2.2d:%2.2d",
-                     arcRecord.packedTime/60,
-                     arcRecord.packedTime%60);
+            store->highTemp     = ( float )arcRecord.hiOutsideTemp;
+            sprintf( store->highTempTime, "%2.2d:%2.2d",
+                     arcRecord.packedTime / 60,
+                     arcRecord.packedTime % 60 );
         }
-        if (store->lowTemp > (float)arcRecord.lowOutsideTemp)
+        if( store->lowTemp > ( float )arcRecord.lowOutsideTemp )
         {
-            store->lowTemp      = (float)arcRecord.lowOutsideTemp;
-            sprintf (store->lowTempTime, "%2.2d:%2.2d",
-                     arcRecord.packedTime/60,
-                     arcRecord.packedTime%60);
-        }
-
-        sum = (store->highTemp + store->lowTemp)/20.0;
-        store->heatDegDays      = ((sum < 65) ? 65 - sum : 0);
-        store->coolDegDays      = ((sum > 65) ? sum - 65 : 0);
-
-        store->rain             += (float)(arcRecord.rain & 0xFFF)/click;
-        store->avgWind          += (float)arcRecord.windSpeed;
-        if (store->highWind < (float)arcRecord.hiWindSpeed)
-        {
-            store->highWind     = (float)arcRecord.hiWindSpeed;
-            sprintf (store->highWindTime, "%2.2d:%2.2d",
-                     arcRecord.packedTime/60,
-                     arcRecord.packedTime%60);
+            store->lowTemp      = ( float )arcRecord.lowOutsideTemp;
+            sprintf( store->lowTempTime, "%2.2d:%2.2d",
+                     arcRecord.packedTime / 60,
+                     arcRecord.packedTime % 60 );
         }
 
-        if (arcRecord.windDirection < 16)
+        sum = ( store->highTemp + store->lowTemp ) / 20.0;
+        store->heatDegDays      = ( ( sum < 65 ) ? 65 - sum : 0 );
+        store->coolDegDays      = ( ( sum > 65 ) ? sum - 65 : 0 );
+
+        store->rain             += ( float )( arcRecord.rain & 0xFFF ) / click;
+        store->avgWind          += ( float )arcRecord.windSpeed;
+        if( store->highWind < ( float )arcRecord.hiWindSpeed )
         {
-            windAverageAddValue (&windAvg, arcRecord.windDirection);
+            store->highWind     = ( float )arcRecord.hiWindSpeed;
+            sprintf( store->highWindTime, "%2.2d:%2.2d",
+                     arcRecord.packedTime / 60,
+                     arcRecord.packedTime % 60 );
+        }
+
+        if( arcRecord.windDirection < 16 )
+        {
+            windAverageAddValue( &windAvg, arcRecord.windDirection );
         }
     }
 
     //  ... compute the means necessary
-    store->meanTemp     /= (numrecs * 10.0);
-    store->avgWind      /= (numrecs * 10.0);
+    store->meanTemp     /= ( numrecs * 10.0 );
+    store->avgWind      /= ( numrecs * 10.0 );
     store->lowTemp      /= 10.0;
     store->highTemp     /= 10.0;
     store->highWind     /= 10.0;
-    store->domWindDir   = (int)(windAverageCompute(&windAvg)/22.5);
+    store->domWindDir   = ( int )( windAverageCompute( &windAvg ) / 22.5 );
 
-    fclose (infile);
+    fclose( infile );
     return OK;
 }
 #endif
 
 static int getNewestDateTime
 (
-    char            *startName,
+    char*            startName,
     int             year,
     int             month,
-    uint16_t        *date,
-    uint16_t        *time,
-    ArchiveRecord   *newRec
+    uint16_t*        date,
+    uint16_t*        time,
+    ArchiveRecord*   newRec
 )
 {
     int             i, j;
-    FILE            *infile;
+    FILE*            infile;
     char            temp[512];
 
-    infile = fopen (startName, "r");
-    if (infile == NULL)
+    infile = fopen( startName, "r" );
+    if( infile == NULL )
     {
         return ERROR;
     }
 
-    if (fread (&fileHdr, sizeof(fileHdr), 1, infile) != 1)
+    if( fread( &fileHdr, sizeof( fileHdr ), 1, infile ) != 1 )
     {
-        fclose (infile);
+        fclose( infile );
         return ERROR;
     }
 
-    for (i = 1; i < 32; i ++)
+    for( i = 1; i < 32; i ++ )
     {
-        if (fileHdr.dayIndex[i].recordsInDay == 0)
+        if( fileHdr.dayIndex[i].recordsInDay == 0 )
         {
             // we're done with this day
             continue;
         }
 
         //  ... goto the beginning of the archive recs for this day
-        if (fseek (infile,
-                   sizeof(fileHdr) +
-                   DBFILES_RECORD_SIZE*(fileHdr.dayIndex[i].startPos + 2),
-                   SEEK_SET)
-                == -1)
+        if( fseek( infile,
+                   sizeof( fileHdr ) +
+                   DBFILES_RECORD_SIZE * ( fileHdr.dayIndex[i].startPos + 2 ),
+                   SEEK_SET )
+                == -1 )
         {
-            fclose (infile);
+            fclose( infile );
             return ERROR;
         }
 
-        for (j = 0; j < fileHdr.dayIndex[i].recordsInDay - 2; j ++)
+        for( j = 0; j < fileHdr.dayIndex[i].recordsInDay - 2; j ++ )
         {
             // read the archive record
-            if (fread (&arcRecord, sizeof(arcRecord), 1, infile) != 1)
+            if( fread( &arcRecord, sizeof( arcRecord ), 1, infile ) != 1 )
             {
-                fclose (infile);
+                fclose( infile );
                 return ERROR;
             }
 
-            *date = i + (32*month) + ((year-2000)*512);
-            *time = ((arcRecord.packedTime/60)*100) + (arcRecord.packedTime%60);
+            *date = i + ( 32 * month ) + ( ( year - 2000 ) * 512 );
+            *time = ( ( arcRecord.packedTime / 60 ) * 100 ) + ( arcRecord.packedTime % 60 );
             *newRec = arcRecord;
         }
     }
 
-    fclose (infile);
+    fclose( infile );
     return OK;
 }
 
 static int getNextRecord
 (
-    char            *startName,
+    char*            startName,
     int             year,
     int             month,
-    uint16_t        *date,
-    uint16_t        *atime,
-    ArchiveRecord   *newRec
+    uint16_t*        date,
+    uint16_t*        atime,
+    ArchiveRecord*   newRec
 )
 {
     int             i, j, day, hour, minute;
-    FILE            *infile;
+    FILE*            infile;
     char            temp[512];
     time_t          ntime;
     struct tm       tmtime;
 
-    infile = fopen (startName, "r");
-    if (infile == NULL)
+    infile = fopen( startName, "r" );
+    if( infile == NULL )
     {
         return ERROR;
     }
 
-    if (fread (&fileHdr, sizeof(fileHdr), 1, infile) != 1)
+    if( fread( &fileHdr, sizeof( fileHdr ), 1, infile ) != 1 )
     {
-        fclose (infile);
+        fclose( infile );
         return ERROR;
     }
 
-    day = EXTRACT_PACKED_DAY(*date);
-    hour = EXTRACT_PACKED_HOUR(*atime);
-    minute = EXTRACT_PACKED_MINUTE(*atime);
+    day = EXTRACT_PACKED_DAY( *date );
+    hour = EXTRACT_PACKED_HOUR( *atime );
+    minute = EXTRACT_PACKED_MINUTE( *atime );
     *date = *atime = 0;
 
-    for (i = day; i < 32; i ++)
+    for( i = day; i < 32; i ++ )
     {
-        if (fileHdr.dayIndex[i].recordsInDay == 0)
+        if( fileHdr.dayIndex[i].recordsInDay == 0 )
         {
             // we're done with this day
             continue;
         }
 
         //  ... goto the beginning of the archive recs for this day
-        if (fseek (infile,
-                   sizeof(fileHdr) +
-                   DBFILES_RECORD_SIZE*(fileHdr.dayIndex[i].startPos + 2),
-                   SEEK_SET)
-                == -1)
+        if( fseek( infile,
+                   sizeof( fileHdr ) +
+                   DBFILES_RECORD_SIZE * ( fileHdr.dayIndex[i].startPos + 2 ),
+                   SEEK_SET )
+                == -1 )
         {
-            fclose (infile);
+            fclose( infile );
             return ERROR;
         }
 
-        for (j = 0; j < fileHdr.dayIndex[i].recordsInDay - 2; j ++)
+        for( j = 0; j < fileHdr.dayIndex[i].recordsInDay - 2; j ++ )
         {
             // read the archive record
-            if (fread (&arcRecord, sizeof(arcRecord), 1, infile) != 1)
+            if( fread( &arcRecord, sizeof( arcRecord ), 1, infile ) != 1 )
             {
-                fclose (infile);
+                fclose( infile );
                 return ERROR;
             }
 
-            if (i == day)
+            if( i == day )
             {
-                if ((arcRecord.packedTime/60) < hour)
+                if( ( arcRecord.packedTime / 60 ) < hour )
                 {
                     continue;
                 }
-                else if (((arcRecord.packedTime/60) == hour) &&
-                         ((arcRecord.packedTime%60) <= minute))
+                else if( ( ( arcRecord.packedTime / 60 ) == hour ) &&
+                         ( ( arcRecord.packedTime % 60 ) <= minute ) )
                 {
                     continue;
                 }
             }
 
             // we have a winner - set the proper date and time
-            if (arcRecord.packedTime >= (60 * 24))
+            if( arcRecord.packedTime >= ( 60 * 24 ) )
             {
                 // joy, 24:00 VP madness - bump the day forward
-                memset (&tmtime, 0, sizeof (tmtime));
+                memset( &tmtime, 0, sizeof( tmtime ) );
                 tmtime.tm_year = year - 1900;
                 tmtime.tm_mon = month - 1;
                 tmtime.tm_mday = i;
                 tmtime.tm_min = 5;              // avoid leap second worries
                 tmtime.tm_isdst = -1;
-                ntime = mktime (&tmtime);
-                ntime += (WV_SECONDS_IN_DAY + 4*WV_SECONDS_IN_HOUR); // Avoid DST fallback
-                localtime_r (&ntime, &tmtime);
+                ntime = mktime( &tmtime );
+                ntime += ( WV_SECONDS_IN_DAY + 4 * WV_SECONDS_IN_HOUR ); // Avoid DST fallback
+                localtime_r( &ntime, &tmtime );
                 year = tmtime.tm_year + 1900;
                 month = tmtime.tm_mon + 1;
                 day = tmtime.tm_mday;
@@ -1244,28 +1244,28 @@ static int getNextRecord
             else
             {
                 day = i;
-                hour = arcRecord.packedTime/60;
-                minute = arcRecord.packedTime%60;
+                hour = arcRecord.packedTime / 60;
+                minute = arcRecord.packedTime % 60;
             }
 
-            *date = INSERT_PACKED_DATE(year,month,day);
-            *atime = (hour*100) + minute;
+            *date = INSERT_PACKED_DATE( year, month, day );
+            *atime = ( hour * 100 ) + minute;
             *newRec = arcRecord;
-            fclose (infile);
+            fclose( infile );
             return OK;
         }
     }
 
-    fclose (infile);
+    fclose( infile );
     return ERROR;
 }
 
 
 //  ... #########  API Functions #########
 
-char *dbfBuildWindDirString (int dir)
+char* dbfBuildWindDirString( int dir )
 {
-    if (dir < 0 || dir > 15)
+    if( dir < 0 || dir > 15 )
     {
         return "---";
     }
@@ -1288,8 +1288,8 @@ int dbfGetAverages
     int             isMetricUnits,
     int             isMetricMM,
     int             arcInterval,
-    char            *archivePath,
-    HISTORY_DATA    *store,
+    char*            archivePath,
+    HISTORY_DATA*    store,
     int             startmin,
     int             starthour,
     int             startday,
@@ -1311,17 +1311,17 @@ int dbfGetAverages
     WAVG            windAvg;
 
 
-    ntime = time (NULL);
-    localtime_r (&ntime, &locTime);
+    ntime = time( NULL );
+    localtime_r( &ntime, &locTime );
     curmonth = locTime.tm_mon + 1;
     curyear = locTime.tm_year + 1900;
 
     //  ... build the file names
-    fileDate = ((startyear - 2000) * 100) + startmonth;
-    buildArchiveFileName (archivePath, fileDate, startName, &year, &month);
+    fileDate = ( ( startyear - 2000 ) * 100 ) + startmonth;
+    buildArchiveFileName( archivePath, fileDate, startName, &year, &month );
 
 
-    memset (store, 0, sizeof (HISTORY_DATA));
+    memset( store, 0, sizeof( HISTORY_DATA ) );
 
     store->startYear    = startyear;
     store->startMonth   = startmonth;
@@ -1331,24 +1331,24 @@ int dbfGetAverages
 
 
     //  ... create the wind average object
-    windAverageReset (&windAvg);
+    windAverageReset( &windAvg );
 
-    while (!done)
+    while( !done )
     {
-        if ((year > curyear) || (year == curyear && month > curmonth))
+        if( ( year > curyear ) || ( year == curyear && month > curmonth ) )
         {
             // we're done!
             done = TRUE;
             continue;
         }
 
-        if (stat (startName, &fileStatus) == -1)
+        if( stat( startName, &fileStatus ) == -1 )
         {
             return ERROR;
         }
 
         //  ... if we are here, we have a file to work with
-        retVal = rollIntoAverages (isMetricUnits,
+        retVal = rollIntoAverages( isMetricUnits,
                                    isMetricMM,
                                    &windAvg,
                                    startName,
@@ -1356,8 +1356,8 @@ int dbfGetAverages
                                    hour,
                                    mins,
                                    store,
-                                   numMins - minsDone);
-        if (retVal == ERROR)
+                                   numMins - minsDone );
+        if( retVal == ERROR )
         {
             return ERROR;
         }
@@ -1366,17 +1366,17 @@ int dbfGetAverages
         hour = 0;
         mins = 0;
         minsDone += retVal;
-        if (minsDone >= numMins)
+        if( minsDone >= numMins )
         {
             // we're done!
             done = TRUE;
             continue;
         }
 
-        incrementArchiveFileName (startName, startName, &year, &month);
+        incrementArchiveFileName( startName, startName, &year, &month );
     }
 
-    store->values[DATA_INDEX_windDir] = windAverageCompute (&windAvg);
+    store->values[DATA_INDEX_windDir] = windAverageCompute( &windAvg );
 
     return OK;
 }
@@ -1387,8 +1387,8 @@ int dbfGetAverages
 
 int dbfGetNoaaDay
 (
-    char            *archivePath,
-    NOAA_DAY_REC    *store,
+    char*            archivePath,
+    NOAA_DAY_REC*    store,
     int             startyear,
     int             startmonth,
     int             startday
@@ -1402,25 +1402,25 @@ int dbfGetNoaaDay
     time_t          ntime;
     struct tm       locTime;
 
-    ntime = time (NULL);
-    localtime_r (&ntime, &locTime);
+    ntime = time( NULL );
+    localtime_r( &ntime, &locTime );
     curmonth = locTime.tm_mon + 1;
     curyear = locTime.tm_year + 1900;
 
-    if (startyear > curyear ||
-            (startyear == curyear && startmonth > curmonth))
+    if( startyear > curyear ||
+            ( startyear == curyear && startmonth > curmonth ) )
     {
         return ERROR;
     }
 
     //  ... build the file names
-    fileDate = ((startyear - 2000) * 100) + startmonth;
-    buildArchiveFileName (archivePath, fileDate, startName, &year, &month);
+    fileDate = ( ( startyear - 2000 ) * 100 ) + startmonth;
+    buildArchiveFileName( archivePath, fileDate, startName, &year, &month );
 
     //  ... MUST be done here - computeNoaaDay expects it!
-    memset (store, 0, sizeof (NOAA_DAY_REC));
+    memset( store, 0, sizeof( NOAA_DAY_REC ) );
 
-    if (stat (startName, &fileStatus) == -1)
+    if( stat( startName, &fileStatus ) == -1 )
     {
         return ERROR;
     }
@@ -1430,19 +1430,19 @@ int dbfGetNoaaDay
     store->day      = startday;
 
     //  ... if we are here, we have a file to work with
-    return (computeNoaaDay (startName, startday, store));
+    return ( computeNoaaDay( startName, startday, store ) );
 }
 
 // write out all ASCII archive records for the given day to 'filename'
 int dbfWriteDailyArchiveReport
 (
-    char            *archivePath,
-    char            *filename,
+    char*            archivePath,
+    char*            filename,
     time_t          timeval,
     int             isMetric,
     int             isMetricMM,
     int             arcInterval,
-    void            (*writeHeader) (FILE *file)
+    void ( *writeHeader )( FILE* file )
 )
 {
     int             i, recsWritten = ERROR;
@@ -1454,26 +1454,26 @@ int dbfWriteDailyArchiveReport
     uint16_t        start;
     struct tm       locTime;
 
-    localtime_r (&timeval, &locTime);
+    localtime_r( &timeval, &locTime );
     year    = locTime.tm_year + 1900;
     month   = locTime.tm_mon + 1;
     day     = locTime.tm_mday;
 
-    if (stat (filename, &fileStatus) != -1)
+    if( stat( filename, &fileStatus ) != -1 )
     {
         //  exists, delete it
-        unlink (filename);
+        unlink( filename );
     }
 
     // is there even an archive file for this month?
-    start = ((year-2000)*100) + month;
-    buildArchiveFileName (archivePath,
+    start = ( ( year - 2000 ) * 100 ) + month;
+    buildArchiveFileName( archivePath,
                           start,
                           temp,
                           &dummyYear,
-                          &dummyMonth);
+                          &dummyMonth );
 
-    if (stat (temp, &fileStatus) == -1)
+    if( stat( temp, &fileStatus ) == -1 )
     {
         // no records - no month!
         return ERROR;
@@ -1482,12 +1482,12 @@ int dbfWriteDailyArchiveReport
 
     // loop through the day an archive interval at a time
     hour = minute = 0;
-    for (i = arcInterval; i <= WV_MINUTES_IN_DAY; i += arcInterval)
+    for( i = arcInterval; i <= WV_MINUTES_IN_DAY; i += arcInterval )
     {
         hour   = i / 60;
         minute = i % 60;
 
-        retVal = dbfGetAverages (isMetric,
+        retVal = dbfGetAverages( isMetric,
                                  isMetricMM,
                                  arcInterval,
                                  archivePath,
@@ -1497,9 +1497,9 @@ int dbfWriteDailyArchiveReport
                                  day,
                                  month,
                                  year,
-                                 1);
+                                 1 );
 
-        if (retVal == ERROR)
+        if( retVal == ERROR )
         {
             continue;
         }
@@ -1509,7 +1509,7 @@ int dbfWriteDailyArchiveReport
         }
 
         // call our little updater
-        dbfUpdateDailyArchiveReport (filename, &data, writeHeader, isMetric);
+        dbfUpdateDailyArchiveReport( filename, &data, writeHeader, isMetric );
     }
 
     return recsWritten;
@@ -1518,42 +1518,42 @@ int dbfWriteDailyArchiveReport
 // update (or create) the current day's ASCII archive records file
 int dbfUpdateDailyArchiveReport
 (
-    char            *file,
-    HISTORY_DATA    *data,
-    void            (*writeHeaderFcn) (FILE *file),
+    char*            file,
+    HISTORY_DATA*    data,
+    void ( *writeHeaderFcn )( FILE* file ),
     int             isMetric
 )
 
 {
-    FILE            *outfile;
+    FILE*            outfile;
     char            temp[256];
     struct stat     fileStatus;
     int             writeHeader = FALSE;
 
-    if (stat (file, &fileStatus) == -1)
+    if( stat( file, &fileStatus ) == -1 )
     {
         //  new file, write a header
         writeHeader = TRUE;
     }
 
     // first, take care of creating/opening the file
-    outfile = fopen (file, "a");
-    if (outfile == NULL)
+    outfile = fopen( file, "a" );
+    if( outfile == NULL )
     {
         return ERROR;
     }
 
-    if (writeHeader)
+    if( writeHeader )
     {
         // callback the user with the supplied routine
-        (*writeHeaderFcn)(outfile);
+        ( *writeHeaderFcn )( outfile );
     }
 
     // append the new record
 
-    if (!isMetric)
+    if( !isMetric )
     {
-        sprintf (temp,
+        sprintf( temp,
                  "%4.4d%2.2d%2.2d %2.2d:%2.2d\t%.1f\t%.1f\t%.1f\t%.0f\t%.1f\t%.0f\t%.0f\t%.0f\t%.2f\t%.3f\t%.0f\t%.3f\t%.1f\n",
                  data->startYear,
                  data->startMonth,
@@ -1572,12 +1572,12 @@ int dbfUpdateDailyArchiveReport
                  data->values[DATA_INDEX_barometer],
                  data->values[DATA_INDEX_radiation],
                  data->values[DATA_INDEX_ET],
-                 data->values[DATA_INDEX_UV]);
+                 data->values[DATA_INDEX_UV] );
     }
     else
     {
         //    "--Timestamp---\tTemp\tChill\tHIndex\tHumid\tDewpt\tWind\tHiWind\tWindDir\tRain\tBarom\tSolar\tET\tUV\n"
-        sprintf (temp,
+        sprintf( temp,
                  "%4.4d%2.2d%2.2d %2.2d:%2.2d\t%.1f\t%.1f\t%.1f\t%.0f\t%.1f\t%.0f\t%.0f\t%.0f\t%.1f\t%.1f\t%.0f\t%.3f\t%.1f\n",
                  data->startYear,
                  data->startMonth,
@@ -1596,20 +1596,20 @@ int dbfUpdateDailyArchiveReport
                  data->values[DATA_INDEX_barometer],
                  data->values[DATA_INDEX_radiation],
                  data->values[DATA_INDEX_ET],
-                 data->values[DATA_INDEX_UV]);
+                 data->values[DATA_INDEX_UV] );
     }
 
-    if (fwrite (temp, 1, strlen(temp), outfile) != strlen(temp))
+    if( fwrite( temp, 1, strlen( temp ), outfile ) != strlen( temp ) )
     {
-        fclose (outfile);
+        fclose( outfile );
         return ERROR;
     }
 
 
     // cleanup and bail out
-    fclose (outfile);
+    fclose( outfile );
 
-    if (writeHeader)
+    if( writeHeader )
         return 1;
     else
         return OK;
@@ -1624,8 +1624,8 @@ int dbfUpdateDailyArchiveReport
 
 int dbfStoreArchiveRecord
 (
-    char            *archivePath,
-    ARCHIVE_RECORD  *record,
+    char*            archivePath,
+    ARCHIVE_RECORD*  record,
     int             archiveInterval,
     uint16_t        RainCollectorType
 )
@@ -1633,7 +1633,7 @@ int dbfStoreArchiveRecord
     int             year, month, day, hour, minute, dayRecs, dayMinutes;
     int             sqlyear, sqlmonth, sqlday;
     char            arcFileName[256];
-    FILE            *arcFile;
+    FILE*            arcFile;
     struct stat     fileStatus;
     HeaderBlock     hdrblk;
     int16_t         wind;
@@ -1642,30 +1642,30 @@ int dbfStoreArchiveRecord
     time_t          secTime;
 
     // check the archive record version
-    if (record->recordType == 0xFF)
+    if( record->recordType == 0xFF )
     {
         // we have an 'A' record here - convert to 'B' before proceeding
-        convertArchiveAtoB (record);
+        convertArchiveAtoB( record );
     }
 
-    year = sqlyear = (record->date >> 9) + 2000;
-    month = sqlmonth = (record->date >> 5) & 0xf;
+    year = sqlyear = ( record->date >> 9 ) + 2000;
+    month = sqlmonth = ( record->date >> 5 ) & 0xf;
     day = sqlday = record->date & 0x1f;
-    hour = record->time/100;
-    minute = record->time%100;
+    hour = record->time / 100;
+    minute = record->time % 100;
 
-    if (minute == 0 && hour == 0)
+    if( minute == 0 && hour == 0 )
     {
-        memset (&bknTime, 0, sizeof (bknTime));
+        memset( &bknTime, 0, sizeof( bknTime ) );
 
         bknTime.tm_mday  = day;
-        bknTime.tm_mon   = month-1;
-        bknTime.tm_year  = year-1900;
+        bknTime.tm_mon   = month - 1;
+        bknTime.tm_year  = year - 1900;
         bknTime.tm_min   = 5;                // to avoid midnight confusion
         bknTime.tm_isdst = -1;
-        secTime = mktime (&bknTime);
+        secTime = mktime( &bknTime );
         secTime -= WV_SECONDS_IN_DAY;        // subtract a day
-        localtime_r (&secTime, &bknTime);
+        localtime_r( &secTime, &bknTime );
 
         hour    = 24;
         year    = bknTime.tm_year + 1900;
@@ -1673,170 +1673,170 @@ int dbfStoreArchiveRecord
         day     = bknTime.tm_mday;
     }
 
-    dayMinutes = minute + 60*hour;
+    dayMinutes = minute + 60 * hour;
 
-    if (record->avgWindSpeed > 200 || record->prevWindDir > 15)
+    if( record->avgWindSpeed > 200 || record->prevWindDir > 15 )
     {
         record->avgWindSpeed = 0;
         record->prevWindDir = 255;
     }
 
-    if (record->highWindSpeed > 200 || record->highWindDir > 15)
+    if( record->highWindSpeed > 200 || record->highWindDir > 15 )
     {
         record->highWindSpeed = 0;
         record->highWindDir = 255;
     }
 
-    chill = wvutilsCalculateWindChill ((float)record->outTemp/10,
-                                       (float)record->avgWindSpeed);
-    dew = wvutilsCalculateDewpoint ((float)record->outTemp/10,
-                                    (float)record->outHumidity);
-    heat = wvutilsCalculateHeatIndex ((float)record->outTemp/10,
-                                      (float)record->outHumidity);
+    chill = wvutilsCalculateWindChill( ( float )record->outTemp / 10,
+                                       ( float )record->avgWindSpeed );
+    dew = wvutilsCalculateDewpoint( ( float )record->outTemp / 10,
+                                    ( float )record->outHumidity );
+    heat = wvutilsCalculateHeatIndex( ( float )record->outTemp / 10,
+                                      ( float )record->outHumidity );
 
-    sprintf (arcFileName, "%s/%4.4d-%2.2d.wlk", archivePath, year, month);
+    sprintf( arcFileName, "%s/%4.4d-%2.2d.wlk", archivePath, year, month );
 
-    if (stat (arcFileName, &fileStatus) == -1)
+    if( stat( arcFileName, &fileStatus ) == -1 )
     {
         //  ... archive does not exist, create it
-        arcFile = fopen (arcFileName, "w");
-        if (arcFile == NULL)
+        arcFile = fopen( arcFileName, "w" );
+        if( arcFile == NULL )
         {
             return ERROR;
         }
 
-        memset (&hdrblk, 0, sizeof (hdrblk));
-        memcpy (hdrblk.idCode, idCode, sizeof (idCode));
+        memset( &hdrblk, 0, sizeof( hdrblk ) );
+        memcpy( hdrblk.idCode, idCode, sizeof( idCode ) );
 
-        if (fwrite (&hdrblk, sizeof (hdrblk), 1, arcFile) != 1)
+        if( fwrite( &hdrblk, sizeof( hdrblk ), 1, arcFile ) != 1 )
         {
-            fclose (arcFile);
+            fclose( arcFile );
             return ERROR;
         }
 
-        fclose (arcFile);
+        fclose( arcFile );
     }
 
     //  ... now open up the file and read some hdrs
-    arcFile = fopen (arcFileName, "r");
-    if (arcFile == NULL)
+    arcFile = fopen( arcFileName, "r" );
+    if( arcFile == NULL )
     {
         return ERROR;
     }
-    if (fseek (arcFile, 0, SEEK_SET) == -1)
+    if( fseek( arcFile, 0, SEEK_SET ) == -1 )
     {
-        fclose (arcFile);
-        return ERROR;
-    }
-
-    if (fread (&hdrblk, sizeof (hdrblk), 1, arcFile) != 1)
-    {
-        fclose (arcFile);
+        fclose( arcFile );
         return ERROR;
     }
 
-    if (hdrblk.dayIndex[day].recordsInDay != 0)
+    if( fread( &hdrblk, sizeof( hdrblk ), 1, arcFile ) != 1 )
     {
-        if (fseek (arcFile,
-                   sizeof(hdrblk) +
+        fclose( arcFile );
+        return ERROR;
+    }
+
+    if( hdrblk.dayIndex[day].recordsInDay != 0 )
+    {
+        if( fseek( arcFile,
+                   sizeof( hdrblk ) +
                    DBFILES_RECORD_SIZE * hdrblk.dayIndex[day].startPos,
-                   SEEK_SET)
-                == -1)
+                   SEEK_SET )
+                == -1 )
         {
-            fclose (arcFile);
+            fclose( arcFile );
             return ERROR;
         }
 
-        if (fread (&sumRecord, sizeof (sumRecord), 1, arcFile) != 1)
+        if( fread( &sumRecord, sizeof( sumRecord ), 1, arcFile ) != 1 )
         {
-            fclose (arcFile);
+            fclose( arcFile );
             return ERROR;
         }
     }
     else
     {
-        memset (&sumRecord, 0, sizeof (sumRecord));
+        memset( &sumRecord, 0, sizeof( sumRecord ) );
         sumRecord.dataType1 = 0;
         sumRecord.dataSpan = archiveInterval;
         sumRecord.hiOutTemp = record->highOutTemp;
-        insertTimeValue (sumRecord.timeValues1,
+        insertTimeValue( sumRecord.timeValues1,
                          High_Outside_Temperature,
-                         dayMinutes);
+                         dayMinutes );
         sumRecord.lowOutTemp = record->lowOutTemp;
-        insertTimeValue (sumRecord.timeValues1,
+        insertTimeValue( sumRecord.timeValues1,
                          Low_Outside_Temperature,
-                         dayMinutes);
+                         dayMinutes );
         sumRecord.hiInTemp = record->inTemp;
-        insertTimeValue (sumRecord.timeValues1,
+        insertTimeValue( sumRecord.timeValues1,
                          High_Inside_Temperature,
-                         dayMinutes);
+                         dayMinutes );
         sumRecord.lowInTemp = record->inTemp;
-        insertTimeValue (sumRecord.timeValues1,
+        insertTimeValue( sumRecord.timeValues1,
                          Low_Inside_Temperature,
-                         dayMinutes);
+                         dayMinutes );
         sumRecord.avgOutTemp = record->outTemp;
         sumRecord.avgInTemp = record->inTemp;
-        sumRecord.hiChill = (int)(chill*10);
-        insertTimeValue (sumRecord.timeValues1,
+        sumRecord.hiChill = ( int )( chill * 10 );
+        insertTimeValue( sumRecord.timeValues1,
                          High_Wind_Chill,
-                         dayMinutes);
+                         dayMinutes );
         sumRecord.lowChill = sumRecord.hiChill;
-        insertTimeValue (sumRecord.timeValues1,
+        insertTimeValue( sumRecord.timeValues1,
                          Low_Wind_Chill,
-                         dayMinutes);
-        sumRecord.hiDew = (int)(dew*10);
-        insertTimeValue (sumRecord.timeValues1,
+                         dayMinutes );
+        sumRecord.hiDew = ( int )( dew * 10 );
+        insertTimeValue( sumRecord.timeValues1,
                          High_Dew_Point,
-                         dayMinutes);
+                         dayMinutes );
         sumRecord.lowDew = sumRecord.hiDew;
-        insertTimeValue (sumRecord.timeValues1,
+        insertTimeValue( sumRecord.timeValues1,
                          Low_Dew_Point,
-                         dayMinutes);
+                         dayMinutes );
         sumRecord.avgChill = sumRecord.hiChill;
         sumRecord.avgDew = sumRecord.hiDew;
-        sumRecord.hiOutHum = record->outHumidity*10;
-        insertTimeValue (sumRecord.timeValues1,
+        sumRecord.hiOutHum = record->outHumidity * 10;
+        insertTimeValue( sumRecord.timeValues1,
                          High_Outside_Humidity,
-                         dayMinutes);
-        sumRecord.lowOutHum = record->outHumidity*10;
-        insertTimeValue (sumRecord.timeValues1,
+                         dayMinutes );
+        sumRecord.lowOutHum = record->outHumidity * 10;
+        insertTimeValue( sumRecord.timeValues1,
                          Low_Outside_Humidity,
-                         dayMinutes);
-        sumRecord.hiInHum = record->inHumidity*10;
-        insertTimeValue (sumRecord.timeValues1,
+                         dayMinutes );
+        sumRecord.hiInHum = record->inHumidity * 10;
+        insertTimeValue( sumRecord.timeValues1,
                          High_Inside_Humidity,
-                         dayMinutes);
-        sumRecord.lowInHum = record->inHumidity*10;
-        insertTimeValue (sumRecord.timeValues1,
+                         dayMinutes );
+        sumRecord.lowInHum = record->inHumidity * 10;
+        insertTimeValue( sumRecord.timeValues1,
                          Low_Inside_Humidity,
-                         dayMinutes);
-        sumRecord.avgOutHum = record->outHumidity*10;
+                         dayMinutes );
+        sumRecord.avgOutHum = record->outHumidity * 10;
         sumRecord.hiBar = record->barometer;
-        insertTimeValue (sumRecord.timeValues1,
+        insertTimeValue( sumRecord.timeValues1,
                          High_Barometer,
-                         dayMinutes);
+                         dayMinutes );
         sumRecord.lowBar = record->barometer;
-        insertTimeValue (sumRecord.timeValues1,
+        insertTimeValue( sumRecord.timeValues1,
                          Low_Barometer,
-                         dayMinutes);
+                         dayMinutes );
         sumRecord.avgBar = record->barometer;
         sumRecord.hiSpeed = record->highWindSpeed;
-        insertTimeValue (sumRecord.timeValues1,
+        insertTimeValue( sumRecord.timeValues1,
                          High_Wind_Speed,
-                         dayMinutes);
-        insertTimeValue (sumRecord.dirBins,
+                         dayMinutes );
+        insertTimeValue( sumRecord.dirBins,
                          record->prevWindDir,
-                         archiveInterval);
-        sumRecord.avgSpeed = record->avgWindSpeed*10;
+                         archiveInterval );
+        sumRecord.avgSpeed = record->avgWindSpeed * 10;
         sumRecord.dailyWindRunTotal = 0x8000;
         sumRecord.hi10MinSpeed = 0x8000;
         sumRecord.dirHiSpeed = record->highWindDir;
         sumRecord.hi10MinDir = 0xff;
         sumRecord.dailyRainTotal = record->rain;
         sumRecord.hiRainRate = record->highRainRate;
-        insertTimeValue (sumRecord.timeValues1,
+        insertTimeValue( sumRecord.timeValues1,
                          High_Rain_Rate,
-                         dayMinutes);
+                         dayMinutes );
         sumRecord.dailyUVDose = 0x8000;
         sumRecord.hiUV = record->highUV;
         sumRecord.dataType2 = 3;
@@ -1846,33 +1846,33 @@ int dbfStoreArchiveRecord
         sumRecord.dailySolarEnergy = 0x8000;
         sumRecord.minSunlight = 0x8000;
         sumRecord.dailyETTotal = 0;
-        sumRecord.hiHeat = (int)(heat*10);
-        insertTimeValue (sumRecord.timeValues1,
+        sumRecord.hiHeat = ( int )( heat * 10 );
+        insertTimeValue( sumRecord.timeValues1,
                          High_Outside_Heat_Index,
-                         dayMinutes);
+                         dayMinutes );
         sumRecord.lowHeat = sumRecord.hiHeat;
-        insertTimeValue (sumRecord.timeValues1,
+        insertTimeValue( sumRecord.timeValues1,
                          Low_Outside_Heat_Index,
-                         dayMinutes);
+                         dayMinutes );
         sumRecord.avgHeat = sumRecord.hiHeat;
     }
 
     //  ... we're done reading, let's do some writin'
-    fclose (arcFile);
+    fclose( arcFile );
 
-    arcFile = fopen (arcFileName, "r+");
-    if (arcFile == NULL)
+    arcFile = fopen( arcFileName, "r+" );
+    if( arcFile == NULL )
     {
         return ERROR;
     }
 
-    if (fseek (arcFile, 0, SEEK_SET) == -1)
+    if( fseek( arcFile, 0, SEEK_SET ) == -1 )
     {
-        fclose (arcFile);
+        fclose( arcFile );
         return ERROR;
     }
 
-    if (sumRecord.dataType1 == 0)
+    if( sumRecord.dataType1 == 0 )
     {
         hdrblk.dayIndex[day].startPos = hdrblk.totalRecords;
         hdrblk.totalRecords += 3;
@@ -1881,175 +1881,175 @@ int dbfStoreArchiveRecord
     }
 
     //  ... roll in this archive record's data
-    if (sumRecord.dataType1 != 0)
+    if( sumRecord.dataType1 != 0 )
     {
         hdrblk.totalRecords += 1;
         hdrblk.dayIndex[day].recordsInDay += 1;
         sumRecord.dataSpan += archiveInterval;
         dayRecs = hdrblk.dayIndex[day].recordsInDay - 1;    // add one for record we're adding
 
-        if (record->highOutTemp > sumRecord.hiOutTemp)
+        if( record->highOutTemp > sumRecord.hiOutTemp )
         {
             sumRecord.hiOutTemp = record->highOutTemp;
-            insertTimeValue (sumRecord.timeValues1,
+            insertTimeValue( sumRecord.timeValues1,
                              High_Outside_Temperature,
-                             dayMinutes);
+                             dayMinutes );
         }
-        if (record->lowOutTemp < sumRecord.lowOutTemp)
+        if( record->lowOutTemp < sumRecord.lowOutTemp )
         {
             sumRecord.lowOutTemp = record->lowOutTemp;
-            insertTimeValue (sumRecord.timeValues1,
+            insertTimeValue( sumRecord.timeValues1,
                              Low_Outside_Temperature,
-                             dayMinutes);
+                             dayMinutes );
         }
-        if (record->inTemp > sumRecord.hiInTemp)
+        if( record->inTemp > sumRecord.hiInTemp )
         {
             sumRecord.hiInTemp = record->inTemp;
-            insertTimeValue (sumRecord.timeValues1,
+            insertTimeValue( sumRecord.timeValues1,
                              High_Inside_Temperature,
-                             dayMinutes);
+                             dayMinutes );
         }
-        if (record->inTemp < sumRecord.lowInTemp)
+        if( record->inTemp < sumRecord.lowInTemp )
         {
             sumRecord.lowInTemp = record->inTemp;
-            insertTimeValue (sumRecord.timeValues1,
+            insertTimeValue( sumRecord.timeValues1,
                              Low_Inside_Temperature,
-                             dayMinutes);
+                             dayMinutes );
         }
-        sumRecord.avgOutTemp = (((dayRecs-1)*sumRecord.avgOutTemp)+record->outTemp)/dayRecs;
-        sumRecord.avgInTemp = (((dayRecs-1)*sumRecord.avgInTemp)+record->inTemp)/dayRecs;
-        if ((int)(chill*10) > sumRecord.hiChill)
+        sumRecord.avgOutTemp = ( ( ( dayRecs - 1 ) * sumRecord.avgOutTemp ) + record->outTemp ) / dayRecs;
+        sumRecord.avgInTemp = ( ( ( dayRecs - 1 ) * sumRecord.avgInTemp ) + record->inTemp ) / dayRecs;
+        if( ( int )( chill * 10 ) > sumRecord.hiChill )
         {
-            sumRecord.hiChill = (int)(chill*10);
-            insertTimeValue (sumRecord.timeValues1,
+            sumRecord.hiChill = ( int )( chill * 10 );
+            insertTimeValue( sumRecord.timeValues1,
                              High_Wind_Chill,
-                             dayMinutes);
+                             dayMinutes );
         }
-        if ((int)(chill*10) < sumRecord.lowChill)
+        if( ( int )( chill * 10 ) < sumRecord.lowChill )
         {
-            sumRecord.lowChill = (int)(chill*10);
-            insertTimeValue (sumRecord.timeValues1,
+            sumRecord.lowChill = ( int )( chill * 10 );
+            insertTimeValue( sumRecord.timeValues1,
                              Low_Wind_Chill,
-                             dayMinutes);
+                             dayMinutes );
         }
-        if ((int)(dew*10) > sumRecord.hiDew)
+        if( ( int )( dew * 10 ) > sumRecord.hiDew )
         {
-            sumRecord.hiDew = (int)(dew*10);
-            insertTimeValue (sumRecord.timeValues1,
+            sumRecord.hiDew = ( int )( dew * 10 );
+            insertTimeValue( sumRecord.timeValues1,
                              High_Dew_Point,
-                             dayMinutes);
+                             dayMinutes );
         }
-        if ((int)(dew*10) < sumRecord.lowDew)
+        if( ( int )( dew * 10 ) < sumRecord.lowDew )
         {
-            sumRecord.lowDew = (int)(dew*10);
-            insertTimeValue (sumRecord.timeValues1,
+            sumRecord.lowDew = ( int )( dew * 10 );
+            insertTimeValue( sumRecord.timeValues1,
                              Low_Dew_Point,
-                             dayMinutes);
+                             dayMinutes );
         }
-        sumRecord.avgChill = (((dayRecs-1)*sumRecord.avgChill)+(int)(chill*10))/dayRecs;
-        sumRecord.avgDew = (((dayRecs-1)*sumRecord.avgDew)+(int)(dew*10))/dayRecs;
-        if (record->outHumidity*10 > sumRecord.hiOutHum)
+        sumRecord.avgChill = ( ( ( dayRecs - 1 ) * sumRecord.avgChill ) + ( int )( chill * 10 ) ) / dayRecs;
+        sumRecord.avgDew = ( ( ( dayRecs - 1 ) * sumRecord.avgDew ) + ( int )( dew * 10 ) ) / dayRecs;
+        if( record->outHumidity * 10 > sumRecord.hiOutHum )
         {
-            sumRecord.hiOutHum = record->outHumidity*10;
-            insertTimeValue (sumRecord.timeValues1,
+            sumRecord.hiOutHum = record->outHumidity * 10;
+            insertTimeValue( sumRecord.timeValues1,
                              High_Outside_Humidity,
-                             dayMinutes);
+                             dayMinutes );
         }
-        if (record->outHumidity*10 < sumRecord.lowOutHum)
+        if( record->outHumidity * 10 < sumRecord.lowOutHum )
         {
-            sumRecord.lowOutHum = record->outHumidity*10;
-            insertTimeValue (sumRecord.timeValues1,
+            sumRecord.lowOutHum = record->outHumidity * 10;
+            insertTimeValue( sumRecord.timeValues1,
                              Low_Outside_Humidity,
-                             dayMinutes);
+                             dayMinutes );
         }
-        if (record->inHumidity*10 > sumRecord.hiInHum)
+        if( record->inHumidity * 10 > sumRecord.hiInHum )
         {
-            sumRecord.hiInHum = record->inHumidity*10;
-            insertTimeValue (sumRecord.timeValues1,
+            sumRecord.hiInHum = record->inHumidity * 10;
+            insertTimeValue( sumRecord.timeValues1,
                              High_Inside_Humidity,
-                             dayMinutes);
+                             dayMinutes );
         }
-        if (record->inHumidity*10 < sumRecord.lowInHum)
+        if( record->inHumidity * 10 < sumRecord.lowInHum )
         {
-            sumRecord.lowInHum = record->inHumidity*10;
-            insertTimeValue (sumRecord.timeValues1,
+            sumRecord.lowInHum = record->inHumidity * 10;
+            insertTimeValue( sumRecord.timeValues1,
                              Low_Inside_Humidity,
-                             dayMinutes);
+                             dayMinutes );
         }
-        sumRecord.avgOutHum = (((dayRecs-1)*sumRecord.avgOutHum)+record->outHumidity*10)/dayRecs;
-        if (record->barometer > sumRecord.hiBar)
+        sumRecord.avgOutHum = ( ( ( dayRecs - 1 ) * sumRecord.avgOutHum ) + record->outHumidity * 10 ) / dayRecs;
+        if( record->barometer > sumRecord.hiBar )
         {
             sumRecord.hiBar = record->barometer;
-            insertTimeValue (sumRecord.timeValues1,
+            insertTimeValue( sumRecord.timeValues1,
                              High_Barometer,
-                             dayMinutes);
+                             dayMinutes );
         }
-        if (record->barometer < sumRecord.lowBar)
+        if( record->barometer < sumRecord.lowBar )
         {
             sumRecord.lowBar = record->barometer;
-            insertTimeValue (sumRecord.timeValues1,
+            insertTimeValue( sumRecord.timeValues1,
                              Low_Barometer,
-                             dayMinutes);
+                             dayMinutes );
         }
-        sumRecord.avgBar = (((dayRecs-1)*sumRecord.avgBar)+record->barometer)/dayRecs;
-        if (record->highUV > sumRecord.hiUV)
+        sumRecord.avgBar = ( ( ( dayRecs - 1 ) * sumRecord.avgBar ) + record->barometer ) / dayRecs;
+        if( record->highUV > sumRecord.hiUV )
         {
             sumRecord.hiUV = record->highUV;
-            insertTimeValue (sumRecord.timeValues1,
+            insertTimeValue( sumRecord.timeValues1,
                              High_UV,
-                             dayMinutes);
+                             dayMinutes );
         }
 
-        if (record->highRadiation > sumRecord.hiSolar && (float)record->highRadiation >=0 && (float)record->highRadiation <=1800)
+        if( record->highRadiation > sumRecord.hiSolar && ( float )record->highRadiation >= 0 && ( float )record->highRadiation <= 1800 )
         {
             sumRecord.hiSolar = record->highRadiation;
-            insertTimeValue (sumRecord.timeValues2,
+            insertTimeValue( sumRecord.timeValues2,
                              High_Solar_Rad,
-                             dayMinutes);
+                             dayMinutes );
         }
-        if (record->highWindSpeed*10 > sumRecord.hiSpeed)
+        if( record->highWindSpeed * 10 > sumRecord.hiSpeed )
         {
-            sumRecord.hiSpeed = record->highWindSpeed*10;
-            insertTimeValue (sumRecord.timeValues1,
+            sumRecord.hiSpeed = record->highWindSpeed * 10;
+            insertTimeValue( sumRecord.timeValues1,
                              High_Wind_Speed,
-                             dayMinutes);
+                             dayMinutes );
         }
 
-        sumRecord.avgSpeed = (((dayRecs-1)*sumRecord.avgSpeed)+record->avgWindSpeed*10)/dayRecs;
+        sumRecord.avgSpeed = ( ( ( dayRecs - 1 ) * sumRecord.avgSpeed ) + record->avgWindSpeed * 10 ) / dayRecs;
         sumRecord.dailyRainTotal += record->rain;
-        if (record->highRainRate > sumRecord.hiRainRate)
+        if( record->highRainRate > sumRecord.hiRainRate )
         {
             sumRecord.hiRainRate = record->highRainRate;
-            insertTimeValue (sumRecord.timeValues1,
+            insertTimeValue( sumRecord.timeValues1,
                              High_Rain_Rate,
-                             dayMinutes);
+                             dayMinutes );
         }
-        if ((int)(heat*10) > sumRecord.hiHeat)
+        if( ( int )( heat * 10 ) > sumRecord.hiHeat )
         {
-            sumRecord.hiHeat = (int)(heat*10);
-            insertTimeValue (sumRecord.timeValues2,
+            sumRecord.hiHeat = ( int )( heat * 10 );
+            insertTimeValue( sumRecord.timeValues2,
                              High_Outside_Heat_Index,
-                             dayMinutes);
+                             dayMinutes );
         }
-        if ((int)(heat*10) < sumRecord.lowHeat)
+        if( ( int )( heat * 10 ) < sumRecord.lowHeat )
         {
-            sumRecord.lowHeat = (int)(heat*10);
-            insertTimeValue (sumRecord.timeValues2,
+            sumRecord.lowHeat = ( int )( heat * 10 );
+            insertTimeValue( sumRecord.timeValues2,
                              Low_Outside_Heat_Index,
-                             dayMinutes);
+                             dayMinutes );
         }
-        sumRecord.avgHeat = (((dayRecs-1)*sumRecord.avgHeat)+(int)(heat*10))/dayRecs;
+        sumRecord.avgHeat = ( ( ( dayRecs - 1 ) * sumRecord.avgHeat ) + ( int )( heat * 10 ) ) / dayRecs;
 
-        wind = extractTimeValue (sumRecord.dirBins, record->prevWindDir);
+        wind = extractTimeValue( sumRecord.dirBins, record->prevWindDir );
         wind += archiveInterval;
-        insertTimeValue (sumRecord.dirBins,
+        insertTimeValue( sumRecord.dirBins,
                          record->prevWindDir,
-                         wind);
+                         wind );
     }
 
 
 
-    memset (&arcRecord, 0xFF, sizeof (arcRecord));
+    memset( &arcRecord, 0xFF, sizeof( arcRecord ) );
     arcRecord.dataType = 1;
     arcRecord.archiveInterval = archiveInterval;
     arcRecord.packedTime = dayMinutes;
@@ -2058,12 +2058,12 @@ int dbfStoreArchiveRecord
     arcRecord.lowOutsideTemp = record->lowOutTemp;
     arcRecord.insideTemp = record->inTemp;
     arcRecord.barometer = record->barometer;
-    arcRecord.outsideHum = record->outHumidity*10;
-    arcRecord.insideHum = record->inHumidity*10;
+    arcRecord.outsideHum = record->outHumidity * 10;
+    arcRecord.insideHum = record->inHumidity * 10;
     arcRecord.rain = record->rain | RainCollectorType;
     arcRecord.hiRainRate = record->highRainRate;
-    arcRecord.windSpeed = record->avgWindSpeed*10;
-    arcRecord.hiWindSpeed = record->highWindSpeed*10;
+    arcRecord.windSpeed = record->avgWindSpeed * 10;
+    arcRecord.hiWindSpeed = record->highWindSpeed * 10;
     arcRecord.windDirection = record->prevWindDir;
     arcRecord.hiWindDirection = record->highWindDir;
     arcRecord.numWindSamples = record->windSamples;
@@ -2093,47 +2093,47 @@ int dbfStoreArchiveRecord
 
 
     //  ... write out the hdr and the new records
-    if (fseek (arcFile, 0, SEEK_SET) == -1)
+    if( fseek( arcFile, 0, SEEK_SET ) == -1 )
     {
-        fclose (arcFile);
+        fclose( arcFile );
         return ERROR;
     }
 
-    if (fwrite (&hdrblk, sizeof(hdrblk), 1, arcFile) != 1)
+    if( fwrite( &hdrblk, sizeof( hdrblk ), 1, arcFile ) != 1 )
     {
-        fclose (arcFile);
+        fclose( arcFile );
         return ERROR;
     }
 
-    if (fseek (arcFile,
-               sizeof(hdrblk) +
+    if( fseek( arcFile,
+               sizeof( hdrblk ) +
                DBFILES_RECORD_SIZE * hdrblk.dayIndex[day].startPos,
-               SEEK_SET)
-            == -1)
+               SEEK_SET )
+            == -1 )
     {
-        fclose (arcFile);
+        fclose( arcFile );
         return ERROR;
     }
 
     sumRecord.dataType1 = 2;
-    if (fwrite (&sumRecord, sizeof(sumRecord), 1, arcFile) != 1)
+    if( fwrite( &sumRecord, sizeof( sumRecord ), 1, arcFile ) != 1 )
     {
-        fclose (arcFile);
+        fclose( arcFile );
         return ERROR;
     }
 
-    if (fseek (arcFile, 0, SEEK_END) == -1)
+    if( fseek( arcFile, 0, SEEK_END ) == -1 )
     {
-        fclose (arcFile);
+        fclose( arcFile );
         return ERROR;
     }
-    if (fwrite (&arcRecord, sizeof(arcRecord), 1, arcFile) != 1)
+    if( fwrite( &arcRecord, sizeof( arcRecord ), 1, arcFile ) != 1 )
     {
-        fclose (arcFile);
+        fclose( arcFile );
         return ERROR;
     }
 
-    fclose (arcFile);
+    fclose( arcFile );
     return OK;
 }
 
@@ -2146,12 +2146,12 @@ int dbfStoreArchiveRecord
 
 int dbfGetNewestArchiveTime
 (
-    char            *archivePath,
+    char*            archivePath,
     uint16_t        curMonth,
     uint16_t        curYear,
-    uint16_t        *date,
-    uint16_t        *time,
-    ArchiveRecord   *newestRecord
+    uint16_t*        date,
+    uint16_t*        time,
+    ArchiveRecord*   newestRecord
 )
 {
     char            startName[256], stopName[256];
@@ -2159,37 +2159,37 @@ int dbfGetNewestArchiveTime
     int             year, month, done = FALSE;
     uint16_t        start, stop;
 
-    start = ((curYear-2000)*100) + curMonth;
-    stop = ((curYear-2001)*100) + curMonth;             // go back one year
+    start = ( ( curYear - 2000 ) * 100 ) + curMonth;
+    stop = ( ( curYear - 2001 ) * 100 ) + curMonth;     // go back one year
 
     *date = *time = 0;
 
     //  ... build the file names
-    buildArchiveFileName (archivePath, stop, stopName, &year, &month);
-    buildArchiveFileName (archivePath, start, startName, &year, &month);
+    buildArchiveFileName( archivePath, stop, stopName, &year, &month );
+    buildArchiveFileName( archivePath, start, startName, &year, &month );
 
-    while (!done)
+    while( !done )
     {
-        if (strcmp (startName, stopName) < 0)
+        if( strcmp( startName, stopName ) < 0 )
         {
             // we're done!
             done = TRUE;
             continue;
         }
 
-        if (stat (startName, &fileStatus) == -1)
+        if( stat( startName, &fileStatus ) == -1 )
         {
-            decrementArchiveFileName (startName, startName, &year, &month);
+            decrementArchiveFileName( startName, startName, &year, &month );
             continue;
         }
 
         //  ... if we are here, we have a file to work with
-        getNewestDateTime (startName, year, month, date, time, newestRecord);
+        getNewestDateTime( startName, year, month, date, time, newestRecord );
 
         done = TRUE;
     }
 
-    if (*date == 0)
+    if( *date == 0 )
         return ERROR;
     else
         return OK;
@@ -2201,13 +2201,13 @@ int dbfGetNewestArchiveTime
 
 int dbfCopyArchiveRecordToConsoleRecord
 (
-    ArchiveRecord       *src,
-    ARCHIVE_RECORD      *dest,
+    ArchiveRecord*       src,
+    ARCHIVE_RECORD*      dest,
     uint16_t            date,
     uint16_t            time
 )
 {
-    memset (dest, 0, sizeof (*dest));
+    memset( dest, 0, sizeof( *dest ) );
 
     dest->date = date;
     dest->time = time;
@@ -2216,12 +2216,12 @@ int dbfCopyArchiveRecordToConsoleRecord
     dest->lowOutTemp = src->lowOutsideTemp;
     dest->inTemp = src->insideTemp;
     dest->barometer = src->barometer;
-    dest->outHumidity = src->outsideHum/10;
-    dest->inHumidity = src->insideHum/10;
+    dest->outHumidity = src->outsideHum / 10;
+    dest->inHumidity = src->insideHum / 10;
     dest->rain = src->rain;
     dest->highRainRate = src->hiRainRate;
-    dest->avgWindSpeed = src->windSpeed/10;
-    dest->highWindSpeed = src->hiWindSpeed/10;
+    dest->avgWindSpeed = src->windSpeed / 10;
+    dest->highWindSpeed = src->hiWindSpeed / 10;
     dest->prevWindDir = src->windDirection;
     dest->highWindDir = src->hiWindDirection;
     dest->windSamples = src->numWindSamples;
@@ -2234,33 +2234,33 @@ int dbfCopyArchiveRecordToConsoleRecord
 // by 'numMinutes' minutes
 int dbfIncrementConsoleTime
 (
-    ARCHIVE_RECORD      *record,
+    ARCHIVE_RECORD*      record,
     int                 numMinutes
 )
 {
     struct tm           brokenTime, curTime;
     time_t              calTime;
 
-    calTime = time (NULL);
-    localtime_r (&calTime, &curTime);
+    calTime = time( NULL );
+    localtime_r( &calTime, &curTime );
 
-    memset (&brokenTime, 0, sizeof (brokenTime));
-    brokenTime.tm_year      = EXTRACT_PACKED_YEAR(record->date) - 1900;
-    brokenTime.tm_mon       = EXTRACT_PACKED_MONTH(record->date) - 1;
-    brokenTime.tm_mday      = EXTRACT_PACKED_DAY(record->date);
-    brokenTime.tm_hour      = EXTRACT_PACKED_HOUR(record->time);
-    brokenTime.tm_min       = EXTRACT_PACKED_MINUTE(record->time);
+    memset( &brokenTime, 0, sizeof( brokenTime ) );
+    brokenTime.tm_year      = EXTRACT_PACKED_YEAR( record->date ) - 1900;
+    brokenTime.tm_mon       = EXTRACT_PACKED_MONTH( record->date ) - 1;
+    brokenTime.tm_mday      = EXTRACT_PACKED_DAY( record->date );
+    brokenTime.tm_hour      = EXTRACT_PACKED_HOUR( record->time );
+    brokenTime.tm_min       = EXTRACT_PACKED_MINUTE( record->time );
     brokenTime.tm_isdst     = -1;
 
-    calTime = mktime (&brokenTime);
+    calTime = mktime( &brokenTime );
 
-    calTime += (numMinutes * 60);
+    calTime += ( numMinutes * 60 );
 
-    localtime_r (&calTime, &brokenTime);
+    localtime_r( &calTime, &brokenTime );
 
     record->date = brokenTime.tm_mday;
-    record->date |= ((brokenTime.tm_mon + 1) << 5);
-    record->date |= ((brokenTime.tm_year - 100) << 9);
+    record->date |= ( ( brokenTime.tm_mon + 1 ) << 5 );
+    record->date |= ( ( brokenTime.tm_year - 100 ) << 9 );
 
     record->time = brokenTime.tm_hour * 100;
     record->time += brokenTime.tm_min;
@@ -2279,10 +2279,10 @@ int dbfIncrementConsoleTime
 
 int dbfGetNextArchiveRecord
 (
-    char            *archivePath,
-    uint16_t        *date,
-    uint16_t        *atime,
-    ArchiveRecord   *recordStore
+    char*            archivePath,
+    uint16_t*        date,
+    uint16_t*        atime,
+    ArchiveRecord*   recordStore
 )
 {
     char            startName[256], stopName[256];
@@ -2292,24 +2292,24 @@ int dbfGetNextArchiveRecord
     time_t          ntime;
     struct tm       tmtime;
 
-    ntime = time (NULL);
-    localtime_r (&ntime, &tmtime);
-    stop = ((tmtime.tm_year-100)*100) + tmtime.tm_mon + 1;
+    ntime = time( NULL );
+    localtime_r( &ntime, &tmtime );
+    stop = ( ( tmtime.tm_year - 100 ) * 100 ) + tmtime.tm_mon + 1;
 
-    tempMonth = MAX(EXTRACT_PACKED_MONTH(*date),1);
-    tempYear = MAX(EXTRACT_PACKED_YEAR(*date),2000);
-    start = ((tempYear-2000)*100) + tempMonth;
+    tempMonth = MAX( EXTRACT_PACKED_MONTH( *date ), 1 );
+    tempYear = MAX( EXTRACT_PACKED_YEAR( *date ), 2000 );
+    start = ( ( tempYear - 2000 ) * 100 ) + tempMonth;
 
     //  ... build the file names
-    buildArchiveFileName (archivePath, stop, stopName, &year, &month);
-    buildArchiveFileName (archivePath, start, startName, &year, &month);
+    buildArchiveFileName( archivePath, stop, stopName, &year, &month );
+    buildArchiveFileName( archivePath, start, startName, &year, &month );
 
     tempDate = *date;
     tempTime = *atime;
 
-    while (!done)
+    while( !done )
     {
-        if (strcmp (startName, stopName) > 0)
+        if( strcmp( startName, stopName ) > 0 )
         {
             // we're done!
             tempDate = 0;
@@ -2317,19 +2317,19 @@ int dbfGetNextArchiveRecord
             continue;
         }
 
-        if (stat (startName, &fileStatus) == -1)
+        if( stat( startName, &fileStatus ) == -1 )
         {
-            incrementArchiveFileName (startName, startName, &year, &month);
+            incrementArchiveFileName( startName, startName, &year, &month );
             tempDate = 1;
             tempTime = 0;
             continue;
         }
 
         //  ... if we are here, we have a file to work with
-        if (getNextRecord (startName, year, month, &tempDate, &tempTime, recordStore)
-                == ERROR)
+        if( getNextRecord( startName, year, month, &tempDate, &tempTime, recordStore )
+                == ERROR )
         {
-            incrementArchiveFileName (startName, startName, &year, &month);
+            incrementArchiveFileName( startName, startName, &year, &month );
             tempDate = 1;
             tempTime = 0;
             continue;
@@ -2340,7 +2340,7 @@ int dbfGetNextArchiveRecord
         done = TRUE;
     }
 
-    if (tempDate == 0)
+    if( tempDate == 0 )
         return ERROR;
     else
         return OK;
@@ -2355,10 +2355,10 @@ int dbfGetNextArchiveRecord
 
 int dbfExportArchiveFile
 (
-    char                *archivePath,
+    char*                archivePath,
     uint16_t            start,
     uint16_t            stop,
-    char                *outputFilename
+    char*                outputFilename
 )
 {
     char                startName[256], stopName[256];
@@ -2368,42 +2368,42 @@ int dbfExportArchiveFile
 
     //  ... create our output file
 
-    outfilefd = open (outputFilename, O_WRONLY | O_CREAT | O_TRUNC, 00755);
-    if (outfilefd == -1)
+    outfilefd = open( outputFilename, O_WRONLY | O_CREAT | O_TRUNC, 00755 );
+    if( outfilefd == -1 )
     {
         return ERROR;
     }
 
     //  ... build the file names
-    buildArchiveFileName (archivePath, stop, stopName, &year, &month);
-    buildArchiveFileName (archivePath, start, startName, &year, &month);
+    buildArchiveFileName( archivePath, stop, stopName, &year, &month );
+    buildArchiveFileName( archivePath, start, startName, &year, &month );
 
-    while (!done)
+    while( !done )
     {
-        if (strcmp (startName, stopName) > 0)
+        if( strcmp( startName, stopName ) > 0 )
         {
             // we're done!
             done = TRUE;
             continue;
         }
 
-        if (stat (startName, &fileStatus) == -1)
+        if( stat( startName, &fileStatus ) == -1 )
         {
-            incrementArchiveFileName (startName, startName, &year, &month);
+            incrementArchiveFileName( startName, startName, &year, &month );
             continue;
         }
 
         //  ... if we are here, we have a file to work with
-        if (convertFileToAscii (startName, outfilefd, year, month) == ERROR)
+        if( convertFileToAscii( startName, outfilefd, year, month ) == ERROR )
         {
-            close (outfilefd);
+            close( outfilefd );
             return ERROR;
         }
 
-        incrementArchiveFileName (startName, startName, &year, &month);
+        incrementArchiveFileName( startName, startName, &year, &month );
     }
 
-    close (outfilefd);
+    close( outfilefd );
     return OK;
 }
 
@@ -2415,10 +2415,10 @@ int dbfExportArchiveFile
 
 int dbfExportDailySummaryFile
 (
-    char            *archivePath,
+    char*            archivePath,
     uint16_t        start,
     uint16_t        stop,
-    char            *outputFilename
+    char*            outputFilename
 )
 {
     char            startName[256], stopName[256];
@@ -2427,42 +2427,42 @@ int dbfExportDailySummaryFile
     int             year, month, done = FALSE;
 
     //  ... create our output file
-    outfilefd = open (outputFilename, O_WRONLY | O_CREAT | O_TRUNC, 00755);
-    if (outfilefd == -1)
+    outfilefd = open( outputFilename, O_WRONLY | O_CREAT | O_TRUNC, 00755 );
+    if( outfilefd == -1 )
     {
         return ERROR;
     }
 
     //  ... build the file names
-    buildArchiveFileName (archivePath, stop, stopName, &year, &month);
-    buildArchiveFileName (archivePath, start, startName, &year, &month);
+    buildArchiveFileName( archivePath, stop, stopName, &year, &month );
+    buildArchiveFileName( archivePath, start, startName, &year, &month );
 
-    while (!done)
+    while( !done )
     {
-        if (strcmp (startName, stopName) > 0)
+        if( strcmp( startName, stopName ) > 0 )
         {
             // we're done!
             done = TRUE;
             continue;
         }
 
-        if (stat (startName, &fileStatus) == -1)
+        if( stat( startName, &fileStatus ) == -1 )
         {
-            incrementArchiveFileName (startName, startName, &year, &month);
+            incrementArchiveFileName( startName, startName, &year, &month );
             continue;
         }
 
         //  ... if we are here, we have a file to work with
-        if (convertSummaryFileToAscii (startName, outfilefd, year, month) == ERROR)
+        if( convertSummaryFileToAscii( startName, outfilefd, year, month ) == ERROR )
         {
-            close (outfilefd);
+            close( outfilefd );
             return ERROR;
         }
 
-        incrementArchiveFileName (startName, startName, &year, &month);
+        incrementArchiveFileName( startName, startName, &year, &month );
     }
 
-    close (outfilefd);
+    close( outfilefd );
     return OK;
 }
 
@@ -2479,23 +2479,23 @@ int dbfComputePackedDelta
     time_t          oldTIME_T, newTIME_T;
     int             retVal;
 
-    memset (&oldTM, 0, sizeof (oldTM));
-    oldTM.tm_year      = EXTRACT_PACKED_YEAR(oldDate) - 1900;
-    oldTM.tm_mon       = EXTRACT_PACKED_MONTH(oldDate) - 1;
-    oldTM.tm_mday      = EXTRACT_PACKED_DAY(oldDate);
-    oldTM.tm_hour      = EXTRACT_PACKED_HOUR(oldTime);
-    oldTM.tm_min       = EXTRACT_PACKED_MINUTE(oldTime);
+    memset( &oldTM, 0, sizeof( oldTM ) );
+    oldTM.tm_year      = EXTRACT_PACKED_YEAR( oldDate ) - 1900;
+    oldTM.tm_mon       = EXTRACT_PACKED_MONTH( oldDate ) - 1;
+    oldTM.tm_mday      = EXTRACT_PACKED_DAY( oldDate );
+    oldTM.tm_hour      = EXTRACT_PACKED_HOUR( oldTime );
+    oldTM.tm_min       = EXTRACT_PACKED_MINUTE( oldTime );
     oldTM.tm_isdst     = -1;
-    oldTIME_T = mktime (&oldTM);
+    oldTIME_T = mktime( &oldTM );
 
-    memset (&newTM, 0, sizeof (newTM));
-    newTM.tm_year      = EXTRACT_PACKED_YEAR(newDate) - 1900;
-    newTM.tm_mon       = EXTRACT_PACKED_MONTH(newDate) - 1;
-    newTM.tm_mday      = EXTRACT_PACKED_DAY(newDate);
-    newTM.tm_hour      = EXTRACT_PACKED_HOUR(newTime);
-    newTM.tm_min       = EXTRACT_PACKED_MINUTE(newTime);
+    memset( &newTM, 0, sizeof( newTM ) );
+    newTM.tm_year      = EXTRACT_PACKED_YEAR( newDate ) - 1900;
+    newTM.tm_mon       = EXTRACT_PACKED_MONTH( newDate ) - 1;
+    newTM.tm_mday      = EXTRACT_PACKED_DAY( newDate );
+    newTM.tm_hour      = EXTRACT_PACKED_HOUR( newTime );
+    newTM.tm_min       = EXTRACT_PACKED_MINUTE( newTime );
     newTM.tm_isdst     = -1;
-    newTIME_T = mktime (&newTM);
+    newTIME_T = mktime( &newTM );
 
     retVal = newTIME_T - oldTIME_T;
     retVal /= 60;

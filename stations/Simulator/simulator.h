@@ -1,26 +1,26 @@
 #ifndef INC_simulatorh
 #define INC_simulatorh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         simulator.h
- 
+
   PURPOSE:
         Provide the station simulator interface API and utilities.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         01/19/2006      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2006, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files

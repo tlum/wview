@@ -1,25 +1,25 @@
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         wxt510Interface.c
- 
+
   PURPOSE:
         Provide the WXT-510 station interface API and utilities.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         01/14/2006      M.S. Teel       0               Original
         03/23/2008      W. Krenn        1               modified rain/hail/heating
- 
+
   NOTES:
- 
- 
+
+
   LICENSE:
         Copyright (c) 2006, Mark S. Teel (mark@teel.ws)
- 
+
         This source code is released for free distribution under the terms
         of the GNU General Public License.
- 
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -41,10 +41,10 @@
 static WXT510_IF_DATA   wxt510WorkData;
 static WVIEWD_WORK*     pwviewWork;
 
-static void             (*ArchiveIndicator) (ARCHIVE_PKT* newRecord);
+static void ( *ArchiveIndicator )( ARCHIVE_PKT* newRecord );
 
-static void serialPortConfig (int fd);
-static void storeLoopPkt (WVIEWD_WORK* work, LOOP_PKT *dest, NMEA0183_DATA *src);
+static void serialPortConfig( int fd );
+static void storeLoopPkt( WVIEWD_WORK* work, LOOP_PKT* dest, NMEA0183_DATA* src );
 
 
 
@@ -80,13 +80,13 @@ static void storeLoopPkt (WVIEWD_WORK* work, LOOP_PKT *dest, NMEA0183_DATA *src)
 //
 int stationInit
 (
-    WVIEWD_WORK     *work,
-    void            (*archiveIndication)(ARCHIVE_PKT* newRecord)
+    WVIEWD_WORK*     work,
+    void ( *archiveIndication )( ARCHIVE_PKT* newRecord )
 )
 {
     int             i;
 
-    memset (&wxt510WorkData, 0, sizeof(wxt510WorkData));
+    memset( &wxt510WorkData, 0, sizeof( wxt510WorkData ) );
     pwviewWork = work;
 
     // save the archive indication callback (we should never need it)
@@ -100,84 +100,84 @@ int stationInit
     work->stationGeneratesArchives = FALSE;
 
     // initialize the medium abstraction based on user configuration
-    if (!strcmp (work->stationInterface, "serial"))
+    if( !strcmp( work->stationInterface, "serial" ) )
     {
-        if (serialMediumInit (&work->medium, serialPortConfig, O_RDWR | O_NOCTTY | O_NDELAY) == ERROR)
+        if( serialMediumInit( &work->medium, serialPortConfig, O_RDWR | O_NOCTTY | O_NDELAY ) == ERROR )
         {
-            radMsgLog (PRI_HIGH, "stationInit: serial MediumInit failed");
+            radMsgLog( PRI_HIGH, "stationInit: serial MediumInit failed" );
             return ERROR;
         }
     }
-    else if (!strcmp (work->stationInterface, "ethernet"))
+    else if( !strcmp( work->stationInterface, "ethernet" ) )
     {
-        if (ethernetMediumInit (&work->medium, work->stationHost, work->stationPort)
-                == ERROR)
+        if( ethernetMediumInit( &work->medium, work->stationHost, work->stationPort )
+                == ERROR )
         {
-            radMsgLog (PRI_HIGH, "stationInit: ethernet MediumInit failed");
+            radMsgLog( PRI_HIGH, "stationInit: ethernet MediumInit failed" );
             return ERROR;
         }
     }
     else
     {
-        radMsgLog (PRI_HIGH, "stationInit: medium %s not supported",
-                   work->stationInterface);
+        radMsgLog( PRI_HIGH, "stationInit: medium %s not supported",
+                   work->stationInterface );
         return ERROR;
     }
 
     // initialize the interface using the media specific routine
-    if ((*(work->medium.init)) (&work->medium, work->stationDevice) == ERROR)
+    if( ( *( work->medium.init ) )( &work->medium, work->stationDevice ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: medium setup failed");
+        radMsgLog( PRI_HIGH, "stationInit: medium setup failed" );
         return ERROR;
     }
 
-    if (!strcmp (work->stationInterface, "serial"))
+    if( !strcmp( work->stationInterface, "serial" ) )
     {
-        radMsgLog (PRI_STATUS, "WXT510 on %s opened ...",
-                   work->stationDevice);
+        radMsgLog( PRI_STATUS, "WXT510 on %s opened ...",
+                   work->stationDevice );
     }
-    else if (!strcmp (work->stationInterface, "ethernet"))
+    else if( !strcmp( work->stationInterface, "ethernet" ) )
     {
-        radMsgLog (PRI_STATUS, "WXT510 on %s:%d opened ...",
-                   work->stationHost, work->stationPort);
+        radMsgLog( PRI_STATUS, "WXT510 on %s:%d opened ...",
+                   work->stationHost, work->stationPort );
     }
 
 #ifndef _WXT510_CONFIG_ONLY
     // grab the station configuration now
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ELEVATION,
-                                  &wxt510WorkData.elevation)
-            == ERROR)
+                                  &wxt510WorkData.elevation )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LATITUDE,
-                                    &wxt510WorkData.latitude)
-            == ERROR)
+                                    &wxt510WorkData.latitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LONGITUDE,
-                                    &wxt510WorkData.longitude)
-            == ERROR)
+                                    &wxt510WorkData.longitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ARC_INTERVAL,
-                                  &wxt510WorkData.archiveInterval)
-            == ERROR)
+                                  &wxt510WorkData.archiveInterval )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
 
@@ -185,62 +185,62 @@ int stationInit
     work->archiveInterval = wxt510WorkData.archiveInterval;
 
     // sanity check the archive interval against the most recent record
-    if (stationVerifyArchiveInterval (work) == ERROR)
+    if( stationVerifyArchiveInterval( work ) == ERROR )
     {
         // bad magic!
-        radMsgLog (PRI_HIGH, "stationInit: stationVerifyArchiveInterval failed!");
-        radMsgLog (PRI_HIGH, "You must either move old archive data out of the way -or-");
-        radMsgLog (PRI_HIGH, "fix the interval setting...");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationVerifyArchiveInterval failed!" );
+        radMsgLog( PRI_HIGH, "You must either move old archive data out of the way -or-" );
+        radMsgLog( PRI_HIGH, "fix the interval setting..." );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
     else
     {
-        radMsgLog (PRI_STATUS, "station archive interval: %d minutes",
-                   work->archiveInterval);
+        radMsgLog( PRI_STATUS, "station archive interval: %d minutes",
+                   work->archiveInterval );
     }
 
     wxt510WorkData.totalRain = 0;
     wxt510WorkData.totalHail = 0;
 
-    radMsgLog (PRI_STATUS, "Starting station interface: WXT510"); 
+    radMsgLog( PRI_STATUS, "Starting station interface: WXT510" );
 
     // initialize the station interface
-    if (nmea0183Init(work) == ERROR)
+    if( nmea0183Init( work ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: nmea0183Init failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: nmea0183Init failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
 
     // do the initial GetReadings now
-    if (nmea0183GetReadings(work, &wxt510WorkData.nmeaReadings) != OK)
+    if( nmea0183GetReadings( work, &wxt510WorkData.nmeaReadings ) != OK )
     {
-        radMsgLog (PRI_HIGH, "stationInit: initial nmea0183GetReadings failed!");
-        nmea0183Exit (work);
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: initial nmea0183GetReadings failed!" );
+        nmea0183Exit( work );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
 
     // do final initialization tasks
-    if (nmea0183PostInit(work) == ERROR)
+    if( nmea0183PostInit( work ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: nmea0183PostInit failed!");
-        (*(work->medium.exit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: nmea0183PostInit failed!" );
+        ( *( work->medium.exit ) )( &work->medium );
         return ERROR;
     }
 
 
     // populate the LOOP structure
-    storeLoopPkt (work, &work->loopPkt, &wxt510WorkData.nmeaReadings);
+    storeLoopPkt( work, &work->loopPkt, &wxt510WorkData.nmeaReadings );
 
     // start the rain accumulator reset timer -
     // we use the provided interface timer (ifTimer) for this
-    radProcessTimerStart (work->ifTimer, (uint32_t)WXT_RAIN_RESET_INTERVAL);
+    radProcessTimerStart( work->ifTimer, ( uint32_t )WXT_RAIN_RESET_INTERVAL );
 
     // we must indicate successful completion here -
     // even though we are synchronous, the daemon wants to see this event
-    radProcessEventsSend (NULL, STATION_INIT_COMPLETE_EVENT, 0);
+    radProcessEventsSend( NULL, STATION_INIT_COMPLETE_EVENT, 0 );
 
 #endif
 
@@ -253,10 +253,10 @@ int stationInit
 //
 // Returns: N/A
 //
-void stationExit (WVIEWD_WORK *work)
+void stationExit( WVIEWD_WORK* work )
 {
-    nmea0183Exit (work);
-    (*(work->medium.exit)) (&work->medium);
+    nmea0183Exit( work );
+    ( *( work->medium.exit ) )( &work->medium );
 
     return;
 }
@@ -271,28 +271,28 @@ void stationExit (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetPosition (WVIEWD_WORK *work)
+int stationGetPosition( WVIEWD_WORK* work )
 {
     // just set the values from our internal store - we retrieved them in
     // stationInit
-    work->elevation     = (int16_t)wxt510WorkData.elevation;
-    if (wxt510WorkData.latitude >= 0)
-        work->latitude      = (int16_t)((wxt510WorkData.latitude*10)+0.5);
+    work->elevation     = ( int16_t )wxt510WorkData.elevation;
+    if( wxt510WorkData.latitude >= 0 )
+        work->latitude      = ( int16_t )( ( wxt510WorkData.latitude * 10 ) + 0.5 );
     else
-        work->latitude      = (int16_t)((wxt510WorkData.latitude*10)-0.5);
-    if (wxt510WorkData.longitude >= 0)
-        work->longitude     = (int16_t)((wxt510WorkData.longitude*10)+0.5);
+        work->latitude      = ( int16_t )( ( wxt510WorkData.latitude * 10 ) - 0.5 );
+    if( wxt510WorkData.longitude >= 0 )
+        work->longitude     = ( int16_t )( ( wxt510WorkData.longitude * 10 ) + 0.5 );
     else
-        work->longitude     = (int16_t)((wxt510WorkData.longitude*10)-0.5);
+        work->longitude     = ( int16_t )( ( wxt510WorkData.longitude * 10 ) - 0.5 );
 
-    radMsgLog (PRI_STATUS, "station location: elevation: %d feet",
-               work->elevation);
+    radMsgLog( PRI_STATUS, "station location: elevation: %d feet",
+               work->elevation );
 
-    radMsgLog (PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
-               (float)abs(work->latitude)/10.0,
-               ((work->latitude < 0) ? 'S' : 'N'),
-               (float)abs(work->longitude)/10.0,
-               ((work->longitude < 0) ? 'W' : 'E'));
+    radMsgLog( PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
+               ( float )abs( work->latitude ) / 10.0,
+               ( ( work->latitude < 0 ) ? 'S' : 'N' ),
+               ( float )abs( work->longitude ) / 10.0,
+               ( ( work->longitude < 0 ) ? 'W' : 'E' ) );
 
     return OK;
 }
@@ -303,7 +303,7 @@ int stationGetPosition (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationSyncTime (WVIEWD_WORK *work)
+int stationSyncTime( WVIEWD_WORK* work )
 {
     // WXT-510 does not keep time...
     return OK;
@@ -318,18 +318,18 @@ int stationSyncTime (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetReadings (WVIEWD_WORK *work)
+int stationGetReadings( WVIEWD_WORK* work )
 {
     // we will do this synchronously...
 
     // get readings from station
-    if (nmea0183GetReadings(work, &wxt510WorkData.nmeaReadings) == OK)
+    if( nmea0183GetReadings( work, &wxt510WorkData.nmeaReadings ) == OK )
     {
         // populate the LOOP structure
-        storeLoopPkt (work, &work->loopPkt, &wxt510WorkData.nmeaReadings);
+        storeLoopPkt( work, &work->loopPkt, &wxt510WorkData.nmeaReadings );
 
         // indicate we are done
-        radProcessEventsSend (NULL, STATION_LOOP_COMPLETE_EVENT, 0);
+        radProcessEventsSend( NULL, STATION_LOOP_COMPLETE_EVENT, 0 );
     }
 
     return OK;
@@ -347,11 +347,11 @@ int stationGetReadings (WVIEWD_WORK *work)
 // Note: This function will only be invoked by the wview daemon if the
 //       'stationInit' function set the 'stationGeneratesArchives' to TRUE
 //
-int stationGetArchive (WVIEWD_WORK *work)
+int stationGetArchive( WVIEWD_WORK* work )
 {
     // just indicate a NULL record, WXT-510 does not generate them (and this
     // function should never be called!)
-    (*ArchiveIndicator) (NULL);
+    ( *ArchiveIndicator )( NULL );
     return OK;
 }
 
@@ -364,7 +364,7 @@ int stationGetArchive (WVIEWD_WORK *work)
 //
 // Returns: N/A
 //
-void stationDataIndicate (WVIEWD_WORK *work)
+void stationDataIndicate( WVIEWD_WORK* work )
 {
     // WXT510 station is synchronous...
     return;
@@ -373,13 +373,13 @@ void stationDataIndicate (WVIEWD_WORK *work)
 // station-supplied function to receive IPM messages - any message received by
 // the generic station message handler which is not recognized will be passed
 // to the station-specific code through this function.
-// It is the responsibility of the station interface to process the message 
+// It is the responsibility of the station interface to process the message
 // appropriately (or ignore it).
 // -- Synchronous --
 //
 // Returns: N/A
 //
-void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
+void stationMessageIndicate( WVIEWD_WORK* work, int msgType, void* msg )
 {
     // N/A
     return;
@@ -395,16 +395,16 @@ void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
 //
 // Returns: N/A
 //
-void stationIFTimerExpiry (WVIEWD_WORK *work)
+void stationIFTimerExpiry( WVIEWD_WORK* work )
 {
     // the rain accumulator should be reset
-    nmea0183ResetAccumulators (work);
+    nmea0183ResetAccumulators( work );
 
     // reset our container
     wxt510WorkData.totalRain = 0;
 
     // restart the timer
-    radProcessTimerStart (work->ifTimer, (uint32_t)WXT_RAIN_RESET_INTERVAL);
+    radProcessTimerStart( work->ifTimer, ( uint32_t )WXT_RAIN_RESET_INTERVAL );
 
     return;
 }
@@ -416,14 +416,14 @@ void stationIFTimerExpiry (WVIEWD_WORK *work)
 
 //  ... ----- static (local) methods ----- ...
 
-static void serialPortConfig (int fd)
+static void serialPortConfig( int fd )
 {
     struct termios  port, tty, old;
 
-    tcgetattr (fd, &port);
+    tcgetattr( fd, &port );
 
-    cfsetispeed (&port, B19200);
-    cfsetospeed (&port, B19200);
+    cfsetispeed( &port, B19200 );
+    cfsetospeed( &port, B19200 );
 
     // set port to 8N1
     port.c_cflag &= ~PARENB;
@@ -431,28 +431,28 @@ static void serialPortConfig (int fd)
     port.c_cflag &= ~CSIZE;
     port.c_cflag &= ~CRTSCTS;                   // turn OFF H/W flow control
     port.c_cflag |= CS8;
-    port.c_cflag |= (CREAD | CLOCAL);
+    port.c_cflag |= ( CREAD | CLOCAL );
 
-    port.c_iflag &= ~(IXON | IXOFF | IXANY);    // turn off SW flow control
+    port.c_iflag &= ~( IXON | IXOFF | IXANY );  // turn off SW flow control
 
-    port.c_iflag &= ~(INLCR | ICRNL);           // turn off other input magic
+    port.c_iflag &= ~( INLCR | ICRNL );         // turn off other input magic
 
     port.c_oflag = 0;                           // NO output magic wanted
 
-    port.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+    port.c_lflag &= ~( ICANON | ECHO | ECHOE | ISIG );
 
-    tcsetattr (fd, TCSAFLUSH, &port);
+    tcsetattr( fd, TCSAFLUSH, &port );
 
     // bump DTR
-    if (pwviewWork->stationToggleDTR)
+    if( pwviewWork->stationToggleDTR )
     {
-        tcgetattr (fd, &tty);
-        tcgetattr (fd, &old);
-        cfsetospeed (&tty, B0);
-        cfsetispeed (&tty, B0);
-        tcsetattr (fd, TCSANOW, &tty);
-        sleep (1);
-        tcsetattr (fd, TCSANOW, &old);
+        tcgetattr( fd, &tty );
+        tcgetattr( fd, &old );
+        cfsetospeed( &tty, B0 );
+        cfsetispeed( &tty, B0 );
+        tcsetattr( fd, TCSANOW, &tty );
+        sleep( 1 );
+        tcsetattr( fd, TCSANOW, &old );
     }
 
     return;
@@ -460,77 +460,77 @@ static void serialPortConfig (int fd)
 
 #ifndef _WXT510_CONFIG_ONLY
 
-static void storeLoopPkt (WVIEWD_WORK* work, LOOP_PKT *dest, NMEA0183_DATA *src)
+static void storeLoopPkt( WVIEWD_WORK* work, LOOP_PKT* dest, NMEA0183_DATA* src )
 {
     float       tempfloat;
 
     // Clear optional data:
-    stationClearLoopData(work);
+    stationClearLoopData( work );
 
-    if ((10 < src->pressure && src->pressure < 50) &&
-        (-200 < src->temperature && src->temperature < 200))
+    if( ( 10 < src->pressure && src->pressure < 50 ) &&
+            ( -200 < src->temperature && src->temperature < 200 ) )
     {
         // WXT-510 produces station pressure
         dest->stationPressure               = src->pressure;
-    
+
         // Apply calibration here so the computed values reflect it:
         dest->stationPressure *= work->calMPressure;
         dest->stationPressure += work->calCPressure;
-    
+
         // compute sea-level pressure (BP)
-        tempfloat = wvutilsConvertSPToSLP(dest->stationPressure,
-                                          src->temperature,
-                                          (float)wxt510WorkData.elevation);
+        tempfloat = wvutilsConvertSPToSLP( dest->stationPressure,
+                                           src->temperature,
+                                           ( float )wxt510WorkData.elevation );
         dest->barometer                     = tempfloat;
-    
+
         // calculate altimeter
-        tempfloat = wvutilsConvertSPToAltimeter(dest->stationPressure,
-                                                (float)wxt510WorkData.elevation);
+        tempfloat = wvutilsConvertSPToAltimeter( dest->stationPressure,
+                    ( float )wxt510WorkData.elevation );
         dest->altimeter                     = tempfloat;
     }
 
-    if (-200 < src->temperature && src->temperature < 200)
+    if( -200 < src->temperature && src->temperature < 200 )
         dest->outTemp                       = src->temperature;
 
-    if (0 <= src->humidity && src->humidity <= 100)
+    if( 0 <= src->humidity && src->humidity <= 100 )
     {
         tempfloat = src->humidity;
         tempfloat += 0.5;
-        dest->outHumidity                   = (uint16_t)tempfloat;
+        dest->outHumidity                   = ( uint16_t )tempfloat;
     }
 
-    if (0 <= src->windSpeed && src->windSpeed <= 250)
+    if( 0 <= src->windSpeed && src->windSpeed <= 250 )
     {
         tempfloat = src->windSpeed;
         dest->windSpeedF                    = tempfloat;
     }
 
-    if (0 <= src->windDir && src->windDir <= 360)
+    if( 0 <= src->windDir && src->windDir <= 360 )
     {
         tempfloat = src->windDir;
         tempfloat += 0.5;
-        dest->windDir                       = (uint16_t)tempfloat;
+        dest->windDir                       = ( uint16_t )tempfloat;
     }
 
-    if (0 <= src->maxWindSpeed && src->maxWindSpeed <= 250)
+    if( 0 <= src->maxWindSpeed && src->maxWindSpeed <= 250 )
     {
         tempfloat = src->maxWindSpeed;
         dest->windGustF                     = tempfloat;
     }
 
-    if (0 <= src->maxWindDir && src->maxWindDir <= 360)
+    if( 0 <= src->maxWindDir && src->maxWindDir <= 360 )
     {
         tempfloat = src->maxWindDir;
         tempfloat += 0.5;
-        dest->windGustDir                   = (uint16_t)tempfloat;
+        dest->windGustDir                   = ( uint16_t )tempfloat;
     }
 
     dest->rainRate                          = src->rainrate;
 
     // process the rain accumulator
-    if (0 <= src->rain)
+    if( 0 <= src->rain )
     {
-        if (src->rain - wxt510WorkData.totalRain >= 0)
+        if( src->rain - wxt510WorkData.totalRain >= 0 )
         {
             dest->sampleRain = src->rain - wxt510WorkData.totalRain;
             wxt510WorkData.totalRain = src->rain;
@@ -542,7 +542,7 @@ static void storeLoopPkt (WVIEWD_WORK* work, LOOP_PKT *dest, NMEA0183_DATA *src)
             wxt510WorkData.totalRain = src->rain;
         }
 
-        if (dest->sampleRain > 2)
+        if( dest->sampleRain > 2 )
         {
             // Not possible, filter it out:
             dest->sampleRain = 0;
@@ -554,9 +554,9 @@ static void storeLoopPkt (WVIEWD_WORK* work, LOOP_PKT *dest, NMEA0183_DATA *src)
     }
 
     // process the hail accumulator
-    if (0 <= src->rain)
+    if( 0 <= src->rain )
     {
-        if (src->hail - wxt510WorkData.totalHail >= 0)
+        if( src->hail - wxt510WorkData.totalHail >= 0 )
         {
             dest->wxt510Hail = src->hail - wxt510WorkData.totalHail;
             wxt510WorkData.totalHail = src->hail;
@@ -568,7 +568,7 @@ static void storeLoopPkt (WVIEWD_WORK* work, LOOP_PKT *dest, NMEA0183_DATA *src)
             wxt510WorkData.totalHail = src->hail;
         }
 
-        if (dest->wxt510Hail > 5)
+        if( dest->wxt510Hail > 5 )
         {
             // Not possible, filter it out:
             dest->wxt510Hail = 0;

@@ -1,26 +1,26 @@
 #ifndef INC_sshutilsh
 #define INC_sshutilsh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         sshUtils.h
- 
+
   PURPOSE:
         Provide the ssh utility definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         05/28/2005      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -42,6 +42,7 @@
 #include <radlist.h>
 #include <radtimeUtils.h>
 #include <radsysutils.h>
+#include <radprocess.h>
 
 /*  ... Local include files
 */
@@ -77,7 +78,7 @@ typedef struct
     int         interval;
     int         currentCount;
     int         timeout;
-} *SSH_RULE_ID;
+}* SSH_RULE_ID;
 
 
 typedef struct
@@ -85,7 +86,7 @@ typedef struct
     char        rsyncPath[_MAX_PATH];
     RADLIST     rules;
     int         rulesSent;
-}SSH_DATA, *SSH_ID;
+} SSH_DATA, *SSH_ID;
 
 
 /*  !!!!!!!!!!!!!!!!!!!!  END HIDDEN SECTION  !!!!!!!!!!!!!!!!!!!!!
@@ -95,12 +96,12 @@ typedef struct
 
 /* ... API function prototypes
 */
-extern int sshUtilsInit (SSH_DATA* data);
+extern int sshUtilsInit( SSH_DATA* data );
 
 //  ... process the rules list; returns number of rules successfully sent
-extern int sshUtilsSendFiles (SSH_ID id, char *workdir);
+extern int sshUtilsSendFiles( SSH_ID id, char* workdir );
 
-extern void sshUtilsExit (SSH_ID);
+extern void sshUtilsExit( SSH_ID );
 
 
 #endif

@@ -38,7 +38,7 @@ wxt510config_SOURCES  = \
 wxt510config_LDADD   =
 
 # define library directories
-wxt510config_LDFLAGS = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+wxt510config_LDFLAGS = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 wxt510config_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

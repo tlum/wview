@@ -31,7 +31,7 @@ arc_be2le_SOURCES  = \
 arc_be2le_LDADD   =
 
 # define library directories
-arc_be2le_LDFLAGS = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+arc_be2le_LDFLAGS = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 arc_be2le_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

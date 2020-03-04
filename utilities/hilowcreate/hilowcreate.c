@@ -1,18 +1,18 @@
 /*---------------------------------------------------------------------
- 
+
  FILE NAME:
         hilowcreate.c
- 
+
  PURPOSE:
         wview archive file convertor utility: SQLite3 database TO Davis WLK.
- 
+
  REVISION HISTORY:
     Date        Programmer  Revision    Function
     03/01/2009  M.S. Teel   0           Original
- 
+
  ASSUMPTIONS:
  None.
- 
+
 ------------------------------------------------------------------------*/
 #include <stdio.h>
 #include <string.h>
@@ -28,45 +28,45 @@
 #include <dbsqlite.h>
 
 
-static void USAGE (void)
+static void USAGE( void )
 {
-    printf ("Usage: hilowcreate <source_directory>\n\n");
-    printf ("    Create wview HILOW data in <source_directory>/wview-hilow.sdb\n");
-    printf ("    using archive records in <source_directory>/wview-archive.sdb\n\n");
-    printf ("Note: If wview-hilow.sdb already exists in <source_directory>, it will be overwritten;\n");
-    printf ("      <source_directory> cannot be the live wview archive, copy wview-archive.sdb to a work directory.\n\n");
+    printf( "Usage: hilowcreate <source_directory>\n\n" );
+    printf( "    Create wview HILOW data in <source_directory>/wview-hilow.sdb\n" );
+    printf( "    using archive records in <source_directory>/wview-archive.sdb\n\n" );
+    printf( "Note: If wview-hilow.sdb already exists in <source_directory>, it will be overwritten;\n" );
+    printf( "      <source_directory> cannot be the live wview archive, copy wview-archive.sdb to a work directory.\n\n" );
     return;
 }
 
 
 // Create HILOW DB:
-static void CreateHiLowDatabase (char *srcDir)
+static void CreateHiLowDatabase( char* srcDir )
 {
-    time_t              timeStamp, diffTime, retVal, startTime = time(NULL);
+    time_t              timeStamp, diffTime, retVal, startTime = time( NULL );
     struct tm           buildTime;
     ARCHIVE_PKT         sqlitePkt;
     int                 inserts = 0, errors = 0;
     char                cmnd[_MAX_PATH];
 
-    dbsqliteArchiveSetPath(srcDir);
+    dbsqliteArchiveSetPath( srcDir );
 
     // ... Initialize the archive database interface:
-    if (dbsqliteArchiveInit() == ERROR)
+    if( dbsqliteArchiveInit() == ERROR )
     {
-        printf("dbsqliteArchiveInit failed");
+        printf( "dbsqliteArchiveInit failed" );
         return;
     }
 
     // Remove any old copies:
-    sprintf(cmnd, "rm -f %s/wview-hilow.sdb", srcDir);
-    if (system(cmnd) != 0)
+    sprintf( cmnd, "rm -f %s/wview-hilow.sdb", srcDir );
+    if( system( cmnd ) != 0 )
     {
-        printf("system error:%s:%s\n", cmnd, strerror(errno));
+        printf( "system error:%s:%s\n", cmnd, strerror( errno ) );
     }
 
-    if (dbsqliteHiLowInit(TRUE) == ERROR)
+    if( dbsqliteHiLowInit( TRUE ) == ERROR )
     {
-        printf("dbsqliteHiLowInit failed");
+        printf( "dbsqliteHiLowInit failed" );
         dbsqliteArchiveExit();
         return;
     }
@@ -75,54 +75,54 @@ static void CreateHiLowDatabase (char *srcDir)
     dbsqliteArchiveExit();
 
     // Output results:
-    printf ("%s/wview-hilow.sdb created successfully!\n", srcDir);
-    printf ("Now copy %s/wview-hilow.sdb to %s/archive and restart wview 5.1.0 or newer...\n",
-            srcDir, WV_RUN_DIR);
+    printf( "%s/wview-hilow.sdb created successfully!\n", srcDir );
+    printf( "Now copy %s/wview-hilow.sdb to %s/archive and restart wview 5.1.0 or newer...\n",
+            srcDir, WV_RUN_DIR );
     return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int main (int argc, char *argv[])
+int main( int argc, char* argv[] )
 {
-    char            *SourceDir;
+    char*            SourceDir;
     struct stat     fileData;
     char            tempPath[_MAX_PATH];
-    
-    if (argc < 2)
+
+    if( argc < 2 )
     {
-        USAGE ();
+        USAGE();
         return ERROR;
     }
 
     SourceDir = argv[1];
-    sprintf(tempPath, "%s/archive", WV_RUN_DIR);
+    sprintf( tempPath, "%s/archive", WV_RUN_DIR );
 
     // sanity check the arguments
-    if (stat(SourceDir, &fileData) != 0)
+    if( stat( SourceDir, &fileData ) != 0 )
     {
-        printf ("Source directory %s does not exist!\n", SourceDir);
+        printf( "Source directory %s does not exist!\n", SourceDir );
         return ERROR;
     }
-    else if (!(fileData.st_mode & S_IFDIR))
+    else if( !( fileData.st_mode & S_IFDIR ) )
     {
-        printf ("Source directory %s is not a directory!\n", SourceDir);
+        printf( "Source directory %s is not a directory!\n", SourceDir );
         return ERROR;
     }
-    else if (! strcmp(SourceDir, tempPath))
+    else if( ! strcmp( SourceDir, tempPath ) )
     {
-        printf ("ERROR: Source directory cannot be the active archive directory %s\n",
-                tempPath);
-        printf ("Copy your wview-archive.sdb database to a working directory\n");
-        printf ("and use that as the source directory.\n");
-        printf ("wview will add the new records created while this process is running\n");
-        printf ("the next time it is started with the new HILOW database.\n");
+        printf( "ERROR: Source directory cannot be the active archive directory %s\n",
+                tempPath );
+        printf( "Copy your wview-archive.sdb database to a working directory\n" );
+        printf( "and use that as the source directory.\n" );
+        printf( "wview will add the new records created while this process is running\n" );
+        printf( "the next time it is started with the new HILOW database.\n" );
         return ERROR;
     }
 
     // OK, args appear to be good, create HILOW data:
-    printf("Creating HILOW database...(this takes ~ 30 seconds to 30 minutes per month of data according to your server platform)...\n");
-    CreateHiLowDatabase (SourceDir);
+    printf( "Creating HILOW database...(this takes ~ 30 seconds to 30 minutes per month of data according to your server platform)...\n" );
+    CreateHiLowDatabase( SourceDir );
 
-    exit (0);
+    exit( 0 );
 }
 

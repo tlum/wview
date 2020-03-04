@@ -13,14 +13,14 @@
         01/20/04        M.S. Teel       0               Original
 
   NOTES:
-        
+
 
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -62,7 +62,7 @@
 //  ... this is the user-defined generator jump table
 //  ... indexes from images.conf are used to index into this table
 //  ... Thus, order is VERY important
-extern int (*user_generators[]) (HTML_IMG *img);
+extern int ( *user_generators[] )( HTML_IMG* img );
 
 
 #endif

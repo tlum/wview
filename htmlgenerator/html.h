@@ -1,26 +1,26 @@
 #ifndef INC_htmlh
 #define INC_htmlh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         html.h
- 
+
   PURPOSE:
         Provide the wview HTML generator definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         08/27/03        M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -57,6 +57,7 @@
 #include <services.h>
 #include <status.h>
 #include <htmlMgr.h>
+#include <htmlGenerate.h>
 #include <noaaGenerate.h>
 #include <arcrecGenerate.h>
 
@@ -132,11 +133,11 @@ typedef enum
 } HTML_STATES;
 
 
-extern int htmlIdleState (int state, void *stimulus, void *data);
-extern int htmlStationInfoState (int state, void *stimulus, void *data);
-extern int htmlRunState (int state, void *stimulus, void *data);
-extern int htmlDataState (int state, void *stimulus, void *data);
-extern int htmlErrorState (int state, void *stimulus, void *data);
+extern int htmlIdleState( int state, void* stimulus, void* data );
+extern int htmlStationInfoState( int state, void* stimulus, void* data );
+extern int htmlRunState( int state, void* stimulus, void* data );
+extern int htmlDataState( int state, void* stimulus, void* data );
+extern int htmlErrorState( int state, void* stimulus, void* data );
 
 
 /*  !!!!!!!!!!!!!!!!!!!!  END HIDDEN SECTION  !!!!!!!!!!!!!!!!!!!!!

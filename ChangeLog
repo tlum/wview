@@ -2,6 +2,37 @@ RELEASE VERSION HISTORY (newest to oldest)
 ------------------------------------------
 
 
+5.21.7    05-28-2014
+--------------------
+
+radlib version required: 2.12.0 or newer
+
+1)  Fixed debian package dependency.
+
+
+
+5.21.6    05-27-2014
+--------------------
+
+radlib version required: 2.12.0 or newer
+
+1)  Automatically detect the rsyslogd default owner and group for log files
+    and use those for the debian package installer (different platforms
+    use different values).
+
+2)  Updated hidapi from latest upstream source. This effects all USB
+    stations.
+
+3)  Updated WMRUSB interface. Found the cause for missing bytes in the
+    stream which in turn caused bad rain packets, among others.
+
+4)  Formatted the source code. Many esoteric diffs with previous release.
+
+5)  Added better support for extra humidity sensors.
+
+
+
+
 5.21.5    04-06-2014
 --------------------
 

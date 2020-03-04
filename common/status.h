@@ -1,26 +1,26 @@
 #ifndef INC_statush
 #define INC_statush
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         status.h
- 
+
   PURPOSE:
         Define the status reporting API.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         12/27/2009      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2009, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 //  ... includes
@@ -52,7 +52,7 @@ typedef enum
     STATUS_SHUTDOWN,
     STATUS_ERROR
 } STATUS_TYPE;
-    
+
 typedef struct
 {
     char            filePath[_MAX_PATH];
@@ -66,21 +66,21 @@ typedef struct
 //  ... API prototypes
 
 //  ... initialize the status log:
-extern int statusInit(const char* filePath, char* statLabel[STATUS_STATS_MAX]);
+extern int statusInit( const char* filePath, char* statLabel[STATUS_STATS_MAX] );
 
 //  ... send a status update:
-extern int statusUpdate(STATUS_TYPE status);
+extern int statusUpdate( STATUS_TYPE status );
 
 //  ... send a status update:
-extern int statusUpdateMessage(const char* message);
+extern int statusUpdateMessage( const char* message );
 
 //  ... send a status update:
-extern int statusUpdateStat(int index, int value);
+extern int statusUpdateStat( int index, int value );
 
-extern int statusIncrementStat(int index);
+extern int statusIncrementStat( int index );
 
 // Does not allow the value to be negative:
-extern int statusDecrementStat(int index);
+extern int statusDecrementStat( int index );
 
 #endif
 

@@ -17,6 +17,30 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
+rsyslog_username=
+rsyslog_groupname=
+rsyslog_readFile=/etc/rsyslog.conf
+
+get_rsyslog_info()
+{
+    if [ ! -f $rsyslog_readFile ]; then
+        echo "File not found: $rsyslog_readFile"
+    else
+        while read chLine; do
+            chField="${chLine%% *}"       # split into option name and value
+            chValue="${chLine##* }"
+            case $chField in
+                "\$FileOwner")
+                    rsyslog_username="$chValue"
+                    ;;
+                "\$FileGroup")
+                    rsyslog_groupname="$chValue"
+                    ;;
+            esac
+        done <$rsyslog_readFile
+        echo "$rsyslog_readFile: @$rsyslog_username:$rsyslog_groupname@"
+    fi
+}
 
 case "$1" in
     configure)
@@ -146,10 +170,13 @@ case "$1" in
 
 #       Copy our rsyslog configuration file if rsyslog is installed:
         if [ -e /etc/rsyslog.d ]; then
+            get_rsyslog_info
             cp -fp /usr/share/wview/etc/rsyslog.d/99-wview.conf /etc/rsyslog.d
             if [ ! -e /var/log/wview.log ]; then
                 touch /var/log/wview.log
-                chown syslog:adm /var/log/wview.log
+                if [ "$rsyslog_username" != "" ]; then
+                    chown $rsyslog_username:$rsyslog_groupname /var/log/wview.log
+                fi
                 chmod 664 /var/log/wview.log
                 /etc/init.d/rsyslog restart
             fi

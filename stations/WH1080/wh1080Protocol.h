@@ -1,17 +1,17 @@
 #ifndef INC_wh1080protocolh
 #define INC_wh1080protocolh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         wh1080Protocol.h
- 
+
   PURPOSE:
         Provide protocol utilities for WH1080 station communication.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         02/17/2011      M.S. Teel       0               Original
- 
+
   NOTES:
         Parts of this implementation were inspired by the fowsr project
         (C) Arne-Jorgen Auberg (arne.jorgen.auberg@gmail.com) with hidapi
@@ -20,26 +20,26 @@
         The WH1080 protocol is undocumented. The following was observed
         by sniffing the USB interface:
 
-        A1 is a read command: 
-        It is sent as A1XX XX20 A1XX XX20 where XXXX is the offset in the 
-        memory map. The WH1080 responds with 4 8 byte blocks to make up a 
+        A1 is a read command:
+        It is sent as A1XX XX20 A1XX XX20 where XXXX is the offset in the
+        memory map. The WH1080 responds with 4 8 byte blocks to make up a
         32 byte read of address XXXX.
 
-        A0 is a write command: 
-        It is sent as A0XX XX20 A0XX XX20 where XXXX is the offset in the 
-        memory map. It is followed by 4 8 byte chunks of data to be written 
-        at the offset. The WH1080 acknowledges the write with an 8 byte 
+        A0 is a write command:
+        It is sent as A0XX XX20 A0XX XX20 where XXXX is the offset in the
+        memory map. It is followed by 4 8 byte chunks of data to be written
+        at the offset. The WH1080 acknowledges the write with an 8 byte
         chunk: A5A5 A5A5.
 
-        A2 is a one byte write command. 
+        A2 is a one byte write command.
         It is used as: A200 1A20 A2AA 0020 to indicate a data refresh.
         The WH1080 acknowledges the write with an 8 byte chunk: A5A5 A5A5.
- 
+
   LICENSE:
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -79,7 +79,7 @@
 // Weather Station buffer parameters:
 #define WH1080_RAIN_MAX             0x10000     // Wrap value for rain counter
 #define WH1080_BUFFER_START         0x100       // Size of fixed block
-                                                // start of buffer records
+// start of buffer records
 #define WH1080_BUFFER_CHUNK         0x20        // Size of chunk received over USB
 
 // Weather Station record memory positions:
@@ -112,7 +112,7 @@
 //	wg	wind gust low bits plus upper bits of address +1
 //	wd  wind direction
 
-enum ws_types {ub,sb,us,ss,dt,tt,pb,wa,wg,wd};
+enum ws_types {ub, sb, us, ss, dt, tt, pb, wa, wg, wd};
 
 #define WH1080_NUM_SENSORS              11
 
@@ -166,16 +166,16 @@ typedef struct
 
 
 // call once during initialization
-extern int wh1080Init (WVIEWD_WORK *work);
+extern int wh1080Init( WVIEWD_WORK* work );
 
 // do cleanup
-extern void wh1080Exit (WVIEWD_WORK *work);
+extern void wh1080Exit( WVIEWD_WORK* work );
 
 // read data from station:
-extern void wh1080ReadData (WVIEWD_WORK *work);
+extern void wh1080ReadData( WVIEWD_WORK* work );
 
 // get loop packet data:
-extern void wh1080GetReadings (WVIEWD_WORK *work);
+extern void wh1080GetReadings( WVIEWD_WORK* work );
 
 #endif
 

@@ -1,24 +1,24 @@
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         parser.c
- 
+
   PURPOSE:
         Provide ASCII parsing utilities.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         01/15/2006      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2006, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -48,97 +48,97 @@
 /*  ... local memory
 */
 
-static void emptyTokenList (RADLIST_ID list)
+static void emptyTokenList( RADLIST_ID list )
 {
     NODE_PTR        node;
 
-    for (node = radListRemoveFirst(list);
-         node != NULL;
-         node = radListRemoveFirst(list))
+    for( node = radListRemoveFirst( list );
+            node != NULL;
+            node = radListRemoveFirst( list ) )
     {
-        radBufferRls (node);
+        radBufferRls( node );
     }
 }
 
 
 // create a parsing object
-PARSER_ID parserInit (char *inputString, char *delimiters)
+PARSER_ID parserInit( char* inputString, char* delimiters )
 {
     PARSER_ID       newId;
-    PARSE_TOKEN     *node;
-    char            *token;
+    PARSE_TOKEN*     node;
+    char*            token;
     char            temp[_MAX_PATH];
 
-    newId = (PARSER_ID)radBufferGet (sizeof(PARSE_DATA));
-    if (newId == NULL)
+    newId = ( PARSER_ID )radBufferGet( sizeof( PARSE_DATA ) );
+    if( newId == NULL )
     {
         return NULL;
     }
 
-    memset (newId, 0, sizeof(PARSE_DATA));
-    radListReset (&newId->tokens);
+    memset( newId, 0, sizeof( PARSE_DATA ) );
+    radListReset( &newId->tokens );
 
     // parse the input
-    wvstrncpy (temp, inputString, _MAX_PATH);
-    token = strtok (temp, delimiters);
-    if (token == NULL)
+    wvstrncpy( temp, inputString, _MAX_PATH );
+    token = strtok( temp, delimiters );
+    if( token == NULL )
     {
-        radBufferRls (newId);
+        radBufferRls( newId );
         return NULL;
     }
 
-    while (token != NULL)
+    while( token != NULL )
     {
-        node = (PARSE_TOKEN *)radBufferGet (sizeof(PARSE_TOKEN));
-        if (node == NULL)
+        node = ( PARSE_TOKEN* )radBufferGet( sizeof( PARSE_TOKEN ) );
+        if( node == NULL )
         {
-            emptyTokenList (&newId->tokens);
-            radBufferRls (newId);
+            emptyTokenList( &newId->tokens );
+            radBufferRls( newId );
             return NULL;
         }
 
-        wvstrncpy (node->value, token, sizeof(node->value));
-        radListAddToEnd (&newId->tokens, (NODE_PTR)node);
+        wvstrncpy( node->value, token, sizeof( node->value ) );
+        radListAddToEnd( &newId->tokens, ( NODE_PTR )node );
 
         // get the next one
-        token = strtok (NULL, delimiters);
+        token = strtok( NULL, delimiters );
     }
 
     return newId;
 }
 
 // destroy a parsing object
-void parserExit (PARSER_ID id)
+void parserExit( PARSER_ID id )
 {
-    emptyTokenList (&id->tokens);
-    radBufferRls (id);
+    emptyTokenList( &id->tokens );
+    radBufferRls( id );
 }
 
 // get the first token
-char *parserGetFirst (PARSER_ID id)
+char* parserGetFirst( PARSER_ID id )
 {
-    id->current = (PARSE_TOKEN *)radListGetFirst (&id->tokens);
+    id->current = ( PARSE_TOKEN* )radListGetFirst( &id->tokens );
     return id->current->value;
 }
 
 // get the next token
-char *parserGetNext (PARSER_ID id)
+char* parserGetNext( PARSER_ID id )
 {
-    id->current = (PARSE_TOKEN *)radListGetNext (&id->tokens, (NODE_PTR)id->current);
+    id->current = ( PARSE_TOKEN* )radListGetNext( &id->tokens, ( NODE_PTR )id->current );
     return id->current->value;
 }
 
 // get the n'th token
-char *parserGetNumber (PARSER_ID id, int n)
+char* parserGetNumber( PARSER_ID id, int n )
 {
-    PARSE_TOKEN     *node;
+    PARSE_TOKEN*     node;
     int             count;
 
-    for (count = 1, node = (PARSE_TOKEN *)radListGetFirst(&id->tokens);
-         node != NULL;
-         count ++, node = (PARSE_TOKEN *)radListGetNext(&id->tokens, (NODE_PTR)node))
+    for( count = 1, node = ( PARSE_TOKEN* )radListGetFirst( &id->tokens );
+            node != NULL;
+            count ++, node = ( PARSE_TOKEN* )radListGetNext( &id->tokens, ( NODE_PTR )node ) )
     {
-        if (count == n)
+        if( count == n )
         {
             // return this one
             id->current = node;

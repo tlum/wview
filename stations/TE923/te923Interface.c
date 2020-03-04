@@ -1,23 +1,23 @@
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         te923Interface.c
- 
+
   PURPOSE:
         Provide the Honeywell TE923 station interface API and utilities.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         02/17/2011      M.S. Teel       0               Original
- 
+
   NOTES:
-        The TE923 station provides a USB HID interface for I/O        
- 
+        The TE923 station provides a USB HID interface for I/O
+
   LICENSE:
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -37,9 +37,9 @@
 */
 
 static TE923_IF_DATA   te923WorkData;
-static void             (*ArchiveIndicator) (ARCHIVE_PKT* newRecord);
+static void ( *ArchiveIndicator )( ARCHIVE_PKT* newRecord );
 
-static void serialPortConfig (int fd);
+static void serialPortConfig( int fd );
 
 
 
@@ -75,14 +75,14 @@ static void serialPortConfig (int fd);
 //
 int stationInit
 (
-    WVIEWD_WORK     *work,
-    void            (*archiveIndication)(ARCHIVE_PKT* newRecord)
+    WVIEWD_WORK*     work,
+    void ( *archiveIndication )( ARCHIVE_PKT* newRecord )
 )
 {
     int             i;
     STIM            stim;
 
-    memset (&te923WorkData, 0, sizeof(te923WorkData));
+    memset( &te923WorkData, 0, sizeof( te923WorkData ) );
 
     // save the archive indication callback (we should never need it)
     ArchiveIndicator = archiveIndication;
@@ -95,51 +95,51 @@ int stationInit
     work->stationGeneratesArchives = FALSE;
 
     // The TE923 is a USB-only device:
-    if (usbhidMediumInit (&work->medium, TE923_VENDOR_ID, TE923_PRODUCT_ID, FALSE, FALSE) == ERROR)
+    if( usbhidMediumInit( &work->medium, TE923_VENDOR_ID, TE923_PRODUCT_ID, FALSE, FALSE ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: USB MediumInit failed");
+        radMsgLog( PRI_HIGH, "stationInit: USB MediumInit failed" );
         return ERROR;
     }
 
-    radMsgLog (PRI_STATUS, "TE923 on USB %4.4X:%4.4X opened ...",
-               TE923_VENDOR_ID, TE923_PRODUCT_ID);
+    radMsgLog( PRI_STATUS, "TE923 on USB %4.4X:%4.4X opened ...",
+               TE923_VENDOR_ID, TE923_PRODUCT_ID );
 
 
     // grab the station configuration now
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ELEVATION,
-                                  &te923WorkData.elevation)
-            == ERROR)
+                                  &te923WorkData.elevation )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!");
-        (*(work->medium.usbhidExit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ELEV failed!" );
+        ( *( work->medium.usbhidExit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LATITUDE,
-                                    &te923WorkData.latitude)
-            == ERROR)
+                                    &te923WorkData.latitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!");
-        (*(work->medium.usbhidExit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LAT failed!" );
+        ( *( work->medium.usbhidExit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueFloat (work,
+    if( stationGetConfigValueFloat( work,
                                     STATION_PARM_LONGITUDE,
-                                    &te923WorkData.longitude)
-            == ERROR)
+                                    &te923WorkData.longitude )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!");
-        (*(work->medium.usbhidExit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt LONG failed!" );
+        ( *( work->medium.usbhidExit ) )( &work->medium );
         return ERROR;
     }
-    if (stationGetConfigValueInt (work,
+    if( stationGetConfigValueInt( work,
                                   STATION_PARM_ARC_INTERVAL,
-                                  &te923WorkData.archiveInterval)
-            == ERROR)
+                                  &te923WorkData.archiveInterval )
+            == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!");
-        (*(work->medium.usbhidExit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationGetConfigValueInt ARCINT failed!" );
+        ( *( work->medium.usbhidExit ) )( &work->medium );
         return ERROR;
     }
 
@@ -147,27 +147,27 @@ int stationInit
     work->archiveInterval = te923WorkData.archiveInterval;
 
     // sanity check the archive interval against the most recent record
-    if (stationVerifyArchiveInterval (work) == ERROR)
+    if( stationVerifyArchiveInterval( work ) == ERROR )
     {
         // bad magic!
-        radMsgLog (PRI_HIGH, "stationInit: stationVerifyArchiveInterval failed!");
-        radMsgLog (PRI_HIGH, "You must either move old archive data out of the way -or-");
-        radMsgLog (PRI_HIGH, "fix the interval setting...");
-        (*(work->medium.usbhidExit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: stationVerifyArchiveInterval failed!" );
+        radMsgLog( PRI_HIGH, "You must either move old archive data out of the way -or-" );
+        radMsgLog( PRI_HIGH, "fix the interval setting..." );
+        ( *( work->medium.usbhidExit ) )( &work->medium );
         return ERROR;
     }
     else
     {
-        radMsgLog (PRI_STATUS, "station archive interval: %d minutes",
-                   work->archiveInterval);
+        radMsgLog( PRI_STATUS, "station archive interval: %d minutes",
+                   work->archiveInterval );
     }
 
-    radMsgLog (PRI_STATUS, "Starting station interface: TE923"); 
+    radMsgLog( PRI_STATUS, "Starting station interface: TE923" );
 
-    if (te923Init (work) == ERROR)
+    if( te923Init( work ) == ERROR )
     {
-        radMsgLog (PRI_HIGH, "stationInit: te923Init failed!");
-        (*(work->medium.usbhidExit)) (&work->medium);
+        radMsgLog( PRI_HIGH, "stationInit: te923Init failed!" );
+        ( *( work->medium.usbhidExit ) )( &work->medium );
         return ERROR;
     }
 
@@ -178,10 +178,10 @@ int stationInit
 //
 // Returns: N/A
 //
-void stationExit (WVIEWD_WORK *work)
+void stationExit( WVIEWD_WORK* work )
 {
-    te923Exit (work);
-    (*(work->medium.usbhidExit)) (&work->medium);
+    te923Exit( work );
+    ( *( work->medium.usbhidExit ) )( &work->medium );
 
     return;
 }
@@ -196,28 +196,28 @@ void stationExit (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetPosition (WVIEWD_WORK *work)
+int stationGetPosition( WVIEWD_WORK* work )
 {
     // just set the values from our internal store - we retrieved them in
     // stationInit
-    work->elevation     = (int16_t)te923WorkData.elevation;
-    if (te923WorkData.latitude >= 0)
-        work->latitude      = (int16_t)((te923WorkData.latitude*10)+0.5);
+    work->elevation     = ( int16_t )te923WorkData.elevation;
+    if( te923WorkData.latitude >= 0 )
+        work->latitude      = ( int16_t )( ( te923WorkData.latitude * 10 ) + 0.5 );
     else
-        work->latitude      = (int16_t)((te923WorkData.latitude*10)-0.5);
-    if (te923WorkData.longitude >= 0)
-        work->longitude     = (int16_t)((te923WorkData.longitude*10)+0.5);
+        work->latitude      = ( int16_t )( ( te923WorkData.latitude * 10 ) - 0.5 );
+    if( te923WorkData.longitude >= 0 )
+        work->longitude     = ( int16_t )( ( te923WorkData.longitude * 10 ) + 0.5 );
     else
-        work->longitude     = (int16_t)((te923WorkData.longitude*10)-0.5);
+        work->longitude     = ( int16_t )( ( te923WorkData.longitude * 10 ) - 0.5 );
 
-    radMsgLog (PRI_STATUS, "station location: elevation: %d feet",
-               work->elevation);
+    radMsgLog( PRI_STATUS, "station location: elevation: %d feet",
+               work->elevation );
 
-    radMsgLog (PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
-               (float)abs(work->latitude)/10.0,
-               ((work->latitude < 0) ? 'S' : 'N'),
-               (float)abs(work->longitude)/10.0,
-               ((work->longitude < 0) ? 'W' : 'E'));
+    radMsgLog( PRI_STATUS, "station location: latitude: %3.1f %c  longitude: %3.1f %c",
+               ( float )abs( work->latitude ) / 10.0,
+               ( ( work->latitude < 0 ) ? 'S' : 'N' ),
+               ( float )abs( work->longitude ) / 10.0,
+               ( ( work->longitude < 0 ) ? 'W' : 'E' ) );
 
     return OK;
 }
@@ -228,7 +228,7 @@ int stationGetPosition (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationSyncTime (WVIEWD_WORK *work)
+int stationSyncTime( WVIEWD_WORK* work )
 {
     // We don't use the TE923 time...
     return OK;
@@ -243,9 +243,9 @@ int stationSyncTime (WVIEWD_WORK *work)
 //
 // Returns: OK or ERROR
 //
-int stationGetReadings (WVIEWD_WORK *work)
+int stationGetReadings( WVIEWD_WORK* work )
 {
-    te923GetReadings (work);
+    te923GetReadings( work );
 
     return OK;
 }
@@ -262,11 +262,11 @@ int stationGetReadings (WVIEWD_WORK *work)
 // Note: This function will only be invoked by the wview daemon if the
 //       'stationInit' function set the 'stationGeneratesArchives' to TRUE
 //
-int stationGetArchive (WVIEWD_WORK *work)
+int stationGetArchive( WVIEWD_WORK* work )
 {
     // just indicate a NULL record, WMR918 does not generate them (and this
     // function should never be called!)
-    (*ArchiveIndicator) (NULL);
+    ( *ArchiveIndicator )( NULL );
     return OK;
 }
 
@@ -279,7 +279,7 @@ int stationGetArchive (WVIEWD_WORK *work)
 //
 // Returns: N/A
 //
-void stationDataIndicate (WVIEWD_WORK *work)
+void stationDataIndicate( WVIEWD_WORK* work )
 {
     // N/A
     return;
@@ -288,13 +288,13 @@ void stationDataIndicate (WVIEWD_WORK *work)
 // station-supplied function to receive IPM messages - any message received by
 // the generic station message handler which is not recognized will be passed
 // to the station-specific code through this function.
-// It is the responsibility of the station interface to process the message 
+// It is the responsibility of the station interface to process the message
 // appropriately (or ignore it).
 // -- Synchronous --
 //
 // Returns: N/A
 //
-void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
+void stationMessageIndicate( WVIEWD_WORK* work, int msgType, void* msg )
 {
     // N/A
     return;
@@ -310,7 +310,7 @@ void stationMessageIndicate (WVIEWD_WORK *work, int msgType, void *msg)
 //
 // Returns: N/A
 //
-void stationIFTimerExpiry (WVIEWD_WORK *work)
+void stationIFTimerExpiry( WVIEWD_WORK* work )
 {
     // N/A
     return;

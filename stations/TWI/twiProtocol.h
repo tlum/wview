@@ -1,27 +1,27 @@
 #ifndef INC_twiProtocolh
 #define INC_twiProtocolh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         twiProtocol.h
- 
+
   PURPOSE:
         Provide protocol utilities for TWI station communication.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         12/14/2009      M.S. Teel       0               Original
- 
- 
+
+
   NOTES:
- 
- 
+
+
   LICENSE:
         Copyright (c) 2009, Mark S. Teel (mark@teel.ws)
- 
+
         This source code is released for free distribution under the terms
         of the GNU General Public License.
- 
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -102,29 +102,29 @@ TWI_WORK;
 // function prototypes
 
 // call once during initialization
-extern int twiProtocolInit(WVIEWD_WORK *work);
+extern int twiProtocolInit( WVIEWD_WORK* work );
 
 // call once during initialization after first sensor readings
-extern int twiProtocolPostInit(WVIEWD_WORK *work);
+extern int twiProtocolPostInit( WVIEWD_WORK* work );
 
 // do cleanup
-extern void twiProtocolExit(WVIEWD_WORK *work);
+extern void twiProtocolExit( WVIEWD_WORK* work );
 
 // initiate a synchronous sensor collection
-extern int twiProtocolGetReadings(WVIEWD_WORK *work, TWI_DATA *store);
+extern int twiProtocolGetReadings( WVIEWD_WORK* work, TWI_DATA* store );
 
 // send a properly formatted line to the station, optionally checking
 // the response
 extern int twiProtocolWriteLineToStation
 (
-    WVIEWD_WORK     *work,
-    char            *strToSend,
+    WVIEWD_WORK*     work,
+    char*            strToSend,
     int             flushRXBuffer
 );
 
 // read a properly formatted data line from the station:
 // returns OK or ERROR:
-extern int twiProtocolReadLine (WVIEWD_WORK *work);
+extern int twiProtocolReadLine( WVIEWD_WORK* work );
 
 
 #endif

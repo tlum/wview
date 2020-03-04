@@ -40,7 +40,7 @@ vpconfig_SOURCES  = \
 vpconfig_LDADD   =
 
 # define library directories
-vpconfig_LDFLAGS = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+vpconfig_LDFLAGS = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 vpconfig_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

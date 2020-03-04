@@ -56,7 +56,7 @@ wviewd_wmr918_SOURCES     = \
 wviewd_wmr918_LDADD       =
 
 # define library directories
-wviewd_wmr918_LDFLAGS     = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+wviewd_wmr918_LDFLAGS     = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 wviewd_wmr918_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

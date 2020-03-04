@@ -36,7 +36,7 @@ wvalarmd_SOURCES  = \
 wvalarmd_LDADD   =
 
 # define library directories
-wvalarmd_LDFLAGS = -L$(prefix)/lib -L$(prefix)/usr/lib -L/usr/lib
+wvalarmd_LDFLAGS = -L$(prefix)/lib -L/usr/lib
 
 if CROSSCOMPILE
 wvalarmd_LDFLAGS += $(prefix)/lib/crt1.o $(prefix)/lib/crti.o $(prefix)/lib/crtn.o

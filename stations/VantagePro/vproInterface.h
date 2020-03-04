@@ -101,14 +101,14 @@ typedef struct
 {
     uint8_t             interval;
     uint16_t            crc;
-}__attribute__ ((packed)) ARCHIVE_INTERVAL;
+} __attribute__( ( packed ) ) ARCHIVE_INTERVAL;
 
 typedef struct
 {
     uint16_t            pages;
     uint16_t            firstRecIndex;
     uint16_t            crc;
-}__attribute__ ((packed)) DMPAFT_HDR;
+} __attribute__( ( packed ) ) DMPAFT_HDR;
 
 typedef struct
 {
@@ -116,7 +116,7 @@ typedef struct
     ARCHIVE_RECORD      record[5];
     uint8_t             unused[4];
     uint16_t            crc;
-}__attribute__ ((packed)) ARCHIVE_PAGE;
+} __attribute__( ( packed ) ) ARCHIVE_PAGE;
 
 //  ... serial format
 /*  ... define the LOOP (current readings) serial data format
@@ -175,7 +175,7 @@ typedef struct
     uint8_t             lf;
     uint8_t             cr;
     uint16_t            crc;
-}__attribute__ ((packed)) LOOP_DATA;
+} __attribute__( ( packed ) ) LOOP_DATA;
 
 
 // define Vantage Pro specific interface data here
@@ -228,43 +228,43 @@ typedef enum
 // ... function prototypes
 
 // ... flush the input buffer from the VP
-extern void vpifFlush (WVIEWD_WORK *work);
+extern void vpifFlush( WVIEWD_WORK* work );
 
 // ... wake up the Vantage Pro console;
 // ... returns OK or ERROR
-extern int vpifWakeupConsole (WVIEWD_WORK *work);
+extern int vpifWakeupConsole( WVIEWD_WORK* work );
 
 // ... get the date and time from the Vantage Pro console;
 // ... returns OK or ERROR
 extern int vpifGetTime
 (
-    WVIEWD_WORK *work,
-    uint16_t    *year,
-    uint16_t    *month,
-    uint16_t    *day,
-    uint16_t    *hour,
-    uint16_t    *minute,
-    uint16_t    *second
+    WVIEWD_WORK* work,
+    uint16_t*    year,
+    uint16_t*    month,
+    uint16_t*    day,
+    uint16_t*    hour,
+    uint16_t*    minute,
+    uint16_t*    second
 );
 
 // ... get the console's stored latitude and longitude
 // ... return OK or ERROR
 extern int vpifGetLatandLong
 (
-    WVIEWD_WORK *work
+    WVIEWD_WORK* work
 );
 
 // ... get the console's archive interval
-extern int vpifGetArchiveInterval (WVIEWD_WORK *work);
+extern int vpifGetArchiveInterval( WVIEWD_WORK* work );
 
 // ... get the console's rain collector size:
-extern int vpifGetRainCollectorSize (WVIEWD_WORK *work);
+extern int vpifGetRainCollectorSize( WVIEWD_WORK* work );
 
 // ... set the date and time for the Vantage Pro console;
 // ... returns OK or ERROR
 extern int vpifSetTime
 (
-    WVIEWD_WORK *work,
+    WVIEWD_WORK* work,
     uint16_t    year,               // ex: 2001 1998 2004
     uint16_t    month,
     uint16_t    day,
@@ -277,32 +277,32 @@ extern int vpifSetTime
 // ... returns OK or ERROR
 extern int vpifSetGMTOffset
 (
-    WVIEWD_WORK *work,
-    int         *offset
+    WVIEWD_WORK* work,
+    int*         offset
 );
 
-extern int vpifGetAck (WVIEWD_WORK *work, int msWait);
-extern int vpifGetRXCheck (WVIEWD_WORK *work);
-extern void vpifIndicateStationUp (void);
-extern void vpifIndicateLoopDone (void);
-extern int vpifSynchronizeConsoleClock (WVIEWD_WORK *work);
+extern int vpifGetAck( WVIEWD_WORK* work, int msWait );
+extern int vpifGetRXCheck( WVIEWD_WORK* work );
+extern void vpifIndicateStationUp( void );
+extern void vpifIndicateLoopDone( void );
+extern int vpifSynchronizeConsoleClock( WVIEWD_WORK* work );
 
 
 // ... this guy reads/parses msgs and updates the internal data stores;
 // ... uses the "reqMsgType" of the work area to determine msg type to read;
 // ... returns OK or ERROR
-extern int vpifReadMessage (WVIEWD_WORK *work, int expectACKFirst);
+extern int vpifReadMessage( WVIEWD_WORK* work, int expectACKFirst );
 
 
 // ... send msgs to the console;
 // ... will set the "reqMsgType" of the work area appropriately;
 // ... returns OK or ERROR
-extern int vpifSendAck (WVIEWD_WORK *work);
-extern int vpifSendNak (WVIEWD_WORK *work);
-extern int vpifSendCancel (WVIEWD_WORK *work);
-extern int vpifSendDumpAfterRqst (WVIEWD_WORK *work);
-extern int vpifSendDumpDateTimeRqst (WVIEWD_WORK *work);
-extern int vpifSendLoopRqst (WVIEWD_WORK *work, int number);
+extern int vpifSendAck( WVIEWD_WORK* work );
+extern int vpifSendNak( WVIEWD_WORK* work );
+extern int vpifSendCancel( WVIEWD_WORK* work );
+extern int vpifSendDumpAfterRqst( WVIEWD_WORK* work );
+extern int vpifSendDumpDateTimeRqst( WVIEWD_WORK* work );
+extern int vpifSendLoopRqst( WVIEWD_WORK* work, int number );
 
 
 // ... define the VP state machine states
@@ -318,61 +318,61 @@ typedef enum
     VPRO_STATE_ERROR
 } VPRO_STATES;
 
-extern int vproStartProcState (int state, void *stimulus, void *data);
-extern int vproRunState (int state, void *stimulus, void *data);
-extern int vproDumpAfterState (int state, void *stimulus, void *data);
-extern int vproDumpAfterAckState (int state, void *stimulus, void *data);
-extern int vproReceiveArchiveState (int state, void *stimulus, void *data);
-extern int vproLoopState (int state, void *stimulus, void *data);
-extern int vproReadRecoverState (int state, void *stimulus, void *data);
-extern int vproStopState (int state, void *stimulus, void *data);
-extern int vproErrorState (int state, void *stimulus, void *data);
+extern int vproStartProcState( int state, void* stimulus, void* data );
+extern int vproRunState( int state, void* stimulus, void* data );
+extern int vproDumpAfterState( int state, void* stimulus, void* data );
+extern int vproDumpAfterAckState( int state, void* stimulus, void* data );
+extern int vproReceiveArchiveState( int state, void* stimulus, void* data );
+extern int vproLoopState( int state, void* stimulus, void* data );
+extern int vproReadRecoverState( int state, void* stimulus, void* data );
+extern int vproStopState( int state, void* stimulus, void* data );
+extern int vproErrorState( int state, void* stimulus, void* data );
 
 
 #ifdef _VP_CONFIG_ONLY
 typedef enum
 {
-  VPRO_SENSOR_ISS                   = 0x00,
-  VPRO_SENSOR_TEMP                  = 0x01,
-  VPRO_SENSOR_HUM                   = 0x02,
-  VPRO_SENSOR_TEMP_HUM              = 0x03,
-  VPRO_SENSOR_WIND                  = 0x04,
-  VPRO_SENSOR_RAIN                  = 0x05,
-  VPRO_SENSOR_LEAF                  = 0x06,
-  VPRO_SENSOR_SOIL                  = 0x07,
-  VPRO_SENSOR_LEAF_SOIL             = 0x08,
-  VPRO_SENSOR_SENSORLINK            = 0x09,
-  VPRO_SENSOR_NONE                  = 0x0A
+    VPRO_SENSOR_ISS                   = 0x00,
+    VPRO_SENSOR_TEMP                  = 0x01,
+    VPRO_SENSOR_HUM                   = 0x02,
+    VPRO_SENSOR_TEMP_HUM              = 0x03,
+    VPRO_SENSOR_WIND                  = 0x04,
+    VPRO_SENSOR_RAIN                  = 0x05,
+    VPRO_SENSOR_LEAF                  = 0x06,
+    VPRO_SENSOR_SOIL                  = 0x07,
+    VPRO_SENSOR_LEAF_SOIL             = 0x08,
+    VPRO_SENSOR_SENSORLINK            = 0x09,
+    VPRO_SENSOR_NONE                  = 0x0A
 } VPRO_SENSOR_TYPES;
 
 typedef enum
 {
-  VPRO_RAIN_COLLECTOR_0_01_IN       = 0x0,
-  VPRO_RAIN_COLLECTOR_0_2_MM        = 0x1,
-  VPRO_RAIN_COLLECTOR_0_1_MM        = 0x2
+    VPRO_RAIN_COLLECTOR_0_01_IN       = 0x0,
+    VPRO_RAIN_COLLECTOR_0_2_MM        = 0x1,
+    VPRO_RAIN_COLLECTOR_0_1_MM        = 0x2
 } VPRO_RAIN_COLLECTOR_SIZE;
 
 //  ... methods for vpconfig only
-extern int vpconfigGetArchiveInterval (WVIEWD_WORK *work);
-extern int vpconfigGetFWVersion (WVIEWD_WORK *work);
-extern int vpconfigGetRainSeasonStart (WVIEWD_WORK *work);
-extern int vpconfigGetWindDirectionCal (WVIEWD_WORK *work);
-extern int vpconfigGetTransmitters (WVIEWD_WORK *work);
-extern int vpconfigGetRainCollectorSize (WVIEWD_WORK *work);
-extern int vpconfigGetWindCupSize (WVIEWD_WORK *work);
-extern int vpconfigSetInterval (WVIEWD_WORK *work, int interval);
-extern int vpconfigClearArchiveMemory (WVIEWD_WORK *work);
-extern int vpconfigSetElevation (WVIEWD_WORK *work, int elevation);
-extern int vpconfigSetGain (WVIEWD_WORK *work, int on);
-extern int vpconfigSetLatandLong (WVIEWD_WORK *work, int latitude, int longitude);
-extern int vpconfigSetRainSeasonStart (WVIEWD_WORK *work, int startMonth);
-extern int vpconfigSetRainYearToDate (WVIEWD_WORK *work, float rainAmount);
-extern int vpconfigSetETYearToDate (WVIEWD_WORK *work, float etAmount);
-extern int vpconfigSetWindDirectionCal (WVIEWD_WORK *work, int offset);
-extern int vpconfigSetSensor (WVIEWD_WORK *work, int channel, VPRO_SENSOR_TYPES sensorType);
-extern int vpconfigSetRetransmitChannel (WVIEWD_WORK *work, int channel);
-extern int vpconfigSetRainCollectorSize (WVIEWD_WORK *work, VPRO_RAIN_COLLECTOR_SIZE rainCollectorSize);
-extern int vpconfigSetWindCupSize (WVIEWD_WORK *work, int isLarge);
+extern int vpconfigGetArchiveInterval( WVIEWD_WORK* work );
+extern int vpconfigGetFWVersion( WVIEWD_WORK* work );
+extern int vpconfigGetRainSeasonStart( WVIEWD_WORK* work );
+extern int vpconfigGetWindDirectionCal( WVIEWD_WORK* work );
+extern int vpconfigGetTransmitters( WVIEWD_WORK* work );
+extern int vpconfigGetRainCollectorSize( WVIEWD_WORK* work );
+extern int vpconfigGetWindCupSize( WVIEWD_WORK* work );
+extern int vpconfigSetInterval( WVIEWD_WORK* work, int interval );
+extern int vpconfigClearArchiveMemory( WVIEWD_WORK* work );
+extern int vpconfigSetElevation( WVIEWD_WORK* work, int elevation );
+extern int vpconfigSetGain( WVIEWD_WORK* work, int on );
+extern int vpconfigSetLatandLong( WVIEWD_WORK* work, int latitude, int longitude );
+extern int vpconfigSetRainSeasonStart( WVIEWD_WORK* work, int startMonth );
+extern int vpconfigSetRainYearToDate( WVIEWD_WORK* work, float rainAmount );
+extern int vpconfigSetETYearToDate( WVIEWD_WORK* work, float etAmount );
+extern int vpconfigSetWindDirectionCal( WVIEWD_WORK* work, int offset );
+extern int vpconfigSetSensor( WVIEWD_WORK* work, int channel, VPRO_SENSOR_TYPES sensorType );
+extern int vpconfigSetRetransmitChannel( WVIEWD_WORK* work, int channel );
+extern int vpconfigSetRainCollectorSize( WVIEWD_WORK* work, VPRO_RAIN_COLLECTOR_SIZE rainCollectorSize );
+extern int vpconfigSetWindCupSize( WVIEWD_WORK* work, int isLarge );
 #endif
 
 #endif

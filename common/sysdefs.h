@@ -1,17 +1,17 @@
 #ifndef INC_sysdefsh
 #define INC_sysdefsh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         sysdefs.h
- 
+
   PURPOSE:
         Define system definitions.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         08/24/03        M.S. Teel       0               Original
-        11/02/2004      K. McGuire      1               ARM Mods and 
+        11/02/2004      K. McGuire      1               ARM Mods and
                                                         CONS_ARCHIVE_INTERVAL
         01/10/2006      M.S. Teel       2               Update for station
                                                         abstraction
@@ -21,10 +21,10 @@
 
   LICENSE:
         Copyright (c) 2004, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 #include <sys/types.h>
@@ -226,77 +226,77 @@ typedef enum
     HTML_WINDUNITS_KMH
 } HTML_WUNITS;
 
-extern void wvutilsSetWindUnits(HTML_WUNITS units);
-extern char* wvutilsGetWindUnitLabel(void);
-extern float wvutilsGetWindSpeed(float mph);
-extern float wvutilsGetWindSpeedMetric(float kph);
+extern void wvutilsSetWindUnits( HTML_WUNITS units );
+extern char* wvutilsGetWindUnitLabel( void );
+extern float wvutilsGetWindSpeed( float mph );
+extern float wvutilsGetWindSpeedMetric( float kph );
 
 // wvconfigInit() must have been called before calling this:
-extern int  wvutilsSetVerbosity (uint16_t daemonBitMask);
+extern int  wvutilsSetVerbosity( uint16_t daemonBitMask );
 
-extern int wvutilsToggleVerbosity (void);
-extern void wvutilsLogEvent (int priority, char *format, ...);
+extern int wvutilsToggleVerbosity( void );
+extern void wvutilsLogEvent( int priority, char* format, ... );
 
-extern float wvutilsCalculateHeatIndex (float temp, float humidity);
-extern float wvutilsCalculateWindChill (float temp, float windspeed);
-extern float wvutilsCalculateDewpoint (float temp, float humidity);
+extern float wvutilsCalculateHeatIndex( float temp, float humidity );
+extern float wvutilsCalculateWindChill( float temp, float windspeed );
+extern float wvutilsCalculateDewpoint( float temp, float humidity );
 
 /****************************************************************************
  * Converters
  ***************************************************************************/
-extern void wvutilsSetRainIsMM(int setValue);
-extern int wvutilsGetRainIsMM(void);
-extern float wvutilsConvertFToC (float fahrenValue);
-extern float wvutilsConvertCToF (float celsiusValue);
-extern float wvutilsConvertDeltaFToC (float fahrenValue);
-extern float wvutilsConvertMPHToKPH (float mph);
-extern float wvutilsConvertMPHToMPS (float mph);
-extern float wvutilsConvertMPHToKnots (float mph);
-extern float wvutilsConvertKPHToMPH (float kph);
-extern float wvutilsConvertKPHToMPS (float kph);
-extern float wvutilsConvertKPHToKnots (float kph);
-extern float wvutilsConvertMPSToKPH (float mps);
-extern float wvutilsConvertMPSToMPH (float mps);
-extern float wvutilsConvertMPSToKnots (float mps);
-extern float wvutilsConvertKnotsToKPH (float mps);
-extern float wvutilsConvertKnotsToMPH (float mps);
-extern float wvutilsConvertKnotsToMPS (float mps);
-extern float wvutilsConvertINHGToHPA (float inches);
-extern float wvutilsConvertHPAToINHG (float mb);
-extern float wvutilsConvertRainINToMetric (float inches);
-extern float wvutilsConvertRainMetricToIN (float inches);
-extern float wvutilsConvertINToCM (float inches);
-extern float wvutilsConvertCMToIN (float cm);
-extern float wvutilsConvertINToMM (float inches);
-extern float wvutilsConvertMMToIN (float mm);
+extern void wvutilsSetRainIsMM( int setValue );
+extern int wvutilsGetRainIsMM( void );
+extern float wvutilsConvertFToC( float fahrenValue );
+extern float wvutilsConvertCToF( float celsiusValue );
+extern float wvutilsConvertDeltaFToC( float fahrenValue );
+extern float wvutilsConvertMPHToKPH( float mph );
+extern float wvutilsConvertMPHToMPS( float mph );
+extern float wvutilsConvertMPHToKnots( float mph );
+extern float wvutilsConvertKPHToMPH( float kph );
+extern float wvutilsConvertKPHToMPS( float kph );
+extern float wvutilsConvertKPHToKnots( float kph );
+extern float wvutilsConvertMPSToKPH( float mps );
+extern float wvutilsConvertMPSToMPH( float mps );
+extern float wvutilsConvertMPSToKnots( float mps );
+extern float wvutilsConvertKnotsToKPH( float mps );
+extern float wvutilsConvertKnotsToMPH( float mps );
+extern float wvutilsConvertKnotsToMPS( float mps );
+extern float wvutilsConvertINHGToHPA( float inches );
+extern float wvutilsConvertHPAToINHG( float mb );
+extern float wvutilsConvertRainINToMetric( float inches );
+extern float wvutilsConvertRainMetricToIN( float inches );
+extern float wvutilsConvertINToCM( float inches );
+extern float wvutilsConvertCMToIN( float cm );
+extern float wvutilsConvertINToMM( float inches );
+extern float wvutilsConvertMMToIN( float mm );
 
-extern float wvutilsConvertFeetToMeters (float feet);
-extern float wvutilsConvertKilometersToMiles (float km);
-extern float wvutilsConvertMilesToKilometers (float miles);
+extern float wvutilsConvertFeetToMeters( float feet );
+extern float wvutilsConvertKilometersToMiles( float km );
+extern float wvutilsConvertMilesToKilometers( float miles );
 
-extern char *wvutilsConvertToBeaufortScale (int windSpeed);
+extern char* wvutilsConvertToBeaufortScale( int windSpeed );
 
 
 //  calculate the air density in kg/m^3
-extern float wvutilsCalculateAirDensity (float tempF, float bp, float dp);
+extern float wvutilsCalculateAirDensity( float tempF, float bp, float dp );
 
 //  calculate sea level pressure from station pressure
-extern float wvutilsConvertSPToSLP (float SP, float tempF, float elevationFT);
+extern float wvutilsConvertSPToSLP( float SP, float tempF, float elevationFT );
 
 //  calculate station pressure from sea level pressure
-extern float wvutilsConvertSLPToSP (float SLP, float tempF, float elevationFT);
+extern float wvutilsConvertSLPToSP( float SLP, float tempF, float elevationFT );
 
 //  calculate altimeter pressure from station pressure
-extern float wvutilsConvertSPToAltimeter (float SPInches, float elevationFT);
+extern float wvutilsConvertSPToAltimeter( float SPInches, float elevationFT );
 
 // Calculate the apparent temperature:
-extern float wvutilsCalculateApparentTemp(float temp, float windspeed, float humidity);
+extern float wvutilsCalculateApparentTemp( float temp, float windspeed, float humidity );
 
 // Calculate wet bulb temperature
-extern float wvutilsCalculateWetBulbTemp( float temp, float humidity, float pressure);
+extern float wvutilsCalculateWetBulbTemp( float temp, float humidity, float pressure );
 
 // convert packed date/time to time_t
-extern time_t wvutilsPackedTimeToTimeT (uint16_t packedDate, uint16_t packedTime);
+extern time_t wvutilsPackedTimeToTimeT( uint16_t packedDate, uint16_t packedTime );
 
 // calculate the time difference in packed date/time format
 // does not consider leap years
@@ -310,7 +310,7 @@ extern int wvutilsCalculatePackedTimeDelta
 );
 
 // increment a packed time value by the given minutes, rolls over at 24:00
-extern uint16_t wvutilsIncrementPackedTime (uint16_t pTime, int minutes);
+extern uint16_t wvutilsIncrementPackedTime( uint16_t pTime, int minutes );
 
 
 // define sun rise and set types
@@ -341,8 +341,8 @@ extern void sunTimesGetSunRiseSet
     float       latitude,
     float       longitude,
     int         type,       // RS_TYPE_SUN, RS_TYPE_CIVIL, RS_TYPE_ASTRO, RS_TYPE_MIDDAY
-    int16_t     *packedRise,
-    int16_t     *packedSet
+    int16_t*     packedRise,
+    int16_t*     packedSet
 );
 
 // Get day length in packed format
@@ -355,61 +355,84 @@ extern int16_t sunTimesGetDayLength
     float       longitude
 );
 
+// calculate MoonRise and MoonSet times
+//
+// Returns Rise and Set times times returned as packed time (hour*100 + minutes)
+//
+// packedRise > 0 && packedSet = -1 =>  the moon rises and never sets
+// packedRise = -1 && packSet > 0   =>  no moon rise and the moon sets
+// packedRise = packedSet = -1      =>  the moon never sets
+// packedRise = packedSet = -2      =>  the moon never rises
+
+extern int GetMoonRiseSetTimes
+(
+    int          year,
+    int          month,
+    int          day,
+    double       zone,                   // Timezone offset from UTC/GMT in hours
+    double       lat,                    // Latitude degress  N=> +, S=> -
+    double       lon,                    // longitude degress E=> +, W=> -
+    int16_t*      packedRise,            // returned Moon Rise time
+    double*       riseAz,                // return Moon Rise Azimuth
+    int16_t*      packedSet,             // returned Moon Set time
+    double*       setAz                  // return Moon Set Azimuth
+);
+
 // produce a float string fixing the truncation annoyance
-extern char *wvutilsPrintFloat (float value, int decPlaces);
+extern char* wvutilsPrintFloat( float value, int decPlaces );
 
 // Define a NULL-terminating wvstrncpy:
-extern int wvstrncpy(char *d, const char *s, size_t bufsize);
+extern int wvstrncpy( char* d, const char* s, size_t bufsize );
 
 // Right-trim a string:
-extern void wvstrtrim(char *d);
+extern void wvstrtrim( char* d );
 
 // Respond to PMON poll messages
-extern void wvutilsSendPMONPollResponse (int mask, PMON_PROCESS_TYPES process);
+extern void wvutilsSendPMONPollResponse( int mask, PMON_PROCESS_TYPES process );
 
 // History start time utilities:
-extern int    wvutilsGetDayStartTime   (int archiveInterval);
-extern time_t wvutilsGetWeekStartTime  (int archiveInterval);
-extern time_t wvutilsGetMonthStartTime (int archiveInterval);
-extern time_t wvutilsGetYearStartTime  (int archiveInterval);
+extern int    wvutilsGetDayStartTime( int archiveInterval );
+extern time_t wvutilsGetWeekStartTime( int archiveInterval );
+extern time_t wvutilsGetMonthStartTime( int archiveInterval );
+extern time_t wvutilsGetYearStartTime( int archiveInterval );
 
 // Time utilities:
-extern int wvutilsGetYear  (time_t ntime);
-extern int wvutilsGetMonth (time_t ntime);
-extern int wvutilsGetDay   (time_t ntime);
-extern int wvutilsGetHour  (time_t ntime);
-extern int wvutilsGetMin   (time_t ntime);
-extern int wvutilsGetSec   (time_t ntime);
+extern int wvutilsGetYear( time_t ntime );
+extern int wvutilsGetMonth( time_t ntime );
+extern int wvutilsGetDay( time_t ntime );
+extern int wvutilsGetHour( time_t ntime );
+extern int wvutilsGetMin( time_t ntime );
+extern int wvutilsGetSec( time_t ntime );
 
-extern int wvutilsTimeIsToday(time_t checkTime);
+extern int wvutilsTimeIsToday( time_t checkTime );
 
 //  Determine if it is day or night
 //  Returns TRUE or FALSE
-extern int wvutilsIsDayTime (int16_t timeSunrise, int16_t timeSunset);
+extern int wvutilsIsDayTime( int16_t timeSunrise, int16_t timeSunset );
 
 
 //  return a string indicating the moon phase:
-extern char *lunarPhaseGet (char *increase, char *decrease, char *full);
+extern char* lunarPhaseGet( char* increase, char* decrease, char* full );
 
 
 // Path utilities:
-extern char* wvutilsGetArchivePath(void);
-extern char* wvutilsGetConfigPath(void);
+extern char* wvutilsGetArchivePath( void );
+extern char* wvutilsGetConfigPath( void );
 
 // Marker file utilities:
-extern int    wvutilsWriteMarkerFile(const char* filePath, time_t marker);
-extern time_t wvutilsReadMarkerFile(const char* filePath);
+extern int    wvutilsWriteMarkerFile( const char* filePath, time_t marker );
+extern time_t wvutilsReadMarkerFile( const char* filePath );
 
 
 // Define a SIGCHLD handler to wait for child processes to exit:
 // Should only be called from process signal handler.
-extern void wvutilsWaitForChildren(void);
+extern void wvutilsWaitForChildren( void );
 
 
 //  Initialize and detect a DST state change:
-//  Uses the system clock and the tm struct value "tm_isdst" returned by the 
+//  Uses the system clock and the tm struct value "tm_isdst" returned by the
 //  system call "localtime" to make the determination
-extern int wvutilsDetectDSTInit(void);
+extern int wvutilsDetectDSTInit( void );
 
 typedef enum
 {
@@ -419,14 +442,14 @@ typedef enum
 } WVUTILS_DST_TYPE;
 
 // Returns: WVUTILS_DST_TYPE
-extern int wvutilsDetectDSTChange(void);
+extern int wvutilsDetectDSTChange( void );
 
 
 // Assign a degree value to received string representation for wind direction:
 // Returns degree equivalent or -1 if ERROR:
-extern int wvutilsConvertWindStrToDegrees(const char* windStr);
+extern int wvutilsConvertWindStrToDegrees( const char* windStr );
 
 // Create the CWOP version string:
-extern char* wvutilsCreateCWOPVersion(char* wviewStr);
+extern char* wvutilsCreateCWOPVersion( char* wviewStr );
 
 #endif

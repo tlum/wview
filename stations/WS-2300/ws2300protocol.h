@@ -1,26 +1,26 @@
 #ifndef INC_ws2300protocolh
 #define INC_ws2300protocolh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         ws2300protocol.h
- 
+
   PURPOSE:
         Provide protocol utilities for WS-2300 station communication.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         02/27/2008      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2008, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 /*  ... System include files
@@ -147,21 +147,21 @@ typedef enum
 
 // function prototypes
 
-extern int wsStartProcState (int state, void *stimulus, void *data);
-extern int wsRunState (int state, void *stimulus, void *data);
-extern int wsAdrs0State (int state, void *stimulus, void *data);
-extern int wsAdrs1State (int state, void *stimulus, void *data);
-extern int wsAdrs2State (int state, void *stimulus, void *data);
-extern int wsAdrs3State (int state, void *stimulus, void *data);
-extern int wsNumBytesState (int state, void *stimulus, void *data);
-extern int wsErrorState (int state, void *stimulus, void *data);
+extern int wsStartProcState( int state, void* stimulus, void* data );
+extern int wsRunState( int state, void* stimulus, void* data );
+extern int wsAdrs0State( int state, void* stimulus, void* data );
+extern int wsAdrs1State( int state, void* stimulus, void* data );
+extern int wsAdrs2State( int state, void* stimulus, void* data );
+extern int wsAdrs3State( int state, void* stimulus, void* data );
+extern int wsNumBytesState( int state, void* stimulus, void* data );
+extern int wsErrorState( int state, void* stimulus, void* data );
 
 
 // call once during initialization
-extern int ws2300Init (WVIEWD_WORK *work);
+extern int ws2300Init( WVIEWD_WORK* work );
 
 // do cleanup
-extern void ws2300Exit (WVIEWD_WORK *work);
+extern void ws2300Exit( WVIEWD_WORK* work );
 
 #endif
 

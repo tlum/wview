@@ -1,27 +1,27 @@
 #ifndef INC_emailalertsh
 #define INC_emailalertsh
 /*---------------------------------------------------------------------------
- 
+
   FILENAME:
         emailAlerts.h
- 
+
   PURPOSE:
         Define the Alert Email API.
         Define system alert types.
- 
+
   REVISION HISTORY:
         Date            Engineer        Revision        Remarks
         03/07/2009      M.S. Teel       0               Original
- 
+
   NOTES:
-        
- 
+
+
   LICENSE:
         Copyright (c) 2009, Mark S. Teel (mark@teel.ws)
-  
-        This source code is released for free distribution under the terms 
+
+        This source code is released for free distribution under the terms
         of the GNU General Public License.
-  
+
 ----------------------------------------------------------------------------*/
 
 //  ... includes
@@ -61,18 +61,18 @@ typedef struct
 {
     char*               subject;
     char*               body;
-}__attribute__ ((packed)) ALERT_INFO;
+} __attribute__( ( packed ) ) ALERT_INFO;
 
 
 
 //  ... API prototypes
 
 //  ... send an alert email with given alert type:
-extern int emailAlertSend (EmailAlertTypes type);
+extern int emailAlertSend( EmailAlertTypes type );
 
-extern char* emailAlertGetSubject (EmailAlertTypes type);
+extern char* emailAlertGetSubject( EmailAlertTypes type );
 
-extern char* emailAlertGetBody (EmailAlertTypes type);
+extern char* emailAlertGetBody( EmailAlertTypes type );
 
 #endif
 
