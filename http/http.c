@@ -89,9 +89,7 @@ static void processWUNDERGROUND( WVIEW_MSG_ARCHIVE_NOTIFY* notify )
     length += sprintf( &httpBuffer[length], "ID=%s&PASSWORD=%s",
                        httpWork.stationId, httpWork.password );
 
-    length += sprintf( &httpBuffer[length], "&dateutc=%4.4d-%2.2d-%2.2d+%2.2d:%2.2d:%2.2d",
-                       gmTime.tm_year + 1900, gmTime.tm_mon + 1, gmTime.tm_mday,
-                       gmTime.tm_hour, gmTime.tm_min, gmTime.tm_sec );
+    length += strftime(&httpBuffer[length], 40, "&dateutc=%F+%H%%3A%M%%3A%S", &gmTime);
 
     // check for any wind registered
     if( notify->wspeedF >= 0 || notify->hiwspeedF >= 0 )
@@ -109,8 +107,7 @@ static void processWUNDERGROUND( WVIEW_MSG_ARCHIVE_NOTIFY* notify )
         length += sprintf( &httpBuffer[length], "&humidity=%d", notify->humidity );
     }
 
-    length += sprintf( &httpBuffer[length], "&tempf=%3.3d.%1.1d",
-                       notify->temp / 10, notify->temp % 10 );
+    length += sprintf( &httpBuffer[length], "&tempf=%.1f", (float)notify->temp / 10);
 
     length += sprintf( &httpBuffer[length], "&rainin=%.2f", notify->rainHour );
 
@@ -119,8 +116,7 @@ static void processWUNDERGROUND( WVIEW_MSG_ARCHIVE_NOTIFY* notify )
     length += sprintf( &httpBuffer[length], "&baromin=%2.2d.%2.2d",
                        notify->barom / 1000, ( notify->barom % 1000 ) / 10 );
 
-    length += sprintf( &httpBuffer[length], "&dewptf=%2.2d.%3.3d",
-                       notify->dewpoint / 10, ( notify->dewpoint % 10 ) * 100 );
+    length += sprintf( &httpBuffer[length], "&dewptf=%.1f", (float)notify->dewpoint / 10);
 
     if( notify->radiation != 0xFFFF )
         length += sprintf( &httpBuffer[length], "&solarradiation=%d", ( int )notify->radiation );
@@ -169,6 +165,92 @@ static void processWUNDERGROUND( WVIEW_MSG_ARCHIVE_NOTIFY* notify )
     curl_easy_cleanup( curl );
     statusIncrementStat( HTTP_STATS_PKTS_SENT );
 
+    return;
+}
+
+static void processMLSERVER (WVIEW_MSG_ARCHIVE_NOTIFY *notify)
+{
+    RADSOCK_ID          socket;
+    time_t              ntime;
+    struct tm           lTime;
+    int                 length = 0;
+    char                *serv;
+    int                 port;
+    char                version[64];
+    CURL                *curl;
+    CURLcode            res;
+    char                curlError[CURL_ERROR_SIZE];
+    char                tempBfr[194];
+    
+    // format the MLSERVER data
+    ntime = time (NULL);
+    localtime_r (&ntime, &lTime);
+
+    length = sprintf (httpBuffer, "http://autsrvp01.tedworld.com:6246/command?Macro|");
+    
+    length += sprintf (&httpBuffer[length], "SetVariable|mlweather_asof~%4.4d-%2.2d-%2.2d%%20%2.2d%%3a%2.2d%%3a%2.2d",
+                       lTime.tm_year + 1900, lTime.tm_mon + 1, lTime.tm_mday, 
+                       lTime.tm_hour, lTime.tm_min, lTime.tm_sec);
+
+    length += sprintf (&httpBuffer[length], "!SetVariable|mlweather_currenttemp~%.1f", (float)notify->temp/10);
+
+    if (notify->humidity >= 0 && notify->humidity <= 100)
+    {
+        length += sprintf (&httpBuffer[length], "!SetVariable|mlweather_humidity~%d", notify->humidity);
+    }
+
+    if(notify->UV != 0xFFFF)
+        length += sprintf (&httpBuffer[length], "!SetVariable|mlweather_uvindex~%.1f", notify->UV);
+
+    length += sprintf (&httpBuffer[length], "!SetVariable|mlweather_dewpoint~%.1f", (float)notify->dewpoint/10);
+
+    length += sprintf (&httpBuffer[length], "!SetVariable|mlweather_barometer~%.2d.%2.2d", 
+                       notify->barom/1000, (notify->barom%1000)/10);
+
+    if(notify->radiation != 0xFFFF)
+        length += sprintf (&httpBuffer[length], "!SetVariable|mlweather_solarradiation~%d", notify->radiation);
+
+    length += sprintf (&httpBuffer[length], "&rainin=%.2f", notify->rainHour);
+
+    length += sprintf (&httpBuffer[length], "&dailyrainin=%.2f", ((float)notify->rainDay)/100);
+
+    // check for any wind registered
+    if (notify->winddir > -1)
+    {
+        length += sprintf (&httpBuffer[length], "!SetVariable|mlweather_winddir~%3.3d", notify->winddir);
+        length += sprintf (&httpBuffer[length], "!SetVariable|mlweather_windspeed~%3.3d", (notify->wspeedF));
+        length += sprintf (&httpBuffer[length], "!SetVariable|mlweather_windgust~%3.3d", (notify->hiwspeedF));
+    }
+    
+
+    strncpy (tempBfr, httpBuffer, 192);
+    wvutilsLogEvent (PRI_STATUS, "MLSERVER-send: %s", tempBfr);
+    if (strlen(httpBuffer) > 192)
+    {
+        strncpy (tempBfr, &httpBuffer[192], 192);
+        wvutilsLogEvent (PRI_STATUS, "MLSERVER-send: %s", tempBfr);
+    }
+    
+    // OK, now use libcurl to execute the HTTP "GET"
+    curl = curl_easy_init ();
+    if (curl == NULL)
+    {
+        radMsgLog (PRI_HIGH, "MLSERVER-error: failed to initialize curl!");
+        return;
+    }
+    
+    curl_easy_setopt (curl, CURLOPT_URL, httpBuffer);
+    curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, recv_data);
+    curl_easy_setopt (curl, CURLOPT_ERRORBUFFER, curlError);
+    curl_easy_setopt (curl, CURLOPT_TIMEOUT, 60);
+
+    res = curl_easy_perform (curl);
+    if (res != 0)
+    {
+        radMsgLog (PRI_HIGH, "MLSERVER-error: %s", curlError);
+    }
+    
+    curl_easy_cleanup (curl);
     return;
 }
 
@@ -482,6 +564,10 @@ static void msgHandler
         if( strcmp( httpWork.stationId, "0" ) )
         {
             processWUNDERGROUND( anMsg );
+        }
+        if (strcmp (httpWork.stationId, "0"))
+        {
+            processMLSERVER (anMsg);
         }
         if( strcmp( httpWork.youstationId, "0" ) )
         {
